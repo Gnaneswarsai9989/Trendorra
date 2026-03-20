@@ -1,8 +1,8 @@
-const express = require('express');
-const router  = express.Router();
-const passport = require('passport');
+const express        = require('express');
+const router         = express.Router();
+const passport       = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const User = require('../models/User');
+const User           = require('../models/User');
 const { generateToken, protect } = require('../middleware/auth');
 
 const {
@@ -18,7 +18,7 @@ const {
   updateSellerInfo,
 } = require('../controllers/authController');
 
-// ── Google OAuth Strategy ──
+// ── Google OAuth Strategy ─────────────────────────────────────────
 passport.use(new GoogleStrategy({
   clientID:     process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
@@ -62,19 +62,19 @@ passport.deserializeUser(async (id, done) => {
   }
 });
 
-// ── Auth Routes ──
-router.post('/register',         register);
-router.post('/login',            login);
-router.post('/register-seller',  registerSeller);
-router.get('/me',                protect, getMe);
-router.put('/profile',           protect, updateProfile);
-router.put('/change-password',   protect, changePassword);
-router.post('/address',          protect, addAddress);
-router.post('/forgot-password',  forgotPassword);
-router.post('/reset-password',   resetPassword);
-router.put('/seller-info',       protect, updateSellerInfo);
+// ── Standard Auth Routes ──────────────────────────────────────────
+router.post('/register',        register);
+router.post('/login',           login);
+router.post('/register-seller', registerSeller);
+router.get('/me',               protect, getMe);
+router.put('/profile',          protect, updateProfile);
+router.put('/change-password',  protect, changePassword);
+router.post('/address',         protect, addAddress);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password',  resetPassword);
+router.put('/seller-info',      protect, updateSellerInfo);
 
-// ── Google OAuth Routes ──
+// ── Google OAuth Routes ───────────────────────────────────────────
 router.get('/google',
   passport.authenticate('google', { scope: ['profile', 'email'] })
 );
@@ -82,12 +82,15 @@ router.get('/google',
 router.get('/google/callback',
   passport.authenticate('google', {
     failureRedirect: `${process.env.CLIENT_URL}/login?error=google_failed`,
-    session: false,
+    session: true,   // ✅ required for OAuth handshake
   }),
   (req, res) => {
     const token = generateToken(req.user._id);
     console.log('✅ Google login success:', req.user.email);
-    res.redirect(`${process.env.CLIENT_URL}/auth/google/success?token=${token}`);
+    // ✅ encode token for safe URL transport
+    res.redirect(
+      `${process.env.CLIENT_URL}/auth/google/success?token=${encodeURIComponent(token)}`
+    );
   }
 );
 

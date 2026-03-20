@@ -17,19 +17,35 @@ const app = express();
 app.use(helmet());
 app.use(morgan('dev'));
 
+// ── Trust proxy (required for Render/Vercel) ──────────────────────
+app.set('trust proxy', 1);
+
 // ── Rate limiting ─────────────────────────────────────────────────
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: process.env.NODE_ENV === 'production' ? 500 : 0,
   message: 'Too many requests from this IP, please try again later.',
 });
 app.use('/api/', limiter);
 
 // ── CORS ──────────────────────────────────────────────────────────
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'https://trendorra.vercel.app',
+  process.env.CLIENT_URL,
+].filter(Boolean);
+
 app.use(cors({
-  origin:         process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials:    true,
-  methods:        ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  methods:        ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
@@ -41,7 +57,12 @@ app.use(session({
   secret:            process.env.SESSION_SECRET || 'trendorra_secret',
   resave:            false,
   saveUninitialized: false,
-  cookie:            { secure: false }, // set true in production with HTTPS
+  cookie: {
+    secure:   process.env.NODE_ENV === 'production', // true on Render (HTTPS)
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' required for cross-domain
+    httpOnly: true,
+    maxAge:   24 * 60 * 60 * 1000, // 1 day
+  },
 }));
 
 // ── Passport ──────────────────────────────────────────────────────
@@ -60,7 +81,7 @@ app.use('/api/payment',       require('./routes/paymentRoutes'));
 app.use('/api/coupons',       require('./routes/couponRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/upload',        require('./routes/uploadRoutes'));
-app.use('/api/delivery',      require('./routes/deliveryRoutes')); // ← delivery (Delhivery)
+app.use('/api/delivery',      require('./routes/deliveryRoutes'));
 
 // ── Health check ──────────────────────────────────────────────────
 app.get('/', (req, res) => {

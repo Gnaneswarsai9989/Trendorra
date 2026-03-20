@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { FiEye, FiEyeOff, FiAlertCircle } from 'react-icons/fi';
+import { authAPI } from '../services/api';
 import logo from '../assets/logo.png';
 
 const GOLD = '#C9A84C';
@@ -54,9 +55,9 @@ export function LoginPage() {
     }
   };
 
-  // ✅ Fixed: points to backend port 5000
+  // ✅ Uses authAPI.googleLogin with proper fallback
   const handleGoogleLogin = () => {
-   window.location.href = `${import.meta.env.VITE_API_URL}/api/auth/google`;
+    authAPI.googleLogin();
   };
 
   const borderColor = (field) => {
@@ -68,7 +69,6 @@ export function LoginPage() {
     return 'rgba(255,255,255,0.45)';
   };
 
-  // Google SVG icon
   const GoogleIcon = () => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M21.6 12.227c0-.68-.06-1.333-.174-1.957H12v3.71h5.332c-.23 1.242-.938 2.297-1.998 3.006v2.5h3.23c1.894-1.747 2.99-4.314 2.99-7.26z" fill="#4285F4"/>
@@ -142,8 +142,6 @@ export function LoginPage() {
                     style={{ backgroundColor: submitting ? 'rgba(201,168,76,0.55)' : GOLD, border: 'none', borderRadius: 9999, padding: '12px', fontSize: 14, letterSpacing: '0.12em', textTransform: 'uppercase', cursor: submitting ? 'not-allowed' : 'pointer' }}>
                     {submitting ? '⟳ Signing in...' : 'Sign In'}
                   </button>
-
-                  {/* ✅ FIXED Mobile Google Button */}
                   <button type="button" onClick={handleGoogleLogin}
                     className="w-full font-body text-black mt-3"
                     style={{ backgroundColor: '#fff', border: 'none', borderRadius: 9999, padding: '10px', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, cursor: 'pointer' }}>
@@ -186,7 +184,6 @@ export function LoginPage() {
             )}
           </div>
           <form onSubmit={handleSubmit}>
-            {/* Email */}
             <div style={{ marginBottom: '16px' }}>
               <label className="font-body block" style={{ fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: labelColor('email'), marginBottom: '8px' }}>
                 Email Address
@@ -198,7 +195,6 @@ export function LoginPage() {
                 onFocus={e => { if (errorField !== 'email' && errorField !== 'both') e.target.style.borderColor = GOLD; }}
                 onBlur={e => { if (errorField !== 'email' && errorField !== 'both') e.target.style.borderColor = 'rgba(255,255,255,0.1)'; }} />
             </div>
-            {/* Password */}
             <div style={{ marginBottom: '24px' }}>
               <div className="flex justify-between" style={{ marginBottom: '8px' }}>
                 <label className="font-body" style={{ fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: labelColor('password') }}>Password</label>
@@ -218,13 +214,10 @@ export function LoginPage() {
                 </button>
               </div>
             </div>
-            {/* Submit */}
             <button type="submit" disabled={submitting} className="w-full font-body text-white"
               style={{ backgroundColor: submitting ? 'rgba(201,168,76,0.55)' : GOLD, border: 'none', borderRadius: '8px', padding: '14px', fontSize: '12px', letterSpacing: '0.15em', textTransform: 'uppercase', cursor: submitting ? 'not-allowed' : 'pointer', transition: 'background-color 0.2s' }}>
               {submitting ? '⟳ Signing in...' : 'Sign In'}
             </button>
-
-            {/* ✅ FIXED Desktop Google Button */}
             <button type="button" onClick={handleGoogleLogin}
               className="w-full font-body text-black mt-3"
               style={{ backgroundColor: '#fff', border: 'none', borderRadius: '8px', padding: '12px', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, cursor: 'pointer' }}>
@@ -312,11 +305,11 @@ export function RegisterPage() {
           )}
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             {[
-              { k: 'name',     label: 'Full Name',        type: 'text',                         ph: 'Your full name',        req: true },
-              { k: 'email',    label: 'Email Address',    type: 'email',                        ph: 'you@example.com',       req: true },
+              { k: 'name',     label: 'Full Name',        type: 'text',                         ph: 'Your full name',         req: true },
+              { k: 'email',    label: 'Email Address',    type: 'email',                        ph: 'you@example.com',        req: true },
               { k: 'phone',    label: 'Phone Number',     type: 'tel',                          ph: '10-digit mobile number', req: false },
-              { k: 'password', label: 'Password',         type: showPass ? 'text' : 'password', ph: 'Min. 6 characters',     req: true },
-              { k: 'confirm',  label: 'Confirm Password', type: 'password',                     ph: 'Repeat password',       req: true },
+              { k: 'password', label: 'Password',         type: showPass ? 'text' : 'password', ph: 'Min. 6 characters',      req: true },
+              { k: 'confirm',  label: 'Confirm Password', type: 'password',                     ph: 'Repeat password',        req: true },
             ].map(field => (
               <div key={field.k}>
                 <label className="font-body block"

@@ -8,10 +8,14 @@ export default function GoogleAuthSuccess() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = params.get('token');
+    const token = decodeURIComponent(params.get('token') || '');
     if (token) {
-      loginWithToken(token).then(() => {
-        navigate('/', { replace: true });
+      loginWithToken(token).then((res) => {
+        if (res.success) {
+          navigate('/', { replace: true });
+        } else {
+          navigate('/login?error=google_failed', { replace: true });
+        }
       });
     } else {
       navigate('/login?error=google_failed', { replace: true });
@@ -28,7 +32,6 @@ export default function GoogleAuthSuccess() {
       justifyContent: 'center',
       gap: '16px'
     }}>
-      {/* Spinning loader */}
       <div style={{
         width: 40,
         height: 40,
