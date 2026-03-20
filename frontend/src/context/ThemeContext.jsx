@@ -1,0 +1,30 @@
+import { createContext, useContext, useState, useEffect } from 'react';
+
+const ThemeContext = createContext(null);
+
+export const ThemeProvider = ({ children }) => {
+  const [isDark, setIsDark] = useState(() => {
+    return localStorage.getItem('trendora_theme') !== 'light';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('trendora_theme', isDark ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    document.body.style.backgroundColor = isDark ? '#111111' : '#ffffff';
+    document.body.style.color = isDark ? '#f0f0f0' : '#111111';
+  }, [isDark]);
+
+  const toggleTheme = () => setIsDark(prev => !prev);
+
+  return (
+    <ThemeContext.Provider value={{ isDark, toggleTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+};
+
+export const useTheme = () => {
+  const ctx = useContext(ThemeContext);
+  if (!ctx) throw new Error('useTheme must be used within ThemeProvider');
+  return ctx;
+};
