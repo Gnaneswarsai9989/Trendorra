@@ -2,7 +2,7 @@ import axios from "axios";
 
 // ✅ Use env OR fallback to deployed backend
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "https://trendorra.onrender.com",
+  baseURL: (import.meta.env.VITE_API_URL || "https://trendorra.onrender.com") + "/api",
   timeout: 15000,
 });
 
