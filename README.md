@@ -110,7 +110,7 @@ CLIENT_URL=http://localhost:5173
 
 #### Frontend (`frontend/.env`)
 ```env
-VITE_API_URL=http://localhost:5000/api
+VITE_API_URL=${API_URL}/api
 VITE_RAZORPAY_KEY_ID=rzp_test_xxxxxxxxxxxx
 ```
 
@@ -160,7 +160,7 @@ This creates:
 ### Step 7 — Run the Project
 
 ```bash
-# Terminal 1 - Backend (http://localhost:5000)
+# Terminal 1 - Backend (${API_URL})
 cd backend
 npm run dev
 
