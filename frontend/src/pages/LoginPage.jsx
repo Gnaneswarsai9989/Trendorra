@@ -56,7 +56,7 @@ export function LoginPage() {
 
   // ✅ Fixed: points to backend port 5000
   const handleGoogleLogin = () => {
-    window.location.href = '${API_URL}/api/auth/google';
+   window.location.href = `${import.meta.env.VITE_API_URL}/api/auth/google`;
   };
 
   const borderColor = (field) => {
