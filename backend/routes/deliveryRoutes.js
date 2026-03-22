@@ -367,13 +367,16 @@ router.get('/charges', async (req, res) => {
 });
 
 // ── Mode info ──────────────────────────────────────────────────────
-router.get('/mode', protect, admin, (req, res) => {
+router.get('/mode', async (req, res) => {
+  const isPrototype = process.env.PROTOTYPE_MODE !== 'false';
   res.json({
-    success: true,
-    mode:    PROTOTYPE_MODE ? 'prototype' : 'live',
-    message: PROTOTYPE_MODE
-      ? 'Running in prototype mode. Set PROTOTYPE_MODE=false to enable real Shiprocket.'
-      : 'Running in live mode with Shiprocket.',
+    success:       true,
+    mode:          isPrototype ? 'prototype' : 'live',
+    isPrototype,
+    shiprocketEmail: isPrototype ? null : (process.env.SHIPROCKET_EMAIL ? '✅ Configured' : '❌ Not set'),
+    message:       isPrototype
+      ? 'Prototype mode — set PROTOTYPE_MODE=false in .env to enable Shiprocket'
+      : 'Live mode — Shiprocket API active',
     statusFlow: STATUS_FLOW,
   });
 });
