@@ -1,38 +1,47 @@
 // ═══════════════════════════════════════════════════════════════════
-// FILE: backend/routes/deliveryRoutes.js
-// Complete delivery system — prototype now, real after deploy
+// routes/deliveryRoutes.js
+// PROTOTYPE MODE: simulate delivery steps manually
+// REAL MODE: set PROTOTYPE_MODE=false → uses Shiprocket API
 //
-// HOW TO GO LIVE (after deploy):
+// STATUS FLOW:
+// Processing → Confirmed → Shipped → Out for Delivery → Delivered
+//
+// HOW TO GO LIVE (after testing):
 // 1. Set PROTOTYPE_MODE=false in .env
-// 2. Set SHIPROCKET_EMAIL and SHIPROCKET_PASSWORD in .env
-// 3. Set SHIPROCKET_WEBHOOK_TOKEN=any_secret_string in .env
-// 4. In Shiprocket dashboard → Settings → Webhooks:
-//    URL:   https://yourdomain.com/api/delivery/webhook
-//    Token: same value as SHIPROCKET_WEBHOOK_TOKEN
-// 5. Restart backend → everything works automatically ✅
+// 2. Set SHIPROCKET_EMAIL + SHIPROCKET_PASSWORD in .env
+// 3. Set SHIPROCKET_WEBHOOK_TOKEN in .env
+// 4. In Shiprocket dashboard → Webhooks → set URL to:
+//    https://yourdomain.com/api/delivery/webhook
 // ═══════════════════════════════════════════════════════════════════
 const express = require('express');
 const router  = express.Router();
 const Order   = require('../models/Order');
 const User    = require('../models/User');
 const { protect, admin, seller } = require('../middleware/auth');
-const {
-  createShipment,
-  trackShipment,
-  cancelShipment,
-  mapDelhiveryStatus,
-  PROTOTYPE_MODE,
-} = require('../utils/shiprocket');
 
-const STATUS_FLOW = ['Processing', 'Confirmed', 'Shipped', 'Out for Delivery', 'Delivered'];
+const PROTOTYPE_MODE = process.env.PROTOTYPE_MODE !== 'false';
 
-// ── 1. Seller: Mark order ready for pickup ────────────────────────
-// POST /api/delivery/ready/:orderId
-// Seller clicks this → Shiprocket schedules pickup from THEIR address
-router.post('/ready/:orderId', protect, seller, async (req, res) => {
+const STATUS_FLOW = [
+  'Processing',
+  'Confirmed',
+  'Shipped',
+  'Out for Delivery',
+  'Delivered',
+];
+
+const getShiprocket = () => {
+  if (PROTOTYPE_MODE) return null;
+  try { return require('../utils/shiprocket'); }
+  catch { return null; }
+};
+
+// ══════════════════════════════════════════════════════════════════
+// 1. SELLER: Mark order ready for pickup — Processing → Confirmed
+//    POST /api/delivery/ready/:orderId
+// ══════════════════════════════════════════════════════════════════
+router.post('/ready/:orderId', protect, sellerOrAdmin, async (req, res) => {
   try {
-    const order      = await Order.findById(req.params.orderId)
-                                  .populate('user', 'name phone email');
+    const order      = await Order.findById(req.params.orderId).populate('user', 'name phone email');
     const sellerUser = await User.findById(req.user._id);
 
     if (!order)
@@ -41,115 +50,103 @@ router.post('/ready/:orderId', protect, seller, async (req, res) => {
       return res.status(400).json({ success: false, message: `Order is already ${order.orderStatus}` });
 
     let waybill = null;
-    try {
-      const result = await createShipment(order, sellerUser);
-      waybill      = result?.packages?.[0]?.waybill || null;
-      console.log(`📦 Shipment: ${waybill} ${PROTOTYPE_MODE ? '[PROTOTYPE]' : '[SHIPROCKET LIVE]'}`);
-    } catch (err) {
-      console.error('⚠️ Shiprocket error:', err.message);
-      // Don't block the seller — still mark as confirmed
+
+    if (!PROTOTYPE_MODE) {
+      try {
+        const shiprocket = getShiprocket();
+        if (shiprocket) {
+          const result = await shiprocket.createShipment(order, sellerUser);
+          waybill      = result?.packages?.[0]?.waybill || null;
+          console.log(`📦 Shiprocket AWB: ${waybill}`);
+        }
+      } catch (err) {
+        console.error('⚠️ Shiprocket error:', err.message);
+      }
+    } else {
+      waybill = `PROTO${Date.now().toString().slice(-8)}`;
+      console.log(`📦 [PROTOTYPE] Fake waybill: ${waybill}`);
     }
 
     order.orderStatus = 'Confirmed';
     order.trackingId  = waybill;
     order.readyAt     = new Date();
-    if (!order.statusHistory) order.statusHistory = [];
     order.statusHistory.push({
       status:    'Confirmed',
       timestamp: new Date(),
-      note:      PROTOTYPE_MODE
-        ? `Prototype waybill: ${waybill}`
-        : `Shiprocket AWB: ${waybill} | Pickup from seller address`,
+      message:   PROTOTYPE_MODE
+        ? `[Prototype] Ready for pickup. Waybill: ${waybill}`
+        : `Shiprocket pickup scheduled. AWB: ${waybill}`,
+      updatedBy: req.user._id,
     });
     await order.save();
 
     res.json({
       success: true,
       message: PROTOTYPE_MODE
-        ? `📦 [Prototype] Pickup scheduled! Waybill: ${waybill}`
-        : `📦 Shiprocket pickup scheduled from your address! AWB: ${waybill}`,
+        ? `📦 [Prototype] Ready for pickup! Waybill: ${waybill}`
+        : `📦 Pickup scheduled! AWB: ${waybill}`,
       waybill,
       order,
+      mode: PROTOTYPE_MODE ? 'prototype' : 'live',
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 });
 
-// ── 2. Track shipment ─────────────────────────────────────────────
-// GET /api/delivery/track/:waybill
-router.get('/track/:waybill', protect, async (req, res) => {
-  try {
-    const order = await Order.findOne({ trackingId: req.params.waybill });
-    const data  = await trackShipment(req.params.waybill, order?.orderStatus);
-    res.json({ success: true, data, currentStatus: order?.orderStatus });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-// ── 3. Admin: Cancel shipment ─────────────────────────────────────
-// POST /api/delivery/cancel/:orderId
-router.post('/cancel/:orderId', protect, admin, async (req, res) => {
-  try {
-    const order = await Order.findById(req.params.orderId);
-    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
-
-    if (order.trackingId) {
-      await cancelShipment(order.trackingId).catch(e => console.error('Cancel error:', e.message));
-    }
-
-    order.orderStatus    = 'Cancelled';
-    order.payoutEligible = false;
-    if (!order.statusHistory) order.statusHistory = [];
-    order.statusHistory.push({ status: 'Cancelled', timestamp: new Date(), note: 'Cancelled by admin' });
-    await order.save();
-
-    res.json({ success: true, message: 'Order cancelled', order });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-// ── 4. PROTOTYPE: Simulate next delivery step ─────────────────────
-// POST /api/delivery/simulate/:orderId
-// This route is disabled in real mode automatically
-router.post('/simulate/:orderId', protect, async (req, res) => {
+// ══════════════════════════════════════════════════════════════════
+// 2. PROTOTYPE: Simulate next delivery step
+//    POST /api/delivery/simulate/:orderId
+// ══════════════════════════════════════════════════════════════════
+router.post('/simulate/:orderId', protect, sellerOrAdmin, async (req, res) => {
   if (!PROTOTYPE_MODE) {
-    return res.status(403).json({ success: false, message: 'Simulation disabled in live mode' });
+    return res.status(403).json({
+      success: false,
+      message: 'Simulation is disabled in live mode. Shiprocket handles status updates via webhook.',
+    });
   }
+
   try {
     const order = await Order.findById(req.params.orderId);
-    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+    if (!order)
+      return res.status(404).json({ success: false, message: 'Order not found' });
 
-    const currentIndex = STATUS_FLOW.indexOf(order.orderStatus);
-    if (currentIndex === -1 || currentIndex >= STATUS_FLOW.length - 1) {
-      return res.status(400).json({ success: false, message: `Already at: ${order.orderStatus}` });
+    const currentIdx = STATUS_FLOW.indexOf(order.orderStatus);
+    if (currentIdx === -1 || currentIdx >= STATUS_FLOW.length - 1) {
+      return res.status(400).json({
+        success: false,
+        message: `Order is already at final status: ${order.orderStatus}`,
+      });
     }
 
-    const nextStatus  = STATUS_FLOW[currentIndex + 1];
+    const prevStatus = order.orderStatus;
+    const nextStatus = STATUS_FLOW[currentIdx + 1];
+
     order.orderStatus = nextStatus;
-    if (!order.statusHistory) order.statusHistory = [];
     order.statusHistory.push({
       status:    nextStatus,
       timestamp: new Date(),
-      note:      `[PROTOTYPE] Simulated → ${nextStatus}`,
+      message:   `[Prototype] Simulated: ${prevStatus} → ${nextStatus}`,
+      updatedBy: req.user._id,
     });
 
     if (nextStatus === 'Delivered') {
-      order.isDelivered    = true;
       order.deliveredAt    = new Date();
+      order.isPaid         = true;
+      order.paymentStatus  = order.paymentMethod === 'COD' ? 'Paid' : order.paymentStatus;
       order.payoutEligible = true;
-      console.log(`✅ [PROTOTYPE] Order ${order._id} delivered. Payout ENABLED.`);
+      console.log(`✅ [PROTOTYPE] Order ${order._id} delivered. Payout eligible.`);
     }
+
     await order.save();
 
     res.json({
       success:        true,
-      message:        `[Prototype] Status → ${nextStatus}`,
-      previousStatus: STATUS_FLOW[currentIndex],
+      message:        `[Prototype] ${prevStatus} → ${nextStatus}`,
+      previousStatus: prevStatus,
       newStatus:      nextStatus,
       payoutEligible: order.payoutEligible,
+      remainingSteps: STATUS_FLOW.slice(currentIdx + 2),
       order,
     });
   } catch (error) {
@@ -157,69 +154,221 @@ router.post('/simulate/:orderId', protect, async (req, res) => {
   }
 });
 
-// ── 5. Shiprocket Webhook ─────────────────────────────────────────
-// POST /api/delivery/webhook
-// Shiprocket calls this automatically when delivery status changes
-// Set this URL in: Shiprocket → Settings → Webhooks
-// Note: URL must NOT contain words "shiprocket", "sr", "kr" per their rules
+// ══════════════════════════════════════════════════════════════════
+// 3. TRACK SHIPMENT — GET /api/delivery/track/:waybill
+// ══════════════════════════════════════════════════════════════════
+router.get('/track/:waybill', protect, async (req, res) => {
+  try {
+    const order = await Order.findOne({ trackingId: req.params.waybill });
+
+    if (PROTOTYPE_MODE) {
+      return res.json({
+        success: true,
+        mode:    'prototype',
+        waybill: req.params.waybill,
+        currentStatus: order?.orderStatus || 'Unknown',
+        statusHistory: order?.statusHistory || [],
+        message: 'Prototype tracking — real tracking available after Shiprocket integration',
+      });
+    }
+
+    const shiprocket = getShiprocket();
+    if (shiprocket) {
+      const data = await shiprocket.trackShipment(req.params.waybill, order?.orderStatus);
+      return res.json({ success: true, data, currentStatus: order?.orderStatus });
+    }
+
+    res.json({ success: true, currentStatus: order?.orderStatus });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════
+// 4. ADMIN: Cancel shipment — POST /api/delivery/cancel/:orderId
+// ══════════════════════════════════════════════════════════════════
+router.post('/cancel/:orderId', protect, admin, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.orderId);
+    if (!order)
+      return res.status(404).json({ success: false, message: 'Order not found' });
+
+    if (!PROTOTYPE_MODE && order.trackingId) {
+      const shiprocket = getShiprocket();
+      if (shiprocket) {
+        await shiprocket.cancelShipment(order.trackingId).catch(e =>
+          console.error('Cancel shipment error:', e.message)
+        );
+      }
+    }
+
+    for (const item of order.orderItems) {
+      await require('../models/Product').findByIdAndUpdate(
+        item.product, { $inc: { stock: item.quantity } }
+      );
+    }
+
+    order.orderStatus    = 'Cancelled';
+    order.payoutEligible = false;
+    order.statusHistory.push({
+      status: 'Cancelled', timestamp: new Date(),
+      message: 'Cancelled by admin', updatedBy: req.user._id,
+    });
+    await order.save();
+
+    res.json({ success: true, message: 'Order cancelled and shipment cancelled', order });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════
+// 5. SHIPROCKET WEBHOOK — POST /api/delivery/webhook
+// ══════════════════════════════════════════════════════════════════
 router.post('/webhook', async (req, res) => {
   try {
-    // Verify webhook token (Shiprocket sends it as x-api-key header)
-    const webhookToken = process.env.SHIPROCKET_WEBHOOK_TOKEN;
-    if (webhookToken) {
-      const receivedToken = req.headers['x-api-key'] || req.headers['authorization'];
-      if (receivedToken !== webhookToken) {
-        console.warn('⚠️ Webhook: Invalid token received');
-        return res.status(200).json({ success: true }); // Always 200 to avoid Shiprocket retries
-      }
+    if (PROTOTYPE_MODE)
+      return res.status(200).json({ success: true, message: 'Prototype mode — webhook ignored' });
+
+    const token = process.env.SHIPROCKET_WEBHOOK_TOKEN;
+    if (token) {
+      const received = req.headers['x-api-key'] || req.headers['authorization'];
+      if (received !== token) return res.status(200).json({ success: true });
     }
 
-    const body = req.body;
-
-    // Shiprocket webhook payload
-    const awb    = body.awb || body.waybill || body.tracking_id;
-    const status = body.current_status || body.status;
-
-    console.log(`🔔 Shiprocket webhook: AWB=${awb} | Status=${status}`);
-
-    if (!awb || !status) {
-      return res.status(200).json({ success: true, message: 'No actionable data' });
-    }
+    const { awb, current_status } = req.body;
+    if (!awb || !current_status) return res.status(200).json({ success: true });
 
     const order = await Order.findOne({ trackingId: awb });
-    if (!order) {
-      console.log(`⚠️ Webhook: No order found for AWB ${awb}`);
-      return res.status(200).json({ success: true });
-    }
+    if (!order) return res.status(200).json({ success: true });
 
-    const newStatus = mapDelhiveryStatus(status);
+    const statusMap = {
+      'pickup scheduled': 'Confirmed',
+      'picked up':        'Shipped',
+      'in transit':       'Shipped',
+      'out for delivery': 'Out for Delivery',
+      'delivered':        'Delivered',
+      'undelivered':      'Out for Delivery',
+      'rto initiated':    'Returned',
+    };
+    const newStatus = statusMap[current_status?.toLowerCase()];
 
     if (newStatus && order.orderStatus !== newStatus) {
-      const previousStatus  = order.orderStatus;
-      order.orderStatus     = newStatus;
-      if (!order.statusHistory) order.statusHistory = [];
-      order.statusHistory.push({
-        status:    newStatus,
-        timestamp: new Date(),
-        note:      `Shiprocket: ${status}`,
-      });
-
+      const prev        = order.orderStatus;
+      order.orderStatus = newStatus;
+      order.statusHistory.push({ status: newStatus, timestamp: new Date(), message: `Shiprocket: ${current_status}` });
       if (newStatus === 'Delivered') {
-        order.isDelivered    = true;
         order.deliveredAt    = new Date();
+        order.isPaid         = true;
+        order.paymentStatus  = order.paymentMethod === 'COD' ? 'Paid' : order.paymentStatus;
         order.payoutEligible = true;
-        console.log(`✅ Order ${order._id} DELIVERED. Payout ENABLED.`);
       }
-
       await order.save();
-      console.log(`📊 Order ${order._id}: ${previousStatus} → ${newStatus}`);
+      console.log(`📊 Webhook: Order ${order._id}: ${prev} → ${newStatus}`);
     }
 
-    res.status(200).json({ success: true }); // Always 200 to Shiprocket
+    res.status(200).json({ success: true });
   } catch (error) {
     console.error('Webhook error:', error.message);
-    res.status(200).json({ success: true }); // Always 200 even on error
+    res.status(200).json({ success: true });
+  }
+});
+
+// ── Mode info ──────────────────────────────────────────────────────
+router.get('/mode', protect, admin, (req, res) => {
+  res.json({
+    success: true,
+    mode:    PROTOTYPE_MODE ? 'prototype' : 'live',
+    message: PROTOTYPE_MODE
+      ? 'Running in prototype mode. Set PROTOTYPE_MODE=false to enable real Shiprocket.'
+      : 'Running in live mode with Shiprocket.',
+    statusFlow: STATUS_FLOW,
+  });
+});
+
+
+// ══════════════════════════════════════════════════════════════════
+// CHECK PINCODE SERVICEABILITY
+// GET /api/delivery/check-pincode?pincode=500001
+// Called from checkout page when customer enters pincode
+// No auth required — public endpoint
+// ══════════════════════════════════════════════════════════════════
+router.get('/check-pincode', async (req, res) => {
+  try {
+    const { pincode } = req.query;
+
+    if (!pincode || !/^\d{6}$/.test(pincode)) {
+      return res.status(400).json({
+        success:       false,
+        serviceable:   false,
+        message:       'Enter a valid 6-digit pincode',
+      });
+    }
+
+    // ── PROTOTYPE MODE: all pincodes serviceable ───────────────
+    if (PROTOTYPE_MODE) {
+      return res.json({
+        success:     true,
+        serviceable: true,
+        message:     'Serviceable (prototype mode)',
+        mode:        'prototype',
+        charge:      null, // calculated zone-based in frontend
+      });
+    }
+
+    // ── LIVE MODE: check Shiprocket serviceability ─────────────
+    try {
+      const deliveryService = require('../utils/deliveryService');
+
+      // Use a dummy seller pincode if not provided
+      // In real flow, seller pincode comes from sellerInfo
+      const sellerPincode = req.query.sellerPincode || '500001'; // default Hyderabad
+
+      const result = await deliveryService.getDeliveryCharge(
+        { pincode },
+        { pincode: sellerPincode }
+      );
+
+      if (result.notServiceable) {
+        return res.json({
+          success:     true,
+          serviceable: false,
+          message:     `Delivery not available to pincode ${pincode}. Please try a different address.`,
+          pincode,
+        });
+      }
+
+      return res.json({
+        success:       true,
+        serviceable:   true,
+        message:       `Delivery available${result.courierName ? ` via ${result.courierName}` : ''}`,
+        charge:        result.charge,
+        courierName:   result.courierName  || null,
+        estimatedDays: result.estimatedDays || null,
+        zone:          result.zone,
+        pincode,
+      });
+
+    } catch (err) {
+      // If Shiprocket check fails — don't block customer
+      console.error('Serviceability check error:', err.message);
+      return res.json({
+        success:     true,
+        serviceable: true, // allow order — better to allow than block
+        message:     'Delivery available',
+        fallback:    true,
+      });
+    }
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
 module.exports = router;
+
+function sellerOrAdmin(req, res, next) {
+  if (req.user && (req.user.role === 'seller' || req.user.role === 'admin'))
+    return next();
+  res.status(403).json({ success: false, message: 'Seller or Admin access required' });
+}

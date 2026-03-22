@@ -1,16 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { productAPI, orderAPI, authAPI } from '../../services/api';
+import { productAPI, orderAPI, authAPI, deliveryAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
-import axios from 'axios';
 import {
   FiPackage, FiShoppingBag, FiDollarSign, FiTrendingUp,
   FiPlus, FiEdit2, FiTrash2, FiLogOut, FiUser,
   FiArrowRight, FiStar, FiAlertCircle, FiMapPin,
   FiCreditCard, FiPercent, FiTruck, FiSave,
   FiBarChart2, FiX, FiCheck, FiRefreshCw, FiAlertTriangle,
-  FiArrowLeft, FiClock, FiFileText, FiShield,
+  FiArrowLeft, FiClock, FiFileText, FiShield, FiCheckCircle,
 } from 'react-icons/fi';
 
 const BG     = '#0a0a0a';
@@ -445,7 +444,8 @@ export default function SellerDashboard() {
   const [showResetOrders,  setShowResetOrders]  = useState(false);
   const [showResetRevenue, setShowResetRevenue] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
-  const [markingReady, setMarkingReady] = useState(null);
+  const [markingReady,   setMarkingReady]   = useState(null);
+  const [confirmingOrder, setConfirmingOrder] = useState(null);
   const [legalDoc, setLegalDoc] = useState(null); // key of open legal doc
 
   useEffect(() => {
@@ -497,19 +497,25 @@ export default function SellerDashboard() {
   const handleMarkReady = async (orderId) => {
     setMarkingReady(orderId);
     try {
-      const token = localStorage.getItem('trendora_token');
-      const res = await axios.post(
-        `/api/delivery/ready/${orderId}`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      toast.success(res.data.waybill
-        ? `📦 Pickup scheduled! Tracking: ${res.data.waybill}`
-        : '✅ Order marked as ready for pickup');
+      const res = await deliveryAPI.markReady(orderId);
+      toast.success(res.waybill
+        ? `📦 Pickup scheduled! Tracking: ${res.waybill}`
+        : '✅ Order confirmed & ready for pickup');
       loadData();
     } catch (e) {
-      toast.error(e?.response?.data?.message || 'Failed to schedule pickup');
+      toast.error(e?.message || 'Failed to schedule pickup');
     } finally { setMarkingReady(null); }
+  };
+
+  const handleConfirmOrder = async (orderId) => {
+    setConfirmingOrder(orderId);
+    try {
+      await orderAPI.confirm(orderId);
+      toast.success('✅ Order confirmed!');
+      loadData();
+    } catch (e) {
+      toast.error(e?.message || 'Failed to confirm order');
+    } finally { setConfirmingOrder(null); }
   };
 
   // ── ✅ FIXED: Reset Orders — permanently deletes from DB ─────────
@@ -827,8 +833,7 @@ export default function SellerDashboard() {
                         {orders.map(order => {
                           const { commission, fixed, earnings } = calcEarnings(order.totalPrice || 0);
                           const s = statusStyle(order.orderStatus);
-                          const canMarkReady = order.orderStatus === 'Processing';
-                          return (
+                                          return (
                             <tr key={order._id}>
                               <td style={{ padding: '11px 14px', borderBottom: `1px solid ${BORDER}` }}><span style={{ color: GOLD, fontSize: '12px', fontFamily: 'inherit' }}>#{order._id.slice(-8).toUpperCase()}</span></td>
                               <td style={{ padding: '11px 14px', borderBottom: `1px solid ${BORDER}` }}><span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', fontFamily: 'inherit' }}>{new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span></td>
@@ -843,12 +848,22 @@ export default function SellerDashboard() {
                               </td>
                               <td style={{ padding: '11px 14px', borderBottom: `1px solid ${BORDER}` }}><span style={{ fontSize: '10px', padding: '3px 8px', borderRadius: '20px', color: s.color, backgroundColor: s.bg, fontFamily: 'inherit', whiteSpace: 'nowrap' }}>{order.orderStatus}</span></td>
                               <td style={{ padding: '11px 14px', borderBottom: `1px solid ${BORDER}` }}>
-                                {canMarkReady && (
+                                {order.orderStatus === 'Processing' && (
+                                  <button onClick={() => handleConfirmOrder(order._id)} disabled={confirmingOrder === order._id}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '5px 10px', backgroundColor: 'rgba(96,165,250,0.12)', border: '1px solid rgba(96,165,250,0.3)', borderRadius: '5px', color: '#60a5fa', fontSize: '11px', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+                                    {confirmingOrder === order._id ? <FiRefreshCw size={10} style={{ animation: 'spin 1s linear infinite' }} /> : <FiCheckCircle size={10} />}
+                                    {confirmingOrder === order._id ? 'Confirming…' : 'Confirm Order'}
+                                  </button>
+                                )}
+                                {order.orderStatus === 'Confirmed' && (
                                   <button onClick={() => handleMarkReady(order._id)} disabled={markingReady === order._id}
                                     style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '5px 10px', backgroundColor: `${GOLD}18`, border: `1px solid ${GOLD}35`, borderRadius: '5px', color: GOLD, fontSize: '11px', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
                                     {markingReady === order._id ? <FiRefreshCw size={10} style={{ animation: 'spin 1s linear infinite' }} /> : <FiTruck size={10} />}
                                     {markingReady === order._id ? 'Scheduling…' : 'Ready for Pickup'}
                                   </button>
+                                )}
+                                {!['Processing', 'Confirmed'].includes(order.orderStatus) && (
+                                  <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: 'inherit' }}>—</span>
                                 )}
                               </td>
                             </tr>

@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import {
   FiArrowLeft, FiSave, FiX, FiImage, FiChevronDown, FiCheck,
-  FiUpload, FiStar, FiZap,
+  FiUpload, FiStar, FiZap, FiAward,
 } from 'react-icons/fi';
 import { CATEGORIES, getSubCategoryNames, getGroupedSubCategories } from '../../constants/categories';
 
@@ -188,7 +188,6 @@ function SizeSelector({ value, onChange }) {
 
 /* ── Color Selector ──────────────────────────────────────────────────────── */
 function ColorSelector({ value, onChange }) {
-  // value is array of color name strings e.g. ['Black', 'White']
   const toggle = (colorName) => {
     if (value.includes(colorName)) onChange(value.filter(c => c !== colorName));
     else onChange([...value, colorName]);
@@ -412,9 +411,10 @@ export default function SellerProductForm() {
   const isEdit   = Boolean(id);
 
   const [form, setForm] = useState({
-    name: '', description: '', price: '', category: '', subCategory: '',
+    name: '', description: '', price: '', discountPrice: '', category: '', subCategory: '',
     stock: '', images: [], sizes: [], colors: [],
-    isNewArrival: false, isBestSeller: false,
+    brand: '', tags: '', material: '', careInstructions: '',
+    isNewArrival: false, isBestSeller: false, isFeatured: false,
   });
   const [loading,  setLoading]  = useState(false);
   const [fetching, setFetching] = useState(isEdit);
@@ -425,18 +425,23 @@ export default function SellerProductForm() {
         .then(res => {
           const p = res.product;
           setForm({
-            name:         p.name         || '',
-            description:  p.description  || '',
-            price:        p.price        || '',
-            category:     p.category     || '',
-            subCategory:  p.subCategory  || '',
-            stock:        p.stock        || '',
-            images:       p.images       || [],
-            sizes:        p.sizes        || [],
-            // normalize colors: backend may store strings or objects
-            colors:       (p.colors || []).map(c => typeof c === 'string' ? c : c.name),
-            isNewArrival: p.isNewArrival || false,
-            isBestSeller: p.isBestSeller || false,
+            name:             p.name             || '',
+            description:      p.description      || '',
+            price:            p.price            || '',
+            discountPrice:    p.discountPrice     || '',
+            category:         p.category         || '',
+            subCategory:      p.subCategory      || '',
+            stock:            p.stock            || '',
+            images:           p.images           || [],
+            sizes:            p.sizes            || [],
+            colors:           (p.colors || []).map(c => typeof c === 'string' ? c : c.name),
+            brand:            p.brand            || '',
+            tags:             Array.isArray(p.tags) ? p.tags.join(', ') : (p.tags || ''),
+            material:         p.material         || '',
+            careInstructions: p.careInstructions || '',
+            isNewArrival:     p.isNewArrival     || false,
+            isBestSeller:     p.isBestSeller     || false,
+            isFeatured:       p.isFeatured       || false,
           });
         })
         .catch(() => toast.error('Failed to load product'))
@@ -453,20 +458,29 @@ export default function SellerProductForm() {
     if (!form.name || !form.price || !form.category || !form.stock) {
       toast.error('Please fill all required fields'); return;
     }
+    // Validate discount price
+    if (form.discountPrice && Number(form.discountPrice) >= Number(form.price)) {
+      toast.error('Discount price must be less than selling price'); return;
+    }
     setLoading(true);
     try {
-      // Convert color name strings → { name, hex } objects (as DB expects)
       const colorsAsObjects = form.colors.map(c => {
         if (typeof c === 'object') return c;
         const found = PRESET_COLORS.find(p => p.name === c);
         return found ? { name: found.name, hex: found.hex } : { name: c, hex: '#888888' };
       });
+      // Parse tags string → array
+      const tagsArray = form.tags
+        ? form.tags.split(',').map(t => t.trim()).filter(Boolean)
+        : [];
       const payload = {
         ...form,
-        price:  Number(form.price),
-        stock:  Number(form.stock),
-        colors: colorsAsObjects,
-        seller: user?._id,
+        price:            Number(form.price),
+        discountPrice:    form.discountPrice ? Number(form.discountPrice) : undefined,
+        stock:            Number(form.stock),
+        colors:           colorsAsObjects,
+        tags:             tagsArray,
+        seller:           user?._id,
       };
       if (isEdit) {
         await productAPI.update(id, payload);
@@ -530,17 +544,56 @@ export default function SellerProductForm() {
               {/* Basic Information */}
               <div style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '24px', marginBottom: '16px' }}>
                 <p style={{ color: GOLD, fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', margin: '0 0 18px', fontFamily: 'inherit' }}>Basic Information</p>
+
                 <label style={lbl}>Product Name *</label>
                 <input style={{ ...inp, marginBottom: '16px' }} value={form.name}
                   onChange={e => set('name', e.target.value)} placeholder="e.g. Classic Oversized Tee"
                   onFocus={e => e.target.style.borderColor = GOLD}
                   onBlur={e  => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} required />
+
                 <label style={lbl}>Description</label>
                 <textarea style={{ ...inp, marginBottom: '16px', minHeight: '100px', resize: 'vertical' }}
                   value={form.description} onChange={e => set('description', e.target.value)}
                   placeholder="Describe your product…"
                   onFocus={e => e.target.style.borderColor = GOLD}
                   onBlur={e  => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
+
+                {/* ── NEW: Brand + Tags ── */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '16px' }}>
+                  <div>
+                    <label style={lbl}>Brand</label>
+                    <input style={{ ...inp, marginBottom: 0 }} value={form.brand}
+                      onChange={e => set('brand', e.target.value)} placeholder="e.g. Trendorra"
+                      onFocus={e => e.target.style.borderColor = GOLD}
+                      onBlur={e  => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
+                  </div>
+                  <div>
+                    <label style={lbl}>Tags (comma separated)</label>
+                    <input style={{ ...inp, marginBottom: 0 }} value={form.tags}
+                      onChange={e => set('tags', e.target.value)} placeholder="e.g. cotton, casual, summer"
+                      onFocus={e => e.target.style.borderColor = GOLD}
+                      onBlur={e  => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
+                  </div>
+                </div>
+
+                {/* ── NEW: Material + Care Instructions ── */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '16px' }}>
+                  <div>
+                    <label style={lbl}>Material</label>
+                    <input style={{ ...inp, marginBottom: 0 }} value={form.material}
+                      onChange={e => set('material', e.target.value)} placeholder="e.g. 100% Cotton"
+                      onFocus={e => e.target.style.borderColor = GOLD}
+                      onBlur={e  => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
+                  </div>
+                  <div>
+                    <label style={lbl}>Care Instructions</label>
+                    <input style={{ ...inp, marginBottom: 0 }} value={form.careInstructions}
+                      onChange={e => set('careInstructions', e.target.value)} placeholder="e.g. Machine wash cold"
+                      onFocus={e => e.target.style.borderColor = GOLD}
+                      onBlur={e  => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
+                  </div>
+                </div>
+
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                   <div>
                     <label style={lbl}>Category *</label>
@@ -562,13 +615,21 @@ export default function SellerProductForm() {
               {/* Pricing & Stock */}
               <div style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '24px', marginBottom: '16px' }}>
                 <p style={{ color: GOLD, fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', margin: '0 0 18px', fontFamily: 'inherit' }}>Pricing & Stock</p>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '14px', marginBottom: '16px' }}>
                   <div>
                     <label style={lbl}>Selling Price (₹) *</label>
                     <input type="number" style={{ ...inp, marginBottom: 0 }} value={form.price}
                       onChange={e => set('price', e.target.value)} placeholder="0"
                       onFocus={e => e.target.style.borderColor = GOLD}
                       onBlur={e  => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} min="0" required />
+                  </div>
+                  {/* ── NEW: Discount Price ── */}
+                  <div>
+                    <label style={lbl}>Discount Price (₹)</label>
+                    <input type="number" style={{ ...inp, marginBottom: 0 }} value={form.discountPrice}
+                      onChange={e => set('discountPrice', e.target.value)} placeholder="0"
+                      onFocus={e => e.target.style.borderColor = GOLD}
+                      onBlur={e  => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} min="0" />
                   </div>
                   <div>
                     <label style={lbl}>Stock Quantity *</label>
@@ -578,6 +639,14 @@ export default function SellerProductForm() {
                       onBlur={e  => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} min="0" required />
                   </div>
                 </div>
+                {/* Discount badge hint */}
+                {form.discountPrice && Number(form.discountPrice) > 0 && Number(form.price) > 0 && Number(form.discountPrice) < Number(form.price) && (
+                  <div style={{ marginBottom: '12px', padding: '8px 12px', backgroundColor: 'rgba(74,222,128,0.06)', border: '1px solid rgba(74,222,128,0.2)', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ color: '#4ade80', fontSize: '12px', fontFamily: 'inherit' }}>
+                      🏷 {Math.round(((Number(form.price) - Number(form.discountPrice)) / Number(form.price)) * 100)}% off — customers see ₹{Number(form.discountPrice).toLocaleString()} instead of ₹{Number(form.price).toLocaleString()}
+                    </span>
+                  </div>
+                )}
                 {Number(form.price) > 0 && (
                   <div style={{ backgroundColor: '#0d0d0d', border: `1px solid ${GOLD}25`, borderRadius: '8px', padding: '14px' }}>
                     <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 10px', fontFamily: 'inherit' }}>Your Earnings Preview</p>
@@ -607,8 +676,6 @@ export default function SellerProductForm() {
               {/* Sizes & Colors */}
               <div style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '24px', marginBottom: '16px' }}>
                 <p style={{ color: GOLD, fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', margin: '0 0 20px', fontFamily: 'inherit' }}>Sizes & Colors</p>
-
-                {/* Sizes */}
                 <div style={{ marginBottom: '24px' }}>
                   <label style={lbl}>Available Sizes</label>
                   <SizeSelector value={form.sizes} onChange={v => set('sizes', v)} />
@@ -618,8 +685,6 @@ export default function SellerProductForm() {
                     </p>
                   )}
                 </div>
-
-                {/* Colors */}
                 <div>
                   <label style={lbl}>Available Colors</label>
                   <ColorSelector value={form.colors} onChange={v => set('colors', v)} />
@@ -633,6 +698,11 @@ export default function SellerProductForm() {
                   Enable badges to feature this product in special collections.
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {/* ── NEW: Featured Product badge ── */}
+                  <BadgeToggle active={form.isFeatured} onToggle={() => set('isFeatured', !form.isFeatured)}
+                    icon={<FiAward size={15} style={{ color: form.isFeatured ? '#a78bfa' : 'rgba(255,255,255,0.3)' }} />}
+                    label="Featured Product" description="Highlighted in Featured section & homepage banner"
+                    activeColor="#a78bfa" activeBg="rgba(167,139,250,0.06)" />
                   <BadgeToggle active={form.isNewArrival} onToggle={() => set('isNewArrival', !form.isNewArrival)}
                     icon={<FiZap size={15} style={{ color: form.isNewArrival ? '#60a5fa' : 'rgba(255,255,255,0.3)' }} />}
                     label="New Arrival" description="Shows in New Arrivals section & homepage"
@@ -642,8 +712,13 @@ export default function SellerProductForm() {
                     label="Best Seller" description="Highlighted in Best Sellers & trending pages"
                     activeColor="#f59e0b" activeBg="rgba(245,158,11,0.06)" />
                 </div>
-                {(form.isNewArrival || form.isBestSeller) && (
+                {(form.isFeatured || form.isNewArrival || form.isBestSeller) && (
                   <div style={{ marginTop: '12px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    {form.isFeatured && (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', backgroundColor: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.3)', borderRadius: '20px', color: '#a78bfa', fontSize: '11px', fontFamily: 'inherit' }}>
+                        <FiAward size={10} /> Featured
+                      </span>
+                    )}
                     {form.isNewArrival && (
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', backgroundColor: 'rgba(96,165,250,0.12)', border: '1px solid rgba(96,165,250,0.3)', borderRadius: '20px', color: '#60a5fa', fontSize: '11px', fontFamily: 'inherit' }}>
                         <FiZap size={10} /> New Arrival
@@ -670,6 +745,11 @@ export default function SellerProductForm() {
                       style={{ width: '100%', height: '200px', objectFit: 'cover', borderRadius: '8px', backgroundColor: '#0d0d0d' }}
                       onError={e => e.target.style.display = 'none'} />
                     <div style={{ position: 'absolute', top: '8px', left: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      {form.isFeatured && (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', padding: '3px 8px', backgroundColor: 'rgba(167,139,250,0.9)', borderRadius: '4px', color: '#fff', fontSize: '10px', fontWeight: 700, fontFamily: 'inherit' }}>
+                          <FiAward size={9} /> FEATURED
+                        </span>
+                      )}
                       {form.isNewArrival && (
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', padding: '3px 8px', backgroundColor: 'rgba(96,165,250,0.9)', borderRadius: '4px', color: '#fff', fontSize: '10px', fontWeight: 700, fontFamily: 'inherit' }}>
                           <FiZap size={9} /> NEW
@@ -689,20 +769,23 @@ export default function SellerProductForm() {
                   </div>
                 )}
                 {[
-                  { label: 'Name',        value: form.name        || '—' },
-                  { label: 'Category',    value: form.category    || '—' },
-                  { label: 'SubCategory', value: form.subCategory || '—' },
+                  { label: 'Name',        value: form.name             || '—' },
+                  { label: 'Brand',       value: form.brand            || '—' },
+                  { label: 'Category',    value: form.category         || '—' },
+                  { label: 'SubCategory', value: form.subCategory      || '—' },
                   { label: 'Price',       value: form.price ? `₹${Number(form.price).toLocaleString()}` : '—' },
-                  { label: 'Stock',       value: form.stock       || '—' },
+                  { label: 'Discount',    value: form.discountPrice ? `₹${Number(form.discountPrice).toLocaleString()}` : '—' },
+                  { label: 'Stock',       value: form.stock            || '—' },
                   { label: 'Sizes',       value: form.sizes.length ? form.sizes.join(', ') : '—' },
                   { label: 'Colors',      value: form.colors.length ? form.colors.join(', ') : '—' },
+                  { label: 'Material',    value: form.material         || '—' },
                   { label: 'Images',      value: form.images.length ? `${form.images.length} uploaded` : '—' },
-                  { label: 'Badges',      value: [form.isNewArrival && 'New Arrival', form.isBestSeller && 'Best Seller'].filter(Boolean).join(', ') || '—' },
+                  { label: 'Badges',      value: [form.isFeatured && 'Featured', form.isNewArrival && 'New Arrival', form.isBestSeller && 'Best Seller'].filter(Boolean).join(', ') || '—' },
                 ].map(({ label, value }) => (
                   <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${BORDER}` }}>
                     <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px', fontFamily: 'inherit' }}>{label}</span>
                     <span style={{
-                      color: value === '—' ? 'rgba(255,255,255,0.2)' : (label === 'Badges' && value !== '—') ? '#f59e0b' : '#fff',
+                      color: value === '—' ? 'rgba(255,255,255,0.2)' : (label === 'Badges' && value !== '—') ? '#f59e0b' : (label === 'Discount' && value !== '—') ? '#4ade80' : '#fff',
                       fontSize: '12px', fontFamily: 'inherit', maxWidth: '160px',
                       textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     }}>{value}</span>

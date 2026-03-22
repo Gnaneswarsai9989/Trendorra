@@ -90,15 +90,18 @@ export const orderAPI = {
   getAll:         (params)     => API.get("/orders/all", { params }),
   updateStatus:   (id, data)   => API.put(`/orders/${id}/status`, data),
   cancel:         (id)         => API.put(`/orders/${id}/cancel`),
+  confirm:        (id)         => API.put(`/orders/${id}/confirm`),
   deleteMyOrders: ()           => API.delete("/orders/seller/my-orders"),
 };
 
 // ── Delivery ──────────────────────────────────────────────────────
 export const deliveryAPI = {
-  markReady:   (orderId) => API.post(`/delivery/ready/${orderId}`),
-  simulate:    (orderId) => API.post(`/delivery/simulate/${orderId}`),
-  track:       (waybill) => API.get(`/delivery/track/${waybill}`),
-  cancelOrder: (orderId) => API.post(`/delivery/cancel/${orderId}`),
+  markReady:    (orderId)                   => API.post(`/delivery/ready/${orderId}`),
+  simulate:     (orderId)                   => API.post(`/delivery/simulate/${orderId}`),
+  track:        (waybill)                   => API.get(`/delivery/track/${waybill}`),
+  cancelOrder:  (orderId)                   => API.post(`/delivery/cancel/${orderId}`),
+  // ✅ NEW: Check if pincode is serviceable by Shiprocket
+  checkPincode: (pincode, sellerPincode='') => API.get(`/delivery/check-pincode`, { params: { pincode, sellerPincode } }),
 };
 
 // ── Reviews ──────────────────────────────────────────────────────

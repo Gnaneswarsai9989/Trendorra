@@ -1,212 +1,220 @@
+// ═══════════════════════════════════════════════════════════════════
+// controllers/userController.js — COMPLETE WITH SELLER ANALYTICS
+// ═══════════════════════════════════════════════════════════════════
 const User  = require('../models/User');
 const Order = require('../models/Order');
 
-// @desc  Get all users — supports ?role=seller filter
-// @route GET /api/users
 exports.getAllUsers = async (req, res) => {
   try {
     const { page = 1, limit = 20, role } = req.query;
     const query = role ? { role } : {};
     const total = await User.countDocuments(query);
-    const users = await User.find(query)
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(Number(limit));
+    const users = await User.find(query).sort({ createdAt: -1 })
+      .skip((page - 1) * limit).limit(Number(limit));
     res.json({ success: true, users, total, pages: Math.ceil(total / limit) });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
+  } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };
 
-// @desc  Get single user by ID
-// @route GET /api/users/:id
 exports.getUserById = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
     res.json({ success: true, user });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
+  } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };
 
-// @desc  Update user
-// @route PUT /api/users/:id
 exports.updateUser = async (req, res) => {
   try {
     const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
     res.json({ success: true, user });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
+  } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };
 
-// @desc  Delete user
-// @route DELETE /api/users/:id
 exports.deleteUser = async (req, res) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-    res.json({ success: true, message: 'User deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
+    res.json({ success: true, message: 'User deleted' });
+  } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };
 
-// @desc  Admin dashboard stats
-// @route GET /api/users/dashboard-stats
+// ══════════════════════════════════════════════════════════════════
+// ADMIN DASHBOARD STATS
+// Includes: total stats + per-seller breakdown + daily charts
+// ══════════════════════════════════════════════════════════════════
 exports.getDashboardStats = async (req, res) => {
   try {
     const { period = 'week' } = req.query;
-
-    const now = new Date();
     const ranges = {
-      today: new Date(new Date().setHours(0, 0, 0, 0)),
-      week:  new Date(Date.now() - 6  * 24 * 60 * 60 * 1000),
-      month: new Date(Date.now() - 29 * 24 * 60 * 60 * 1000),
-      year:  new Date(Date.now() - 364 * 24 * 60 * 60 * 1000),
+      today: new Date(new Date().setHours(0,0,0,0)),
+      week:  new Date(Date.now() - 7   * 24*60*60*1000),
+      month: new Date(Date.now() - 30  * 24*60*60*1000),
+      year:  new Date(Date.now() - 365 * 24*60*60*1000),
     };
-    const since = ranges[period] || ranges.week;
-
-    const validOrders  = { orderStatus: { $ne: 'Cancelled' } };
-    const periodFilter = { createdAt: { $gte: since }, orderStatus: { $ne: 'Cancelled' } };
-
-    const getDayCount = (p) => ({ today: 1, week: 7, month: 30, year: 365 }[p] || 7);
-    const dayCount = getDayCount(period);
+    const since    = ranges[period] || ranges.week;
+    const dayCount = { today:1, week:7, month:30, year:365 }[period] || 7;
+    const validOrders = { orderStatus: { $ne: 'Cancelled' } };
 
     const [
-      totalUsers,
-      totalOrders,
-      revenueData,
-      periodRevenueData,
-      recentOrders,
-      ordersByStatus,
-      periodOrders,
-      topProductsRaw,
-      categoryBreakdown,
-      dailyDataRaw,
-      cancelledCount,
+      totalUsers, totalSellers, totalOrders, revenueData,
+      periodRevenueData, recentOrders, ordersByStatus,
+      periodOrders, topProductsRaw, categoryBreakdown,
+      dailyDataRaw, cancelledCount,
+      // Per-seller stats (admin analytics)
+      sellerStats,
     ] = await Promise.all([
+
       User.countDocuments({ role: 'user' }),
+      User.countDocuments({ role: 'seller' }),
       Order.countDocuments(validOrders),
+
       Order.aggregate([
         { $match: validOrders },
-        { $group: { _id: null, total: { $sum: '$totalPrice' } } }
+        { $group: { _id: null, total: { $sum: '$totalPrice' } } },
       ]),
+
       Order.aggregate([
         { $match: { ...validOrders, createdAt: { $gte: since } } },
-        { $group: { _id: null, total: { $sum: '$totalPrice' } } }
+        { $group: { _id: null, total: { $sum: '$totalPrice' } } },
       ]),
+
       Order.find()
-        .sort({ createdAt: -1 })
-        .limit(8)
-        .populate('user', 'name email'),
+        .sort({ createdAt: -1 }).limit(10)
+        .populate('user', 'name email')
+        .populate('orderItems.seller', 'name sellerInfo'),
+
       Order.aggregate([
-        { $group: { _id: '$orderStatus', count: { $sum: 1 } } }
+        { $group: { _id: '$orderStatus', count: { $sum: 1 } } },
       ]),
-      Order.countDocuments(periodFilter),
+
+      Order.countDocuments({ ...validOrders, createdAt: { $gte: since } }),
+
       Order.aggregate([
         { $match: validOrders },
         { $unwind: '$orderItems' },
-        {
-          $group: {
-            _id:       '$orderItems.product',
-            name:      { $first: '$orderItems.name' },
-            image:     { $first: '$orderItems.image' },
-            soldCount: { $sum: '$orderItems.quantity' },
-            revenue:   { $sum: { $multiply: ['$orderItems.price', '$orderItems.quantity'] } }
-          }
-        },
+        { $group: {
+          _id:       '$orderItems.product',
+          name:      { $first: '$orderItems.name' },
+          image:     { $first: '$orderItems.image' },
+          soldCount: { $sum: '$orderItems.quantity' },
+          revenue:   { $sum: { $multiply: ['$orderItems.price', '$orderItems.quantity'] } },
+        }},
         { $sort: { revenue: -1 } },
-        { $limit: 5 }
+        { $limit: 5 },
       ]),
+
       Order.aggregate([
         { $match: validOrders },
         { $unwind: '$orderItems' },
-        {
-          $lookup: {
-            from: 'products', localField: 'orderItems.product',
-            foreignField: '_id', as: 'prod'
-          }
-        },
-        { $unwind: { path: '$prod', preserveNullAndEmptyArrays: true } },
-        {
-          $group: {
-            _id:     '$prod.category',
-            count:   { $sum: '$orderItems.quantity' },
-            revenue: { $sum: { $multiply: ['$orderItems.price', '$orderItems.quantity'] } }
-          }
-        },
-        { $sort: { revenue: -1 } }
+        { $lookup: { from:'products', localField:'orderItems.product', foreignField:'_id', as:'prod' } },
+        { $unwind: { path:'$prod', preserveNullAndEmptyArrays:true } },
+        { $group: {
+          _id:     '$prod.category',
+          count:   { $sum: '$orderItems.quantity' },
+          revenue: { $sum: { $multiply: ['$orderItems.price', '$orderItems.quantity'] } },
+        }},
+        { $sort: { revenue: -1 } },
       ]),
+
       Order.aggregate([
         { $match: { createdAt: { $gte: since }, orderStatus: { $ne: 'Cancelled' } } },
-        {
-          $group: {
-            _id:     { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
-            orders:  { $sum: 1 },
-            revenue: { $sum: '$totalPrice' }
-          }
-        },
-        { $sort: { _id: 1 } }
+        { $group: {
+          _id:     { $dateToString: { format:'%Y-%m-%d', date:'$createdAt' } },
+          orders:  { $sum: 1 },
+          revenue: { $sum: '$totalPrice' },
+        }},
+        { $sort: { _id: 1 } },
       ]),
+
       Order.countDocuments({ orderStatus: 'Cancelled' }),
+
+      // ── Seller breakdown: handles NEW orders (seller field) + OLD orders (product.createdBy)
+      Order.aggregate([
+        { $match: validOrders },
+        { $unwind: '$orderItems' },
+        // Lookup product to get createdBy for old orders that have no seller field
+        { $lookup: { from: 'products', localField: 'orderItems.product', foreignField: '_id', as: 'prod' } },
+        { $unwind: { path: '$prod', preserveNullAndEmptyArrays: true } },
+        // Use seller field if set, otherwise fall back to product.createdBy
+        { $addFields: {
+          effectiveSeller: {
+            $cond: {
+              if:   { $and: [{ $ne: ['$orderItems.seller', null] }, { $ne: ['$orderItems.seller', undefined] }] },
+              then: '$orderItems.seller',
+              else: '$prod.createdBy',
+            }
+          }
+        }},
+        // Only keep items where the effective seller is actually a seller role
+        { $lookup: { from: 'users', localField: 'effectiveSeller', foreignField: '_id', as: 'sellerCheck' } },
+        { $unwind: { path: '$sellerCheck', preserveNullAndEmptyArrays: true } },
+        { $match: { 'sellerCheck.role': 'seller' } },
+        { $group: {
+          _id:     '$effectiveSeller',
+          revenue: { $sum: { $multiply: ['$orderItems.price', '$orderItems.quantity'] } },
+          orders:  { $addToSet: '$_id' },
+          items:   { $sum: '$orderItems.quantity' },
+        }},
+        { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'sellerData' } },
+        { $unwind: { path: '$sellerData', preserveNullAndEmptyArrays: true } },
+        { $project: {
+          sellerName:   '$sellerData.name',
+          sellerEmail:  '$sellerData.email',
+          businessName: '$sellerData.sellerInfo.businessName',
+          status:       '$sellerData.sellerInfo.status',
+          revenue:      1,
+          orderCount:   { $size: '$orders' },
+          itemsSold:    '$items',
+          paidOut:      { $ifNull: ['$sellerData.sellerInfo.totalPaidOut', 0] },
+        }},
+        { $sort: { revenue: -1 } },
+      ]),
     ]);
 
-    // Build daily arrays for selected period
+    // Build daily arrays
     const dailyOrders  = [];
     const dailyRevenue = [];
     for (let i = dayCount - 1; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const key   = d.toISOString().slice(0, 10);
-      const found = dailyDataRaw.find(r => r._id === key);
-      dailyOrders.push(found?.orders  || 0);
-      dailyRevenue.push(found?.revenue || 0);
+      const d   = new Date(); d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0,10);
+      const f   = dailyDataRaw.find(r => r._id === key);
+      dailyOrders.push(f?.orders || 0);
+      dailyRevenue.push(f?.revenue || 0);
     }
-
-    const totalRevenue  = revenueData[0]?.total       || 0;
-    const periodRevenue = periodRevenueData[0]?.total  || 0;
-    const weeklyRevenue = dailyRevenue.reduce((a, b) => a + b, 0);
-    const topProducts   = topProductsRaw.map(p => ({ ...p, _id: p._id?.toString() }));
 
     res.json({
       success: true,
       stats: {
-        totalUsers,
-        totalOrders,
-        totalRevenue,
-        periodRevenue,
-        weeklyRevenue,
+        totalUsers,   totalSellers,
+        totalOrders,  cancelledCount,
+        totalRevenue:  revenueData[0]?.total || 0,
+        periodRevenue: periodRevenueData[0]?.total || 0,
+        weeklyRevenue: dailyRevenue.reduce((a,b)=>a+b,0),
         periodOrders,
-        cancelledCount,
         ordersByStatus,
         recentOrders,
-        topProducts,
+        topProducts: topProductsRaw.map(p => ({ ...p, _id: p._id?.toString() })),
         categoryBreakdown,
-        dailyOrders,
-        dailyRevenue,
-        period,
-        dayCount,
-      }
+        dailyOrders,   dailyRevenue,
+        sellerStats,   // per-seller breakdown
+        period,        dayCount,
+      },
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// @desc  Record a payout for a seller
-// @route POST /api/users/:id/payout
+// ══════════════════════════════════════════════════════════════════
+// RECORD SELLER PAYOUT
+// ══════════════════════════════════════════════════════════════════
 exports.processPayout = async (req, res) => {
   try {
-    const { id }           = req.params;
     const { amount, note } = req.body;
-
-    const seller = await User.findById(id);
-    if (!seller || seller.role !== 'seller') {
+    const seller = await User.findById(req.params.id);
+    if (!seller || seller.role !== 'seller')
       return res.status(404).json({ success: false, message: 'Seller not found' });
-    }
 
     if (!seller.sellerInfo.payoutHistory) seller.sellerInfo.payoutHistory = [];
     seller.sellerInfo.payoutHistory.push({
@@ -218,9 +226,8 @@ exports.processPayout = async (req, res) => {
     seller.sellerInfo.totalPaidOut = (seller.sellerInfo.totalPaidOut || 0) + Number(amount);
     await seller.save();
 
-    console.log(`💸 Payout of ₹${amount} recorded for ${seller.email}`);
+    console.log(`💸 Payout ₹${amount} to ${seller.email}`);
     res.json({ success: true, message: `Payout of ₹${amount} recorded for ${seller.name}` });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
+    res.status(500).json({ success: false, message: error.message }); }
 };

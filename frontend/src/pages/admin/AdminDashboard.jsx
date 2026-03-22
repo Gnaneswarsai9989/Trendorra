@@ -3,25 +3,25 @@ import { Link } from 'react-router-dom';
 import { userAPI } from '../../services/api';
 import {
   FiUsers, FiShoppingBag, FiDollarSign, FiPackage,
-  FiTrendingUp, FiArrowRight, FiArrowLeft, FiBell, FiTag,
-  FiTrash2, FiAlertTriangle, FiRefreshCw,
+  FiTrendingUp, FiArrowRight, FiArrowLeft, FiBell,
+  FiTag, FiRefreshCw, FiTrash2, FiAlertTriangle,
 } from 'react-icons/fi';
 
-const BG     = '#0a0a0a';
-const CARD   = '#1a1a1a';
-const BORDER = 'rgba(255,255,255,0.08)';
-const GOLD   = '#C9A84C';
+const BG = '#0a0a0a'; const CARD = '#1a1a1a';
+const BORDER = 'rgba(255,255,255,0.08)'; const GOLD = '#C9A84C';
 
-const statusStyle = (s) => ({
-  Processing:         { color: '#fbbf24', backgroundColor: 'rgba(251,191,36,0.1)'  },
-  Confirmed:          { color: '#60a5fa', backgroundColor: 'rgba(96,165,250,0.1)'  },
-  Shipped:            { color: '#a78bfa', backgroundColor: 'rgba(167,139,250,0.1)' },
-  'Out for Delivery': { color: '#fb923c', backgroundColor: 'rgba(251,146,60,0.1)'  },
-  Delivered:          { color: '#4ade80', backgroundColor: 'rgba(74,222,128,0.1)'  },
-  Cancelled:          { color: '#f87171', backgroundColor: 'rgba(248,113,113,0.1)' },
-}[s] || { color: 'rgba(255,255,255,0.4)', backgroundColor: 'rgba(255,255,255,0.05)' });
+const statusColor = {
+  Processing: '#fbbf24', Confirmed: '#60a5fa', Shipped: '#a78bfa',
+  'Out for Delivery': '#fb923c', Delivered: '#4ade80', Cancelled: '#f87171',
+};
+const statusStyle = s => ({
+  color: statusColor[s] || '#fff',
+  backgroundColor: `${statusColor[s] || '#fff'}18`,
+  padding: '3px 10px', borderRadius: '4px',
+  fontSize: '11px', fontFamily: 'Jost,sans-serif',
+});
 
-// ─── Reusable Danger Modal ─────────────────────────────────────────────────
+// ─── Danger Modal ─────────────────────────────────────────────────
 function DangerModal({ open, onClose, onConfirm, loading, title, subtitle, lines, accentColor = '#f87171' }) {
   const [typed, setTyped] = useState('');
   useEffect(() => { if (!open) setTyped(''); }, [open]);
@@ -44,7 +44,6 @@ function DangerModal({ open, onClose, onConfirm, loading, title, subtitle, lines
         maxWidth: '460px', width: '100%',
         boxShadow: `0 0 40px ${accentColor}15`,
       }}>
-        {/* Icon + Title */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '22px' }}>
           <div style={{
             width: '48px', height: '48px', borderRadius: '50%',
@@ -64,7 +63,6 @@ function DangerModal({ open, onClose, onConfirm, loading, title, subtitle, lines
           </div>
         </div>
 
-        {/* Warning box */}
         <div style={{
           backgroundColor: `${accentColor}0d`,
           border: `1px solid ${accentColor}25`,
@@ -90,7 +88,6 @@ function DangerModal({ open, onClose, onConfirm, loading, title, subtitle, lines
           </div>
         </div>
 
-        {/* Confirm input */}
         <div style={{ marginBottom: '20px' }}>
           <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', marginBottom: '8px', letterSpacing: '0.05em', fontFamily: 'inherit' }}>
             Type <strong style={{ color: accentColor }}>DELETE</strong> to confirm
@@ -111,7 +108,6 @@ function DangerModal({ open, onClose, onConfirm, loading, title, subtitle, lines
           />
         </div>
 
-        {/* Buttons */}
         <div style={{ display: 'flex', gap: '10px' }}>
           <button
             onClick={onClose}
@@ -152,16 +148,21 @@ function DangerModal({ open, onClose, onConfirm, loading, title, subtitle, lines
   );
 }
 
-// ─── Main Component ────────────────────────────────────────────────────────
+// ─── Main Component ────────────────────────────────────────────────
 export default function AdminDashboard() {
-  const [stats, setStats]     = useState(null);
-  const [loading, setLoading] = useState(true);
-
+  const [stats, setStats]                       = useState(null);
+  const [loading, setLoading]                   = useState(true);
+  const [tab, setTab]                           = useState('overview');
   const [showRevenueModal, setShowRevenueModal] = useState(false);
   const [revenueDeleting, setRevenueDeleting]   = useState(false);
 
-  const fetchStats = () =>
-    userAPI.getDashboardStats().then(res => setStats(res.stats)).finally(() => setLoading(false));
+  const fetchStats = () => {
+    setLoading(true);
+    userAPI.getDashboardStats()
+      .then(res => setStats(res.stats))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  };
 
   useEffect(() => { fetchStats(); }, []);
 
@@ -175,23 +176,19 @@ export default function AdminDashboard() {
     finally { setRevenueDeleting(false); }
   };
 
-  const statCards = stats ? [
-    { label: 'Total Users',     value: stats.totalUsers,  icon: FiUsers,       color: GOLD      },
-    { label: 'Total Orders',    value: stats.totalOrders, icon: FiShoppingBag, color: '#60a5fa' },
-    { label: 'Total Revenue',   value: `₹${(stats.totalRevenue || 0).toLocaleString()}`, icon: FiDollarSign, color: '#4ade80' },
-    { label: 'Avg Order Value', value: stats.totalOrders ? `₹${Math.round(stats.totalRevenue / stats.totalOrders).toLocaleString()}` : '₹0', icon: FiTrendingUp, color: '#a78bfa' },
-  ] : [];
-
-  // ── 7 links — grid will auto-wrap cleanly ──
   const adminLinks = [
-    { to: '/admin/products',      label: 'Products',      icon: FiPackage,     desc: 'Add, edit, delete products'            },
-    { to: '/admin/orders',        label: 'Orders',        icon: FiShoppingBag, desc: 'View and update orders'                },
-    { to: '/admin/users',         label: 'Users',         icon: FiUsers,       desc: 'Manage customers'                      },
-    { to: '/admin/analytics',     label: 'Analytics',     icon: FiTrendingUp,  desc: 'Sales charts & insights'               },
-    { to: '/admin/notifications', label: 'Notifications', icon: FiBell,        desc: 'Send SMS & offers to customers'        },
-    { to: '/admin/coupons',       label: 'Coupons',       icon: FiTag,         desc: 'Create discount codes'                 },
-    { to: '/admin/sellers',       label: 'Sellers',       icon: FiShoppingBag, desc: 'Manage seller accounts & payouts'      },
+    { to: '/admin/products',      label: 'Products',      icon: FiPackage,     desc: 'Add, edit, delete products' },
+    { to: '/admin/orders',        label: 'Orders',        icon: FiShoppingBag, desc: 'View and update orders' },
+    { to: '/admin/users',         label: 'Users',         icon: FiUsers,       desc: 'Manage customers' },
+    { to: '/admin/analytics',     label: 'Analytics',     icon: FiTrendingUp,  desc: 'Sales charts & insights' },
+    { to: '/admin/notifications', label: 'Notifications', icon: FiBell,        desc: 'Send SMS & offers' },
+    { to: '/admin/coupons',       label: 'Coupons',       icon: FiTag,         desc: 'Create discount codes' },
+    { to: '/admin/sellers',       label: 'Sellers',       icon: FiShoppingBag, desc: 'Manage seller accounts & payouts' },
   ];
+
+  const totalRevenue  = stats?.totalRevenue || 0;
+  const sellerRevenue = stats?.sellerStats?.reduce((sum, s) => sum + (s.revenue || 0), 0) || 0;
+  const adminRevenue  = Math.max(0, totalRevenue - sellerRevenue);
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: BG }}>
@@ -221,7 +218,12 @@ export default function AdminDashboard() {
           <h1 className="font-accent text-xl tracking-[0.2em]" style={{ color: GOLD }}>TRENDORRA Dashboard</h1>
         </div>
         <div className="flex items-center gap-3">
-          {/* Reset Revenue button */}
+          <button
+            onClick={fetchStats}
+            className="font-body text-xs flex items-center gap-1.5 transition-colors"
+            style={{ color: 'rgba(255,255,255,0.4)', background: 'none', border: 'none', cursor: 'pointer' }}>
+            <FiRefreshCw size={12} /> Refresh
+          </button>
           <button
             onClick={() => setShowRevenueModal(true)}
             className="flex items-center gap-1.5 font-body text-xs transition-all"
@@ -235,8 +237,8 @@ export default function AdminDashboard() {
           >
             <FiTrash2 size={12} /> Reset Revenue
           </button>
-
-          <Link to="/" className="flex items-center gap-2 font-body text-xs tracking-wider hover:text-gold transition-colors"
+          <Link to="/"
+            className="flex items-center gap-2 font-body text-xs hover:text-gold transition-colors"
             style={{ color: 'rgba(255,255,255,0.4)' }}>
             <FiArrowLeft size={14} /> Back to Store
           </Link>
@@ -245,99 +247,198 @@ export default function AdminDashboard() {
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         {loading ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-8">
             {[...Array(4)].map((_, i) => <div key={i} className="skeleton h-28 rounded" />)}
           </div>
         ) : (
           <>
-            {/* Stat Cards */}
+            {/* ── Stat Cards ── */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-8">
-              {statCards.map(({ label, value, icon: Icon, color }) => (
-                <div key={label} className="p-5" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
-                  <div className="flex items-center justify-between mb-4">
-                    <Icon size={20} style={{ color }} />
+              {[
+                { label: 'Total Users',     value: stats?.totalUsers || 0,                                                                         icon: FiUsers,       color: GOLD      },
+                { label: 'Total Orders',    value: stats?.totalOrders || 0,                                                                        icon: FiShoppingBag, color: '#60a5fa' },
+                { label: 'Total Revenue',   value: `₹${totalRevenue.toLocaleString()}`,                                                            icon: FiDollarSign,  color: '#4ade80' },
+                { label: 'Avg Order Value', value: stats?.totalOrders ? `₹${Math.round(totalRevenue / stats.totalOrders).toLocaleString()}` : '₹0', icon: FiTrendingUp,  color: '#a78bfa' },
+              ].map(({ label, value, icon: Icon, color }) => (
+                <div key={label} className="p-5 relative overflow-hidden"
+                  style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: '10px' }}>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center"
+                      style={{ backgroundColor: `${color}18` }}>
+                      <Icon size={17} style={{ color }} />
+                    </div>
                     <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>{label}</span>
                   </div>
                   <p className="font-body font-bold text-2xl text-white">{value}</p>
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5"
+                    style={{ backgroundColor: color, opacity: 0.4 }} />
                 </div>
               ))}
             </div>
 
-            {/* Order Status Breakdown */}
+            {/* ── Revenue Breakdown ── */}
+            <div className="mb-8 p-6"
+              style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: '12px' }}>
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="font-body text-xs tracking-[0.15em] uppercase"
+                  style={{ color: 'rgba(255,255,255,0.4)' }}>Revenue Breakdown</h2>
+                <div className="flex gap-2">
+                  {['overview', 'sellers'].map(t => (
+                    <button key={t} onClick={() => setTab(t)}
+                      className="px-3 py-1.5 font-body text-xs capitalize transition-all"
+                      style={{
+                        backgroundColor: tab === t ? GOLD : 'transparent',
+                        color: tab === t ? '#fff' : 'rgba(255,255,255,0.4)',
+                        border: `1px solid ${tab === t ? GOLD : BORDER}`,
+                        borderRadius: '6px', cursor: 'pointer',
+                      }}>
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {tab === 'overview' && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-4 rounded-xl"
+                    style={{ backgroundColor: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.2)' }}>
+                    <p className="font-body text-xs mb-1" style={{ color: 'rgba(255,255,255,0.45)' }}>Total Platform Revenue</p>
+                    <p className="font-body font-bold text-2xl" style={{ color: GOLD }}>₹{totalRevenue.toLocaleString()}</p>
+                    <p className="font-body text-xs mt-1" style={{ color: 'rgba(255,255,255,0.3)' }}>{stats?.totalOrders || 0} orders</p>
+                  </div>
+                  <div className="p-4 rounded-xl"
+                    style={{ backgroundColor: 'rgba(96,165,250,0.06)', border: '1px solid rgba(96,165,250,0.2)' }}>
+                    <p className="font-body text-xs mb-1" style={{ color: 'rgba(255,255,255,0.45)' }}>Admin Products Revenue</p>
+                    <p className="font-body font-bold text-2xl" style={{ color: '#60a5fa' }}>₹{adminRevenue.toLocaleString()}</p>
+                    <p className="font-body text-xs mt-1" style={{ color: 'rgba(255,255,255,0.3)' }}>Your own product sales</p>
+                  </div>
+                  <div className="p-4 rounded-xl"
+                    style={{ backgroundColor: 'rgba(74,222,128,0.06)', border: '1px solid rgba(74,222,128,0.2)' }}>
+                    <p className="font-body text-xs mb-1" style={{ color: 'rgba(255,255,255,0.45)' }}>Seller Products Revenue</p>
+                    <p className="font-body font-bold text-2xl" style={{ color: '#4ade80' }}>₹{sellerRevenue.toLocaleString()}</p>
+                    <p className="font-body text-xs mt-1" style={{ color: 'rgba(255,255,255,0.3)' }}>{stats?.sellerStats?.length || 0} active sellers</p>
+                  </div>
+                </div>
+              )}
+
+              {tab === 'sellers' && (
+                <div>
+                  {!stats?.sellerStats?.length ? (
+                    <p className="font-body text-sm text-center py-6" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                      No seller revenue data yet
+                    </p>
+                  ) : (
+                    <table className="w-full">
+                      <thead>
+                        <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
+                          {['Seller', 'Business', 'Orders', 'Items Sold', 'Revenue', 'Paid Out', 'Pending Payout'].map(h => (
+                            <th key={h} className="text-left py-3 px-2 font-body text-xs tracking-wider uppercase"
+                              style={{ color: 'rgba(255,255,255,0.35)' }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {stats.sellerStats.map((s, i) => {
+                          const pendingPayout = Math.max(0, (s.revenue || 0) - (s.paidOut || 0));
+                          return (
+                            <tr key={i} style={{ borderBottom: `1px solid ${BORDER}` }}>
+                              <td className="py-3 px-2">
+                                <p className="font-body text-sm text-white">{s.sellerName || '—'}</p>
+                                <p className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>{s.sellerEmail}</p>
+                              </td>
+                              <td className="py-3 px-2 font-body text-sm text-white">{s.businessName || '—'}</td>
+                              <td className="py-3 px-2 font-body text-sm text-white">{s.orderCount}</td>
+                              <td className="py-3 px-2 font-body text-sm text-white">{s.itemsSold}</td>
+                              <td className="py-3 px-2 font-body text-sm font-semibold" style={{ color: GOLD }}>₹{(s.revenue || 0).toLocaleString()}</td>
+                              <td className="py-3 px-2 font-body text-sm" style={{ color: '#4ade80' }}>₹{(s.paidOut || 0).toLocaleString()}</td>
+                              <td className="py-3 px-2">
+                                <span className="font-body text-sm font-semibold"
+                                  style={{ color: pendingPayout > 0 ? '#fbbf24' : '#4ade80' }}>
+                                  ₹{pendingPayout.toLocaleString()}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* ── Orders by Status ── */}
             {stats?.ordersByStatus?.length > 0 && (
-              <div className="p-6 mb-8" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
+              <div className="p-5 mb-8"
+                style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: '12px' }}>
                 <h2 className="font-body text-xs tracking-[0.15em] uppercase mb-4"
                   style={{ color: 'rgba(255,255,255,0.4)' }}>Orders by Status</h2>
                 <div className="flex flex-wrap gap-3">
                   {stats.ordersByStatus.map(({ _id, count }) => (
-                    <div key={_id} className="px-4 py-2 text-sm font-body" style={statusStyle(_id)}>
+                    <Link key={_id} to={`/admin/orders?status=${_id}`}
+                      className="font-body text-sm px-4 py-2 hover:opacity-80 transition-opacity"
+                      style={statusStyle(_id)}>
                       {_id}: <strong>{count}</strong>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Quick Links — 4 cols on desktop to fit 7 items neatly */}
-            <div
-              className="grid grid-cols-1 gap-5 mb-8"
-              style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}
-            >
+            {/* ── Quick Links ── */}
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
               {adminLinks.map(({ to, label, icon: Icon, desc }) => (
                 <Link key={to} to={to}
-                  className="p-5 flex items-center justify-between group transition-all"
-                  style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}
+                  className="p-4 flex items-center justify-between group transition-all"
+                  style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: '10px' }}
                   onMouseOver={e => e.currentTarget.style.borderColor = GOLD}
                   onMouseOut={e  => e.currentTarget.style.borderColor = BORDER}>
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 flex items-center justify-center"
-                      style={{ backgroundColor: 'rgba(201,168,76,0.15)' }}>
-                      <Icon size={18} style={{ color: GOLD }} />
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 flex items-center justify-center rounded-lg"
+                      style={{ backgroundColor: 'rgba(201,168,76,0.1)' }}>
+                      <Icon size={16} style={{ color: GOLD }} />
                     </div>
                     <div>
                       <p className="font-body font-medium text-sm text-white">{label}</p>
-                      <p className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>{desc}</p>
+                      <p className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>{desc}</p>
                     </div>
                   </div>
-                  <FiArrowRight size={16} style={{ color: 'rgba(255,255,255,0.2)' }} />
+                  <FiArrowRight size={14} style={{ color: 'rgba(255,255,255,0.2)' }} />
                 </Link>
               ))}
             </div>
 
-            {/* Recent Orders */}
+            {/* ── Recent Orders ── */}
             {stats?.recentOrders?.length > 0 && (
-              <div style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
+              <div style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: '12px', overflow: 'hidden' }}>
                 <div className="flex items-center justify-between px-6 py-4"
-                  style={{ borderBottom: `1px solid ${BORDER}` }}>
+                  style={{ borderBottom: `1px solid ${BORDER}`, backgroundColor: '#0d0d0d' }}>
                   <h2 className="font-body text-xs tracking-[0.15em] uppercase"
                     style={{ color: 'rgba(255,255,255,0.4)' }}>Recent Orders</h2>
                   <Link to="/admin/orders" className="font-body text-xs hover:underline" style={{ color: GOLD }}>
                     View All
                   </Link>
                 </div>
-                <div>
-                  {stats.recentOrders.map(order => (
-                    <div key={order._id} className="flex items-center justify-between px-6 py-4"
-                      style={{ borderBottom: `1px solid ${BORDER}` }}>
-                      <div>
-                        <p className="font-body text-sm font-medium text-white">
-                          #{order._id.slice(-8).toUpperCase()}
-                        </p>
-                        <p className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                          {order.user?.name} • {order.user?.email}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <span className="text-xs font-body px-3 py-1" style={statusStyle(order.orderStatus)}>
-                          {order.orderStatus}
-                        </span>
-                        <span className="font-body text-sm font-medium text-white">
-                          ₹{order.totalPrice?.toLocaleString()}
-                        </span>
-                      </div>
+                {stats.recentOrders.map(order => (
+                  <Link key={order._id} to="/admin/orders"
+                    className="flex items-center justify-between px-6 py-4 hover:opacity-80 transition-opacity"
+                    style={{ borderBottom: `1px solid ${BORDER}` }}>
+                    <div>
+                      <p className="font-body text-sm font-medium text-white">
+                        #{order._id.slice(-8).toUpperCase()}
+                      </p>
+                      <p className="font-body text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                        {order.user?.name} · {order.user?.email}
+                      </p>
                     </div>
-                  ))}
-                </div>
+                    <div className="flex items-center gap-4">
+                      <span style={statusStyle(order.orderStatus)}>{order.orderStatus}</span>
+                      <span className="font-body text-sm font-semibold text-white">
+                        ₹{order.totalPrice?.toLocaleString()}
+                      </span>
+                    </div>
+                  </Link>
+                ))}
               </div>
             )}
           </>

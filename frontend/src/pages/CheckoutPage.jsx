@@ -1,16 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { orderAPI, paymentAPI, couponAPI } from '../services/api';
 import toast from 'react-hot-toast';
-import { FiCheck, FiMapPin, FiCreditCard, FiShoppingBag, FiTruck, FiShield, FiChevronDown, FiTag, FiX } from 'react-icons/fi';
+import { FiCheck, FiMapPin, FiCreditCard, FiShoppingBag, FiTruck, FiShield, FiChevronDown } from 'react-icons/fi';
 
-const BG     = '#111111';
-const BG2    = '#0a0a0a';
-const CARD   = '#1a1a1a';
+const BG   = '#111111';
+const BG2  = '#0a0a0a';
+const CARD = '#1a1a1a';
 const BORDER = 'rgba(255,255,255,0.08)';
-const GOLD   = '#C9A84C';
+const GOLD = '#C9A84C';
 
 const STEPS = [
   { label: 'Address', icon: FiMapPin },
@@ -18,13 +18,17 @@ const STEPS = [
   { label: 'Review',  icon: FiShoppingBag },
 ];
 
-/* ── Reusable Field + Input ── */
+/* ── Reusable Input ── */
 const Field = ({ label, children, col }) => (
   <div className={col || ''}>
     <label style={{
-      display: 'block', color: 'rgba(255,255,255,0.4)',
-      fontSize: '10px', letterSpacing: '0.15em',
-      textTransform: 'uppercase', marginBottom: '6px', fontFamily: 'inherit',
+      display: 'block',
+      color: 'rgba(255,255,255,0.4)',
+      fontSize: '10px',
+      letterSpacing: '0.15em',
+      textTransform: 'uppercase',
+      marginBottom: '6px',
+      fontFamily: 'inherit',
     }}>{label}</label>
     {children}
   </div>
@@ -34,7 +38,8 @@ const inputCls = "w-full px-4 py-3 font-body text-sm text-white focus:outline-no
 const inputStyle = (focus) => ({
   backgroundColor: BG2,
   border: `1px solid ${focus ? GOLD : 'rgba(255,255,255,0.1)'}`,
-  borderRadius: '8px', color: '#fff',
+  borderRadius: '8px',
+  color: '#fff',
 });
 
 const TextInput = ({ label, value, onChange, placeholder, type = 'text', maxLength, required, col }) => {
@@ -49,140 +54,149 @@ const TextInput = ({ label, value, onChange, placeholder, type = 'text', maxLeng
   );
 };
 
-/* ── Coupon Box — standalone reusable ── */
-const CouponBox = ({ couponCode, setCouponCode, couponApplied, couponDiscount, applyingCoupon, onApply, onRemove }) => {
-  const [focused, setFocused] = useState(false);
-
-  if (couponApplied) {
-    return (
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '12px 14px',
-        background: 'rgba(74,222,128,0.06)',
-        border: '1px solid rgba(74,222,128,0.22)',
-        borderRadius: '10px',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{
-            width: '28px', height: '28px', borderRadius: '50%',
-            background: 'rgba(74,222,128,0.12)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-          }}>
-            <FiCheck size={13} style={{ color: '#4ade80' }} />
-          </div>
-          <div>
-            <p style={{ fontSize: '12px', fontWeight: 600, color: '#4ade80', margin: 0 }}>
-              {couponApplied.code} applied!
-            </p>
-            <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.40)', margin: '2px 0 0' }}>
-              You save ₹{couponDiscount.toLocaleString()}
-            </p>
-          </div>
-        </div>
-        <button
-          onClick={onRemove}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '4px',
-            background: 'rgba(248,113,113,0.10)',
-            border: '1px solid rgba(248,113,113,0.22)',
-            borderRadius: '6px', padding: '5px 10px',
-            color: '#f87171', fontSize: '11px', cursor: 'pointer', fontFamily: 'inherit',
-          }}
-        >
-          <FiX size={11} /> Remove
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div>
-      {/* Label row */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '10px' }}>
-        <FiTag size={13} style={{ color: GOLD }} />
-        <span style={{
-          fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase',
-          color: 'rgba(201,168,76,0.70)', fontFamily: 'inherit',
-        }}>
-          Have a coupon?
-        </span>
-      </div>
-      {/* Input + button */}
-      <div style={{ display: 'flex', gap: '8px' }}>
-        <input
-          value={couponCode}
-          onChange={e => setCouponCode(e.target.value.toUpperCase())}
-          placeholder="Enter coupon code"
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-          onKeyDown={e => e.key === 'Enter' && onApply()}
-          style={{
-            flex: 1,
-            padding: '11px 14px',
-            fontSize: '13px',
-            fontFamily: 'inherit',
-            letterSpacing: '0.08em',
-            background: BG2,
-            border: `1.5px solid ${focused ? GOLD : 'rgba(255,255,255,0.10)'}`,
-            borderRadius: '8px',
-            color: '#fff',
-            outline: 'none',
-            transition: 'border-color 0.15s',
-            minWidth: 0,
-          }}
-        />
-        <button
-          onClick={onApply}
-          disabled={applyingCoupon}
-          style={{
-            padding: '11px 18px',
-            fontSize: '12px',
-            fontFamily: 'inherit',
-            fontWeight: 600,
-            letterSpacing: '0.10em',
-            textTransform: 'uppercase',
-            background: applyingCoupon ? 'rgba(201,168,76,0.45)' : GOLD,
-            color: '#0a0a0a',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: applyingCoupon ? 'not-allowed' : 'pointer',
-            flexShrink: 0,
-            transition: 'background 0.15s',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {applyingCoupon ? '...' : 'Apply'}
-        </button>
-      </div>
-    </div>
-  );
-};
-
-/* ═══════════════════════════════════════════════════════════════════════════ */
 export default function CheckoutPage() {
   const { cart, cartTotal, clearCart } = useCart();
-  const { user }                       = useAuth();
-  const navigate                       = useNavigate();
-
-  const [step,           setStep]           = useState(0);
-  const [loading,        setLoading]        = useState(false);
-  const [paymentMethod,  setPaymentMethod]  = useState('Razorpay');
-  const [couponCode,     setCouponCode]     = useState('');
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [step, setStep] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('Razorpay');
+  const [couponCode, setCouponCode] = useState('');
   const [couponDiscount, setCouponDiscount] = useState(0);
-  const [couponApplied,  setCouponApplied]  = useState(null);
+  const [couponApplied, setCouponApplied] = useState(null);
   const [applyingCoupon, setApplyingCoupon] = useState(false);
-  const [summaryOpen,    setSummaryOpen]    = useState(false);
-
+  const [summaryOpen, setSummaryOpen] = useState(false); // mobile toggle
   const [address, setAddress] = useState({
     fullName: user?.name || '', phone: user?.phone || '',
     addressLine1: '', addressLine2: '',
     city: '', state: '', pincode: '', country: 'India',
   });
 
-  const items    = cart.items || [];
-  const shipping = cartTotal >= 999 ? 0 : 99;
-  const tax      = Math.round(cartTotal * 0.18);
-  const total    = cartTotal + shipping + tax - couponDiscount;
+  const items = cart.items || [];
+  const [shipping,        setShipping]        = useState(99);
+  const [deliveryZone,    setDeliveryZone]    = useState('');
+  const [notServiceable,  setNotServiceable]  = useState(false);
+  const [serviceMsg,      setServiceMsg]      = useState('');
+  const [checkingPin,     setCheckingPin]     = useState(false);
+  const [pinValid,        setPinValid]        = useState(null); // null=unchecked, true=valid, false=invalid
+
+  // Recalculate delivery charge when address city/state changes
+  // ── Pincode validation + Shiprocket serviceability check ────────
+  useEffect(() => {
+    const pin = address.pincode?.trim();
+    if (!pin || pin.length !== 6 || !/^[0-9]{6}$/.test(pin)) {
+      setPinValid(null);
+      setNotServiceable(false);
+      setServiceMsg('');
+      return;
+    }
+
+    setCheckingPin(true);
+    setPinValid(null);
+
+    // Step 1: India Post API — validate pincode + auto-fill city/state
+    fetch(`https://api.postalpincode.in/pincode/${pin}`)
+      .then(r => r.json())
+      .then(async data => {
+        const post = data?.[0];
+
+        if (post?.Status !== 'Success' || !post?.PostOffice?.length) {
+          // Invalid pincode
+          setNotServiceable(true);
+          setPinValid(false);
+          setServiceMsg(`Pincode ${pin} is not valid. Please enter a correct pincode.`);
+          setShipping(99);
+          setCheckingPin(false);
+          return;
+        }
+
+        // Auto-fill city and state
+        const po = post.PostOffice[0];
+        setAddress(prev => ({
+          ...prev,
+          city:  prev.city  || po.District || po.Name || '',
+          state: prev.state || po.State    || '',
+        }));
+
+        // Step 2: Check Shiprocket serviceability via our backend
+        try {
+          const sellerPincode = cart.items?.[0]?.product?.createdBy?.sellerInfo?.address?.pincode || '';
+          const res = await deliveryAPI.checkPincode(pin, sellerPincode);
+
+          if (!res.serviceable) {
+            // Pincode valid but Shiprocket doesn't deliver here
+            setNotServiceable(true);
+            setPinValid(false);
+            setServiceMsg(`Delivery not available to pincode ${pin}. Please try a different address.`);
+            setShipping(99);
+          } else {
+            // All good — serviceable
+            setNotServiceable(false);
+            setPinValid(true);
+            setServiceMsg('');
+            // If Shiprocket returned a real charge, use it
+            if (res.charge && cartTotal < 999) {
+              setShipping(res.charge);
+              setDeliveryZone(res.zone || 'SHIPROCKET_LIVE');
+            }
+          }
+        } catch {
+          // Backend check failed — don't block, just mark valid
+          setNotServiceable(false);
+          setPinValid(true);
+          setServiceMsg('');
+        } finally {
+          setCheckingPin(false);
+        }
+      })
+      .catch(() => {
+        // India Post API failed — don't block customer
+        setPinValid(null);
+        setCheckingPin(false);
+      });
+  }, [address.pincode]);
+
+  // ── Calculate delivery charge based on city/state ─────────────
+  useEffect(() => {
+    if (!address.city || !address.state) { setShipping(99); setDeliveryZone(''); return; }
+    if (notServiceable) return; // already marked not serviceable
+
+    const NEARBY = {
+      'Maharashtra':    ['Gujarat','Goa','Madhya Pradesh','Karnataka','Telangana'],
+      'Delhi':          ['Haryana','Uttar Pradesh','Rajasthan','Punjab'],
+      'Karnataka':      ['Kerala','Tamil Nadu','Andhra Pradesh','Telangana','Maharashtra'],
+      'Tamil Nadu':     ['Kerala','Karnataka','Andhra Pradesh'],
+      'Gujarat':        ['Maharashtra','Rajasthan','Madhya Pradesh'],
+      'Telangana':      ['Andhra Pradesh','Maharashtra','Karnataka'],
+      'Andhra Pradesh': ['Telangana','Karnataka','Tamil Nadu'],
+      'Uttar Pradesh':  ['Delhi','Haryana','Rajasthan','Bihar'],
+      'Kerala':         ['Karnataka','Tamil Nadu'],
+      'Punjab':         ['Haryana','Delhi','Rajasthan'],
+      'Haryana':        ['Delhi','Punjab','Rajasthan','Uttar Pradesh'],
+    };
+
+    const sellerState = cart.items?.[0]?.product?.createdBy?.sellerInfo?.address?.state || '';
+    const sellerCity  = cart.items?.[0]?.product?.createdBy?.sellerInfo?.address?.city  || '';
+    const uCity  = address.city.trim().toLowerCase();
+    const sCity  = sellerCity.trim().toLowerCase();
+    const uState = address.state.trim();
+    const sState = sellerState.trim();
+
+    if (cartTotal >= 999) { setShipping(0); setDeliveryZone('FREE'); return; }
+
+    let zone = 'FAR_STATE'; let charge = 100;
+    if (sCity && uCity && uCity === sCity)                                            { zone = 'SAME_CITY';    charge = 40; }
+    else if (sState && uState.toLowerCase() === sState.toLowerCase())                 { zone = 'SAME_STATE';   charge = 60; }
+    else if (sState && (NEARBY[sState]||[]).some(s=>s.toLowerCase()===uState.toLowerCase())) { zone = 'NEARBY_STATE'; charge = 80; }
+    else                                                                              { zone = 'FAR_STATE';    charge = 100; }
+
+    setShipping(charge);
+    setDeliveryZone(zone);
+    setNotServiceable(false);
+    setServiceMsg('');
+  }, [address.city, address.state, cartTotal]);
+  const tax = Math.round(cartTotal * 0.18);
+  const total = cartTotal + shipping + tax - couponDiscount;
 
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) { toast.error('Enter a coupon code'); return; }
@@ -207,8 +221,12 @@ export default function CheckoutPage() {
     if (!fullName || !phone || !addressLine1 || !city || !state || !pincode) {
       toast.error('Please fill all required fields'); return;
     }
-    if (phone.length < 10)  { toast.error('Enter valid phone number'); return; }
-    if (pincode.length !== 6){ toast.error('Enter valid 6-digit pincode'); return; }
+    if (phone.length < 10) { toast.error('Enter valid phone number'); return; }
+    if (pincode.length !== 6) { toast.error('Enter valid 6-digit pincode'); return; }
+    if (notServiceable) {
+      toast.error('Delivery not available to this pincode. Please change your address.');
+      return;
+    }
     setStep(1);
   };
 
@@ -275,8 +293,7 @@ export default function CheckoutPage() {
             </span>
           </button>
           {i < STEPS.length - 1 && (
-            <div className="mx-3 sm:mx-5 h-px"
-              style={{ width: '48px', backgroundColor: i < step ? GOLD : 'rgba(255,255,255,0.08)' }} />
+            <div className="mx-3 sm:mx-5 h-px" style={{ width: '48px', backgroundColor: i < step ? GOLD : 'rgba(255,255,255,0.08)' }} />
           )}
         </div>
       ))}
@@ -286,24 +303,25 @@ export default function CheckoutPage() {
   /* ─────────── ORDER SUMMARY ─────────── */
   const OrderSummary = ({ mobile }) => (
     <div style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: '12px', overflow: 'hidden' }}>
+      {/* Mobile toggle header */}
       {mobile && (
         <button onClick={() => setSummaryOpen(!summaryOpen)}
           className="w-full flex items-center justify-between px-5 py-4"
           style={{ backgroundColor: BG2 }}>
           <div className="flex items-center gap-2">
             <FiShoppingBag size={15} style={{ color: GOLD }} />
-            <span className="font-body text-xs tracking-[0.15em] uppercase" style={{ color: GOLD }}>Order Summary</span>
+            <span className="font-body text-xs tracking-[0.15em] uppercase" style={{ color: GOLD }}>
+              Order Summary
+            </span>
           </div>
           <div className="flex items-center gap-3">
             <span className="font-body font-bold text-sm" style={{ color: GOLD }}>₹{total.toLocaleString()}</span>
-            <FiChevronDown size={16} style={{
-              color: 'rgba(255,255,255,0.4)',
-              transform: summaryOpen ? 'rotate(180deg)' : 'none',
-              transition: 'transform 0.2s',
-            }} />
+            <FiChevronDown size={16} style={{ color: 'rgba(255,255,255,0.4)', transform: summaryOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
           </div>
         </button>
       )}
+
+      {/* Desktop header */}
       {!mobile && (
         <div className="px-5 py-4" style={{ backgroundColor: BG2, borderBottom: `1px solid ${BORDER}` }}>
           <div className="flex items-center gap-2">
@@ -312,15 +330,17 @@ export default function CheckoutPage() {
           </div>
         </div>
       )}
+
+      {/* Content */}
       {(!mobile || summaryOpen) && (
         <>
+          {/* Items */}
           <div className="px-5 py-4 space-y-3" style={{ borderBottom: `1px solid ${BORDER}`, maxHeight: '200px', overflowY: 'auto' }}>
             {items.map(item => (
               <div key={item._id} className="flex items-center gap-3">
                 <div className="relative flex-shrink-0">
                   <img src={item.product?.images?.[0]?.url} alt=""
-                    className="w-12 h-14 object-cover"
-                    style={{ borderRadius: '6px', backgroundColor: BG2 }} />
+                    className="w-12 h-14 object-cover" style={{ borderRadius: '6px', backgroundColor: BG2 }} />
                   <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full text-[9px] font-bold text-white flex items-center justify-center"
                     style={{ backgroundColor: GOLD }}>{item.quantity}</span>
                 </div>
@@ -334,12 +354,13 @@ export default function CheckoutPage() {
               </div>
             ))}
           </div>
+
+          {/* Price rows */}
           <div className="px-5 py-4 space-y-2.5" style={{ borderBottom: `1px solid ${BORDER}` }}>
             {[
               { l: `Subtotal (${items.length} item${items.length !== 1 ? 's' : ''})`, v: `₹${cartTotal.toLocaleString()}` },
-              { l: 'Shipping', v: shipping === 0 ? 'FREE' : `₹${shipping}`, green: shipping === 0 },
+              { l: `Delivery${deliveryZone && deliveryZone !== 'FREE' ? ` (${deliveryZone.replace('_',' ')})` : ''}`, v: notServiceable ? '❌ Not available' : shipping === 0 ? 'FREE ✓' : `₹${shipping}`, green: shipping === 0, red: notServiceable },
               { l: 'GST (18%)', v: `₹${tax.toLocaleString()}` },
-              ...(couponDiscount > 0 ? [{ l: `Coupon (${couponApplied?.code})`, v: `-₹${couponDiscount.toLocaleString()}`, green: true }] : []),
             ].map(row => (
               <div key={row.l} className="flex items-center justify-between text-sm font-body">
                 <span style={{ color: 'rgba(255,255,255,0.45)' }}>{row.l}</span>
@@ -347,6 +368,8 @@ export default function CheckoutPage() {
               </div>
             ))}
           </div>
+
+          {/* Total */}
           <div className="px-5 py-4" style={{ borderBottom: `1px solid ${BORDER}` }}>
             <div className="flex items-center justify-between">
               <span className="font-body font-semibold text-base text-white">Total</span>
@@ -358,19 +381,37 @@ export default function CheckoutPage() {
               </p>
             )}
           </div>
-          {/* Coupon — desktop sidebar only */}
+
+          {/* Coupon code */}
           <div className="px-5 py-4" style={{ borderBottom: `1px solid ${BORDER}` }}>
-            <CouponBox
-              couponCode={couponCode} setCouponCode={setCouponCode}
-              couponApplied={couponApplied} couponDiscount={couponDiscount}
-              applyingCoupon={applyingCoupon}
-              onApply={handleApplyCoupon} onRemove={removeCoupon}
-            />
+            {couponApplied ? (
+              <div className="flex items-center justify-between py-2 px-3" style={{ backgroundColor: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)', borderRadius: '8px' }}>
+                <div>
+                  <p className="font-body text-xs font-semibold" style={{ color: '#4ade80' }}>✓ {couponApplied.code} applied!</p>
+                  <p className="font-body text-[10px]" style={{ color: 'rgba(255,255,255,0.4)' }}>Saving ₹{couponDiscount}</p>
+                </div>
+                <button onClick={removeCoupon} className="font-body text-xs" style={{ color: '#f87171' }}>Remove</button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <input value={couponCode} onChange={e => setCouponCode(e.target.value.toUpperCase())}
+                  placeholder="Coupon code"
+                  className="flex-1 px-3 py-2 font-body text-xs text-white focus:outline-none uppercase"
+                  style={{ backgroundColor: BG2, border: `1px solid ${BORDER}`, borderRadius: '6px' }}
+                  onKeyDown={e => e.key === 'Enter' && handleApplyCoupon()} />
+                <button onClick={handleApplyCoupon} disabled={applyingCoupon}
+                  className="px-4 py-2 font-body text-xs tracking-wider uppercase text-white flex-shrink-0"
+                  style={{ backgroundColor: applyingCoupon ? 'rgba(201,168,76,0.5)' : GOLD, borderRadius: '6px' }}>
+                  {applyingCoupon ? '...' : 'Apply'}
+                </button>
+              </div>
+            )}
           </div>
+
+          {/* Trust badges */}
           <div className="px-5 py-4 grid grid-cols-2 gap-2">
             {[{ icon: FiShield, text: 'Secure Payment' }, { icon: FiTruck, text: 'Fast Delivery' }].map(({ icon: Icon, text }) => (
-              <div key={text} className="flex items-center gap-2 px-3 py-2"
-                style={{ backgroundColor: BG2, borderRadius: '6px' }}>
+              <div key={text} className="flex items-center gap-2 px-3 py-2" style={{ backgroundColor: BG2, borderRadius: '6px' }}>
                 <Icon size={13} style={{ color: GOLD, flexShrink: 0 }} />
                 <span className="font-body text-[10px]" style={{ color: 'rgba(255,255,255,0.4)' }}>{text}</span>
               </div>
@@ -384,25 +425,27 @@ export default function CheckoutPage() {
   /* ─────────── MAIN RENDER ─────────── */
   return (
     <div className="min-h-screen" style={{ backgroundColor: BG }}>
-      <div className="py-8 px-4 sm:px-6 text-center"
-        style={{ backgroundColor: BG2, borderBottom: `1px solid ${BORDER}` }}>
+      {/* Page Header */}
+      <div className="py-8 px-4 sm:px-6 text-center" style={{ backgroundColor: BG2, borderBottom: `1px solid ${BORDER}` }}>
         <p className="section-subtitle">Almost there</p>
         <h1 className="section-title">Checkout</h1>
       </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+        {/* Step bar */}
         <StepBar />
 
-        {/* Mobile order summary */}
+        {/* Mobile order summary (collapsible) */}
         <div className="lg:hidden mb-6">
           <OrderSummary mobile />
         </div>
 
+        {/* Main layout */}
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+
           {/* ───── LEFT: Form ───── */}
           <div className="flex-1">
-            <div className="p-5 sm:p-7"
-              style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: '12px' }}>
+            <div className="p-5 sm:p-7" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: '12px' }}>
 
               {/* ── Step 0: Address ── */}
               {step === 0 && (
@@ -414,27 +457,50 @@ export default function CheckoutPage() {
                     </div>
                     <h2 className="font-display text-xl font-light text-white">Delivery Address</h2>
                   </div>
+
                   <div className="space-y-4">
+                    {/* Row 1: Name + Phone */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <TextInput label="Full Name *" value={address.fullName} onChange={set('fullName')} required />
                       <TextInput label="Phone Number *" value={address.phone} onChange={set('phone')} type="tel" maxLength={10} required />
                     </div>
+
+                    {/* Address Line 1 */}
                     <TextInput label="Address Line 1 *" value={address.addressLine1} onChange={set('addressLine1')} placeholder="House no., Street, Area" required />
+
+                    {/* Address Line 2 */}
                     <TextInput label="Address Line 2 (Optional)" value={address.addressLine2} onChange={set('addressLine2')} placeholder="Landmark, Colony" />
+
+                    {/* Row: City + State + Pincode */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                       <TextInput label="City *" value={address.city} onChange={set('city')} required />
                       <TextInput label="State *" value={address.state} onChange={set('state')} required />
                       <div className="col-span-2 sm:col-span-1">
-                        <TextInput label="Pincode *" value={address.pincode} onChange={set('pincode')} maxLength={6} required />
+                        <div>
+                          <TextInput label="Pincode *" value={address.pincode} onChange={e => { set('pincode')(e); setPinValid(null); setNotServiceable(false); setServiceMsg(''); }} maxLength={6} required />
+                          {address.pincode?.length === 6 && (
+                            <p className="font-body text-xs mt-1.5" style={{ color: notServiceable ? '#f87171' : pinValid ? '#4ade80' : 'rgba(255,255,255,0.4)' }}>
+                              {checkingPin
+                                ? '⏳ Checking delivery availability...'
+                                : notServiceable
+                                ? `❌ ${serviceMsg}`
+                                : pinValid
+                                ? '✅ Delivery available to this pincode'
+                                : ''}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
+
+                    {/* Country (read-only) */}
                     <Field label="Country">
-                      <div className="px-4 py-3 font-body text-sm"
-                        style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: `1px solid rgba(255,255,255,0.06)`, borderRadius: '8px', color: 'rgba(255,255,255,0.4)' }}>
+                      <div className="px-4 py-3 font-body text-sm" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: `1px solid rgba(255,255,255,0.06)`, borderRadius: '8px', color: 'rgba(255,255,255,0.4)' }}>
                         🇮🇳 India
                       </div>
                     </Field>
                   </div>
+
                   <button type="submit"
                     className="w-full mt-7 py-4 font-body text-sm tracking-[0.15em] uppercase text-white font-medium transition-colors"
                     style={{ backgroundColor: GOLD, borderRadius: '8px' }}>
@@ -454,11 +520,10 @@ export default function CheckoutPage() {
                     <h2 className="font-display text-xl font-light text-white">Payment Method</h2>
                   </div>
 
-                  {/* Payment options */}
-                  <div className="space-y-3 mb-5">
+                  <div className="space-y-3 mb-6">
                     {[
-                      { id: 'Razorpay', label: 'Pay Online',        sub: 'Cards · UPI · Net Banking · Wallets', emojis: '💳 📱 🏦' },
-                      { id: 'COD',      label: 'Cash on Delivery',   sub: 'Pay when your order arrives (+₹50 fee)', emojis: '💵' },
+                      { id: 'Razorpay', label: 'Pay Online', sub: 'Cards · UPI · Net Banking · Wallets', emojis: '💳 📱 🏦' },
+                      { id: 'COD',      label: 'Cash on Delivery', sub: 'Pay when your order arrives (+₹50 fee)', emojis: '💵' },
                     ].map(m => (
                       <label key={m.id} onClick={() => setPaymentMethod(m.id)}
                         className="flex items-center gap-4 p-4 cursor-pointer transition-all"
@@ -467,11 +532,9 @@ export default function CheckoutPage() {
                           backgroundColor: paymentMethod === m.id ? 'rgba(201,168,76,0.05)' : BG2,
                           borderRadius: '10px',
                         }}>
+                        {/* Custom radio */}
                         <div className="w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center"
-                          style={{
-                            border: `2px solid ${paymentMethod === m.id ? GOLD : 'rgba(255,255,255,0.2)'}`,
-                            backgroundColor: paymentMethod === m.id ? GOLD : 'transparent',
-                          }}>
+                          style={{ border: `2px solid ${paymentMethod === m.id ? GOLD : 'rgba(255,255,255,0.2)'}`, backgroundColor: paymentMethod === m.id ? GOLD : 'transparent' }}>
                           {paymentMethod === m.id && <div className="w-2 h-2 bg-white rounded-full" />}
                         </div>
                         <div className="flex-1">
@@ -483,39 +546,6 @@ export default function CheckoutPage() {
                     ))}
                   </div>
 
-                  {/* ── COUPON BOX — always visible on mobile in Step 1 ── */}
-                  <div className="lg:hidden mb-5">
-                    <div style={{
-                      padding: '16px',
-                      background: 'rgba(201,168,76,0.04)',
-                      border: `1px solid rgba(201,168,76,0.18)`,
-                      borderRadius: '12px',
-                    }}>
-                      <CouponBox
-                        couponCode={couponCode} setCouponCode={setCouponCode}
-                        couponApplied={couponApplied} couponDiscount={couponDiscount}
-                        applyingCoupon={applyingCoupon}
-                        onApply={handleApplyCoupon} onRemove={removeCoupon}
-                      />
-                      {/* Show discount line if applied */}
-                      {couponDiscount > 0 && (
-                        <div style={{
-                          display: 'flex', justifyContent: 'space-between',
-                          marginTop: '12px', paddingTop: '12px',
-                          borderTop: '1px solid rgba(255,255,255,0.06)',
-                        }}>
-                          <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)', fontFamily: 'inherit' }}>
-                            Total after discount
-                          </span>
-                          <span style={{ fontSize: '14px', fontWeight: 700, color: GOLD, fontFamily: 'inherit' }}>
-                            ₹{total.toLocaleString()}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Back / Review buttons */}
                   <div className="grid grid-cols-2 gap-3">
                     <button onClick={() => setStep(0)}
                       className="py-4 font-body text-sm tracking-[0.12em] uppercase transition-all"
@@ -541,8 +571,9 @@ export default function CheckoutPage() {
                     </div>
                     <h2 className="font-display text-xl font-light text-white">Review Order</h2>
                   </div>
-                  <div className="p-4 mb-4"
-                    style={{ backgroundColor: BG2, border: `1px solid ${BORDER}`, borderRadius: '10px' }}>
+
+                  {/* Address card */}
+                  <div className="p-4 mb-4" style={{ backgroundColor: BG2, border: `1px solid ${BORDER}`, borderRadius: '10px' }}>
                     <div className="flex items-start justify-between">
                       <div>
                         <p className="font-body text-[10px] tracking-[0.15em] uppercase mb-2" style={{ color: GOLD }}>Delivery Address</p>
@@ -558,8 +589,9 @@ export default function CheckoutPage() {
                       <button onClick={() => setStep(0)} className="font-body text-xs hover:underline flex-shrink-0 ml-4" style={{ color: GOLD }}>Edit</button>
                     </div>
                   </div>
-                  <div className="p-4 mb-5"
-                    style={{ backgroundColor: BG2, border: `1px solid ${BORDER}`, borderRadius: '10px' }}>
+
+                  {/* Payment card */}
+                  <div className="p-4 mb-5" style={{ backgroundColor: BG2, border: `1px solid ${BORDER}`, borderRadius: '10px' }}>
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-body text-[10px] tracking-[0.15em] uppercase mb-1" style={{ color: GOLD }}>Payment</p>
@@ -568,6 +600,8 @@ export default function CheckoutPage() {
                       <button onClick={() => setStep(1)} className="font-body text-xs hover:underline" style={{ color: GOLD }}>Edit</button>
                     </div>
                   </div>
+
+                  {/* Items list */}
                   <div className="space-y-2 mb-6">
                     <p className="font-body text-[10px] tracking-[0.15em] uppercase mb-3" style={{ color: 'rgba(255,255,255,0.35)' }}>
                       {items.length} Item{items.length !== 1 ? 's' : ''}
@@ -576,8 +610,7 @@ export default function CheckoutPage() {
                       <div key={item._id} className="flex items-center gap-3 p-3"
                         style={{ backgroundColor: BG2, border: `1px solid ${BORDER}`, borderRadius: '8px' }}>
                         <img src={item.product?.images?.[0]?.url} alt=""
-                          className="w-12 h-14 object-cover flex-shrink-0"
-                          style={{ borderRadius: '6px', backgroundColor: BG }} />
+                          className="w-12 h-14 object-cover flex-shrink-0" style={{ borderRadius: '6px', backgroundColor: BG }} />
                         <div className="flex-1 min-w-0">
                           <p className="font-body font-medium text-sm text-white truncate">{item.product?.name}</p>
                           <p className="font-body text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
@@ -590,6 +623,7 @@ export default function CheckoutPage() {
                       </div>
                     ))}
                   </div>
+
                   <div className="grid grid-cols-2 gap-3">
                     <button onClick={() => setStep(1)}
                       className="py-4 font-body text-sm tracking-[0.12em] uppercase transition-all"
@@ -604,6 +638,7 @@ export default function CheckoutPage() {
                   </div>
                 </div>
               )}
+
             </div>
           </div>
 
@@ -613,6 +648,7 @@ export default function CheckoutPage() {
               <OrderSummary />
             </div>
           </div>
+
         </div>
       </div>
     </div>
