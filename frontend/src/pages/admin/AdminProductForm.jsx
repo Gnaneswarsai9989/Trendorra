@@ -1,459 +1,265 @@
-import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
-import { productAPI, uploadAPI } from '../../services/api';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { productAPI } from '../../services/api';
 import toast from 'react-hot-toast';
-import { FiUpload, FiX, FiPlus, FiArrowLeft, FiChevronDown, FiCheck } from 'react-icons/fi';
-import { CATEGORIES, getSubCategoryNames, getGroupedSubCategories } from '../../constants/categories';
+import { FiPlus, FiEdit2, FiTrash2, FiStar, FiArrowLeft, FiUser } from 'react-icons/fi';
 
-const BG     = '#0a0a0a';
-const CARD   = '#1a1a1a';
+const BG = '#0a0a0a';
+const CARD = '#1a1a1a';
 const BORDER = 'rgba(255,255,255,0.08)';
-const GOLD   = '#C9A84C';
-const SIZES  = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'Free Size'];
+const GOLD = '#C9A84C';
 
-const inputStyle = {
-  backgroundColor: '#0a0a0a',
-  border: `1px solid rgba(255,255,255,0.12)`,
-  color: '#fff',
-  width: '100%',
-  padding: '0.75rem 1rem',
-  fontSize: '0.875rem',
-  outline: 'none',
-};
-const labelStyle = {
-  display: 'block',
-  color: 'rgba(255,255,255,0.45)',
-  fontSize: '11px',
-  letterSpacing: '0.15em',
-  textTransform: 'uppercase',
-  marginBottom: '8px',
-};
-const sectionStyle = {
-  backgroundColor: CARD,
-  border: `1px solid ${BORDER}`,
-  padding: '1.5rem',
-  marginBottom: '1.5rem',
-};
-const sectionTitleStyle = {
-  color: 'rgba(255,255,255,0.4)',
-  fontSize: '11px',
-  letterSpacing: '0.2em',
-  textTransform: 'uppercase',
-  marginBottom: '1.5rem',
-  paddingBottom: '0.75rem',
-  borderBottom: `1px solid ${BORDER}`,
-};
-
-/* ── Field — MUST be outside AdminProductForm to prevent focus loss ───────── */
-function Field({ label, children, span }) {
-  return (
-    <div className={span ? `md:col-span-${span}` : ''}>
-      <label style={labelStyle}>{label}</label>
-      {children}
-    </div>
-  );
-}
-
-/* ── SubCategoryDropdown ─────────────────────────────────────────────────── */
-function SubCategoryDropdown({ category, value, onChange }) {
-  const [open,   setOpen]   = useState(false);
+export default function AdminProducts() {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(null);
   const [search, setSearch] = useState('');
-  const ref       = useRef(null);
-  const searchRef = useRef(null);
-  const grouped  = getGroupedSubCategories(category);
-  const allNames = getSubCategoryNames(category);
-  const filtered = search.trim()
-    ? allNames.filter(n => n.toLowerCase().includes(search.toLowerCase()))
-    : null;
-  useEffect(() => {
-    const handler = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
-  useEffect(() => { if (open) setTimeout(() => searchRef.current?.focus(), 60); }, [open]);
-  useEffect(() => { onChange(''); setSearch(''); }, [category]);
-  const select = name => { onChange(name); setOpen(false); setSearch(''); };
-  const noop = allNames.length === 0;
-  return (
-    <div ref={ref} style={{ position: 'relative' }}>
-      <button
-        type="button"
-        disabled={noop}
-        onClick={() => setOpen(p => !p)}
-        style={{
-          ...inputStyle,
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          cursor: noop ? 'not-allowed' : 'pointer',
-          borderColor: open ? GOLD : 'rgba(255,255,255,0.12)',
-          transition: 'border-color 0.15s',
-        }}
-      >
-        <span style={{ color: value ? '#fff' : 'rgba(255,255,255,0.30)' }}>
-          {value || (noop ? 'No subcategories' : 'Select subcategory')}
-        </span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          {value && (
-            <span onClick={e => { e.stopPropagation(); onChange(''); }}
-              style={{ color: 'rgba(255,255,255,0.35)', cursor: 'pointer', lineHeight: 1 }}>
-              <FiX size={13} />
-            </span>
-          )}
-          <FiChevronDown size={15} style={{
-            color: open ? GOLD : 'rgba(255,255,255,0.35)',
-            transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
-            transition: 'transform 0.18s, color 0.15s',
-          }} />
-        </div>
-      </button>
-      {open && (
-        <div style={{
-          position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0,
-          zIndex: 200, background: '#141414',
-          border: `1px solid rgba(201,168,76,0.35)`, borderRadius: '8px',
-          boxShadow: '0 16px 48px rgba(0,0,0,0.70)', overflow: 'hidden',
-        }}>
-          <div style={{ padding: '10px 12px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-            <input ref={searchRef} value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Search subcategories..."
-              style={{
-                width: '100%', background: '#0a0a0a',
-                border: '1px solid rgba(255,255,255,0.10)', borderRadius: '5px',
-                padding: '7px 10px', fontSize: '12px', color: '#fff', outline: 'none', fontFamily: 'inherit',
-              }} />
-          </div>
-          <div style={{ maxHeight: '260px', overflowY: 'auto' }}>
-            {filtered && (
-              filtered.length === 0
-                ? <p style={{ padding: '14px 16px', fontSize: '12px', color: 'rgba(255,255,255,0.35)', textAlign: 'center' }}>No results</p>
-                : filtered.map(name => <DropItem key={name} name={name} active={value === name} onSelect={select} />)
-            )}
-            {!filtered && Object.entries(grouped).map(([group, names]) => (
-              <div key={group}>
-                <div style={{
-                  padding: '7px 14px 4px', fontSize: '9px', letterSpacing: '0.18em',
-                  textTransform: 'uppercase', color: GOLD, fontWeight: 500,
-                  background: 'rgba(201,168,76,0.05)', borderTop: '1px solid rgba(255,255,255,0.04)',
-                }}>
-                  {group}
-                </div>
-                {names.map(name => <DropItem key={name} name={name} active={value === name} onSelect={select} />)}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+  const [filter, setFilter] = useState('all'); // 'all' | 'admin' | 'seller'
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({});
 
-function DropItem({ name, active, onSelect }) {
-  return (
-    <button type="button" onClick={() => onSelect(name)}
-      style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        width: '100%', padding: '9px 16px', fontSize: '13px',
-        color: active ? GOLD : 'rgba(255,255,255,0.75)',
-        background: active ? 'rgba(201,168,76,0.08)' : 'transparent',
-        border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
-        transition: 'background 0.12s, color 0.12s',
-      }}
-      onMouseEnter={e => { if (!active) { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = '#fff'; }}}
-      onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.75)'; }}}
-    >
-      <span>{name}</span>
-      {active && <FiCheck size={13} style={{ color: GOLD, flexShrink: 0 }} />}
-    </button>
-  );
-}
-
-/* ── Main component ──────────────────────────────────────────────────────── */
-export default function AdminProductForm() {
-  const { id }   = useParams();
-  const navigate = useNavigate();
-  const isEdit   = !!id;
-
-  const [loading,   setLoading]   = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [form, setForm] = useState({
-    name: '', description: '', price: '', discountPrice: '',
-    category: 'Men', subCategory: '',
-    brand: 'Trendorra', stock: '',
-    sizes: [], material: '', careInstructions: '',
-    isFeatured: false, isNewArrival: false, isBestSeller: false,
-    images: [], colors: [],
-  });
-  const [newColor, setNewColor] = useState({ name: '', hex: '#C9A84C' });
-
-  useEffect(() => {
-    if (isEdit) {
-      productAPI.getById(id).then(res => {
-        const p = res.product;
-        setForm({
-          name: p.name || '', description: p.description || '',
-          price: p.price || '', discountPrice: p.discountPrice || '',
-          category: p.category || 'Men', subCategory: p.subCategory || '',
-          brand: p.brand || 'Trendorra',
-          stock: p.stock || '', sizes: p.sizes || [],
-          material: p.material || '', careInstructions: p.careInstructions || '',
-          isFeatured: p.isFeatured || false, isNewArrival: p.isNewArrival || false,
-          isBestSeller: p.isBestSeller || false,
-          images: p.images || [], colors: p.colors || [],
-        });
-      });
-    }
-  }, [id, isEdit]);
-
-  const handleImageUpload = async (e) => {
-    const files = Array.from(e.target.files);
-    if (!files.length) return;
-    setUploading(true);
-    try {
-      const formData = new FormData();
-      files.forEach(f => formData.append('images', f));
-      const res = await uploadAPI.uploadImages(formData);
-      setForm(prev => ({ ...prev, images: [...prev.images, ...res.images] }));
-      toast.success('Images uploaded!');
-    } catch { toast.error('Failed to upload images'); }
-    finally  { setUploading(false); }
-  };
-
-  const removeImage = i   => setForm(prev => ({ ...prev, images: prev.images.filter((_, j) => j !== i) }));
-  const toggleSize  = sz  => setForm(prev => ({ ...prev, sizes: prev.sizes.includes(sz) ? prev.sizes.filter(s => s !== sz) : [...prev.sizes, sz] }));
-  const addColor    = ()  => {
-    if (!newColor.name) return;
-    setForm(prev => ({ ...prev, colors: [...prev.colors, { ...newColor }] }));
-    setNewColor({ name: '', hex: '#C9A84C' });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const fetchProducts = async () => {
     setLoading(true);
     try {
-      const data = {
-        ...form,
-        price:         Number(form.price),
-        discountPrice: Number(form.discountPrice) || 0,
-        stock:         Number(form.stock),
-      };
-      if (isEdit) { await productAPI.update(id, data); toast.success('Product updated!'); }
-      else        { await productAPI.create(data);     toast.success('Product created!'); }
-      navigate('/admin/products');
-    } catch (err) { toast.error(err.message || 'Failed'); }
-    finally       { setLoading(false); }
+      const res = await productAPI.getAll({ search, page, limit: 10 });
+      setProducts(res.products);
+      setPagination(res.pagination);
+    } finally { setLoading(false); }
   };
+
+  useEffect(() => { fetchProducts(); }, [search, page]);
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Delete this product?')) return;
+    setDeleting(id);
+    try { await productAPI.delete(id); toast.success('Product deleted'); fetchProducts(); }
+    catch { toast.error('Failed to delete'); } finally { setDeleting(null); }
+  };
+
+  // Filter products client-side by source
+  const filteredProducts = products.filter(p => {
+    if (filter === 'seller') return p.createdBy && p.createdBy.role === 'seller';
+    if (filter === 'admin')  return !p.createdBy || p.createdBy.role === 'admin';
+    return true;
+  });
+
+  const thStyle = {
+    color: 'rgba(255,255,255,0.35)', fontSize: '11px', letterSpacing: '0.15em',
+    textTransform: 'uppercase', padding: '1rem 1.5rem', textAlign: 'left',
+    borderBottom: `1px solid ${BORDER}`, backgroundColor: '#050505',
+  };
+  const tdStyle = { padding: '1rem 1.5rem', borderBottom: `1px solid ${BORDER}` };
+
+  const sellerCount = products.filter(p => p.createdBy?.role === 'seller').length;
+  const adminCount  = products.filter(p => !p.createdBy || p.createdBy?.role === 'admin').length;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: BG }}>
-      {/* ── Header ── */}
+      {/* Header */}
       <div className="px-6 py-5 flex items-center justify-between"
         style={{ backgroundColor: '#050505', borderBottom: `1px solid ${BORDER}` }}>
         <div>
-          <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: '4px' }}>
-            Admin Panel
-          </p>
-          <h1 style={{ color: GOLD, fontFamily: 'Cinzel, serif', fontSize: '18px', letterSpacing: '0.2em' }}>
-            {isEdit ? 'Edit Product' : 'Add Product'}
-          </h1>
+          <p className="font-body text-xs tracking-[0.2em] uppercase mb-1"
+            style={{ color: 'rgba(255,255,255,0.3)' }}>Admin Panel</p>
+          <h1 className="font-accent text-xl tracking-[0.2em]" style={{ color: GOLD }}>Products</h1>
         </div>
-        <Link to="/admin/products"
-          className="flex items-center gap-1 font-body text-xs tracking-wider hover:text-gold transition-colors"
-          style={{ color: 'rgba(255,255,255,0.4)' }}>
-          <FiArrowLeft size={13} /> Products
-        </Link>
+        <div className="flex gap-4 items-center">
+          <Link to="/admin" className="font-body text-xs tracking-wider hover:text-gold transition-colors flex items-center gap-1"
+            style={{ color: 'rgba(255,255,255,0.4)' }}><FiArrowLeft size={13} /> Dashboard</Link>
+          <Link to="/admin/products/new"
+            className="flex items-center gap-2 px-4 py-2 text-xs font-body tracking-wider text-white transition-colors"
+            style={{ backgroundColor: GOLD }}>
+            <FiPlus size={14} /> Add Product
+          </Link>
+        </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 py-8">
-        <form onSubmit={handleSubmit}>
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Search + Filter row */}
+        <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
+          <div className="flex gap-3 items-center flex-wrap">
+            <input type="text" placeholder="Search products..." value={search}
+              onChange={e => { setSearch(e.target.value); setPage(1); }}
+              className="px-4 py-2.5 text-sm font-body w-64 focus:outline-none"
+              style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, color: '#fff' }} />
 
-          {/* ── BASIC INFORMATION ── */}
-          <div style={sectionStyle}>
-            <p style={sectionTitleStyle}>Basic Information</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div className="md:col-span-2">
-                <Field label="Product Name *">
-                  <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-                    style={inputStyle} required placeholder="e.g. Classic Oversized Tee" />
-                </Field>
-              </div>
-              <div className="md:col-span-2">
-                <Field label="Description">
-                  <textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
-                    style={{ ...inputStyle, resize: 'none', minHeight: '100px' }}
-                    rows={4} placeholder="Describe your product..." />
-                </Field>
-              </div>
-              <div>
-                <label style={labelStyle}>Category *</label>
-                <select value={form.category}
-                  onChange={e => setForm(p => ({ ...p, category: e.target.value, subCategory: '' }))}
-                  style={inputStyle}>
-                  {CATEGORIES.map(c => (
-                    <option key={c} value={c} style={{ backgroundColor: '#0a0a0a' }}>{c}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label style={labelStyle}>Sub Category</label>
-                <SubCategoryDropdown
-                  category={form.category}
-                  value={form.subCategory}
-                  onChange={val => setForm(p => ({ ...p, subCategory: val }))}
-                />
-              </div>
-              <Field label="Brand">
-                <input value={form.brand} onChange={e => setForm(p => ({ ...p, brand: e.target.value }))}
-                  style={inputStyle} />
-              </Field>
-              <Field label="Material">
-                <input value={form.material} onChange={e => setForm(p => ({ ...p, material: e.target.value }))}
-                  style={inputStyle} placeholder="e.g. 100% Cotton" />
-              </Field>
-              <Field label="Price (₹) *">
-                <input type="number" value={form.price}
-                  onChange={e => setForm(p => ({ ...p, price: e.target.value }))}
-                  style={inputStyle} required min={0} />
-              </Field>
-              <Field label="Discount Price (₹)">
-                <input type="number" value={form.discountPrice}
-                  onChange={e => setForm(p => ({ ...p, discountPrice: e.target.value }))}
-                  style={inputStyle} min={0} />
-              </Field>
-              <Field label="Stock Quantity *">
-                <input type="number" value={form.stock}
-                  onChange={e => setForm(p => ({ ...p, stock: e.target.value }))}
-                  style={inputStyle} required min={0} />
-              </Field>
-              <Field label="Care Instructions">
-                <input value={form.careInstructions}
-                  onChange={e => setForm(p => ({ ...p, careInstructions: e.target.value }))}
-                  style={inputStyle} placeholder="e.g. Machine wash cold" />
-              </Field>
-            </div>
-          </div>
-
-          {/* ── PRODUCT IMAGES ── */}
-          <div style={sectionStyle}>
-            <p style={sectionTitleStyle}>Product Images</p>
-            <div className="flex flex-wrap gap-4 mb-4">
-              {form.images.map((img, i) => (
-                <div key={i} className="relative group w-24 h-28">
-                  <img src={img.url} alt="" className="w-full h-full object-cover"
-                    style={{ border: `1px solid ${BORDER}` }} />
-                  <button type="button" onClick={() => removeImage(i)}
-                    className="absolute top-1 right-1 w-5 h-5 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                    style={{ backgroundColor: '#ef4444' }}>
-                    <FiX size={12} />
-                  </button>
-                  {i === 0 && (
-                    <span className="absolute bottom-0 left-0 right-0 text-[9px] text-center py-0.5 text-white"
-                      style={{ backgroundColor: GOLD }}>Main</span>
-                  )}
-                </div>
-              ))}
-              <label
-                className="w-24 h-28 flex flex-col items-center justify-center cursor-pointer transition-colors"
-                style={{ border: `2px dashed ${BORDER}`, opacity: uploading ? 0.5 : 1 }}
-                onMouseOver={e => e.currentTarget.style.borderColor = GOLD}
-                onMouseOut={e  => e.currentTarget.style.borderColor = BORDER}>
-                <input type="file" multiple accept="image/*" onChange={handleImageUpload}
-                  className="hidden" disabled={uploading} />
-                <FiUpload size={20} style={{ color: 'rgba(255,255,255,0.3)', marginBottom: '4px' }} />
-                <span className="text-[10px] font-body" style={{ color: 'rgba(255,255,255,0.3)' }}>
-                  {uploading ? 'Uploading...' : 'Upload'}
-                </span>
-              </label>
-            </div>
-            <p className="text-xs font-body" style={{ color: 'rgba(255,255,255,0.25)' }}>
-              First image is the main product photo. Max 5MB per image.
-            </p>
-          </div>
-
-          {/* ── SIZES & COLORS ── */}
-          <div style={sectionStyle}>
-            <p style={sectionTitleStyle}>Sizes & Colors</p>
-            <div className="mb-6">
-              <label style={labelStyle}>Available Sizes</label>
-              <div className="flex flex-wrap gap-2">
-                {SIZES.map(size => (
-                  <button key={size} type="button" onClick={() => toggleSize(size)}
-                    className="px-3 py-2 text-xs font-body border transition-all"
-                    style={{
-                      backgroundColor: form.sizes.includes(size) ? GOLD : 'transparent',
-                      borderColor:     form.sizes.includes(size) ? GOLD : 'rgba(255,255,255,0.15)',
-                      color:           form.sizes.includes(size) ? '#fff' : 'rgba(255,255,255,0.5)',
-                    }}>
-                    {size}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <label style={labelStyle}>Colors</label>
-              <div className="flex flex-wrap gap-3 mb-4">
-                {form.colors.map((c, i) => (
-                  <div key={i} className="flex items-center gap-2 px-3 py-2"
-                    style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: `1px solid ${BORDER}` }}>
-                    <div className="w-4 h-4 rounded-full border border-white/20" style={{ backgroundColor: c.hex }} />
-                    <span className="font-body text-sm text-white">{c.name}</span>
-                    <button type="button"
-                      onClick={() => setForm(p => ({ ...p, colors: p.colors.filter((_, j) => j !== i) }))}
-                      className="text-red-400 ml-1"><FiX size={12} /></button>
-                  </div>
-                ))}
-              </div>
-              <div className="flex items-center gap-3 flex-wrap">
-                <input value={newColor.name} onChange={e => setNewColor(p => ({ ...p, name: e.target.value }))}
-                  placeholder="Color name" className="px-3 py-2 text-sm font-body focus:outline-none w-36"
-                  style={{ backgroundColor: '#0a0a0a', border: `1px solid rgba(255,255,255,0.12)`, color: '#fff' }} />
-                <input type="color" value={newColor.hex} onChange={e => setNewColor(p => ({ ...p, hex: e.target.value }))}
-                  className="w-10 h-10 cursor-pointer"
-                  style={{ border: `1px solid ${BORDER}`, backgroundColor: 'transparent' }} />
-                <button type="button" onClick={addColor}
-                  className="flex items-center gap-1 text-sm font-body hover:underline" style={{ color: GOLD }}>
-                  <FiPlus size={14} /> Add Color
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* ── PRODUCT LABELS ── */}
-          <div style={sectionStyle}>
-            <p style={sectionTitleStyle}>Product Labels</p>
-            <div className="flex flex-wrap gap-6">
+            {/* Filter tabs */}
+            <div style={{ display: 'flex', gap: '6px' }}>
               {[
-                { key: 'isFeatured',   label: 'Featured Product' },
-                { key: 'isNewArrival', label: 'New Arrival'      },
-                { key: 'isBestSeller', label: 'Best Seller'      },
+                { key: 'all',    label: `All (${pagination.total || 0})`  },
+                { key: 'admin',  label: `Admin (${adminCount})`            },
+                { key: 'seller', label: `Sellers (${sellerCount})`         },
               ].map(({ key, label }) => (
-                <label key={key} className="flex items-center gap-3 cursor-pointer">
-                  <div className="relative w-10 h-6 cursor-pointer"
-                    onClick={() => setForm(p => ({ ...p, [key]: !p[key] }))}>
-                    <div className="w-10 h-6 rounded-full transition-colors"
-                      style={{ backgroundColor: form[key] ? GOLD : 'rgba(255,255,255,0.1)' }} />
-                    <div className="absolute top-1 w-4 h-4 bg-white rounded-full transition-all"
-                      style={{ left: form[key] ? '1.25rem' : '0.25rem' }} />
-                  </div>
-                  <span className="font-body text-sm"
-                    style={{ color: form[key] ? '#fff' : 'rgba(255,255,255,0.5)' }}>{label}</span>
-                </label>
+                <button key={key} onClick={() => setFilter(key)}
+                  style={{
+                    padding: '5px 12px', fontSize: '11px', fontFamily: 'inherit',
+                    borderRadius: '4px', cursor: 'pointer', transition: 'all 0.15s',
+                    backgroundColor: filter === key ? GOLD : 'transparent',
+                    border: `1px solid ${filter === key ? GOLD : BORDER}`,
+                    color: filter === key ? '#000' : 'rgba(255,255,255,0.4)',
+                    fontWeight: filter === key ? '700' : '400',
+                  }}>
+                  {label}
+                </button>
               ))}
             </div>
           </div>
+          <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>
+            {pagination.total} products
+          </p>
+        </div>
 
-          {/* ── ACTIONS ── */}
-          <div className="flex gap-4">
-            <button type="submit" disabled={loading}
-              className="px-12 py-4 font-body text-sm tracking-[0.15em] uppercase text-white transition-colors"
-              style={{ backgroundColor: loading ? 'rgba(201,168,76,0.5)' : GOLD }}>
-              {loading ? 'Saving...' : isEdit ? 'Update Product' : 'Create Product'}
-            </button>
-            <Link to="/admin/products"
-              className="px-12 py-4 font-body text-sm tracking-[0.15em] uppercase text-center transition-colors"
-              style={{ border: `1px solid rgba(255,255,255,0.2)`, color: 'rgba(255,255,255,0.6)' }}>
-              Cancel
-            </Link>
+        <div className="overflow-x-auto" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
+          <table className="w-full">
+            <thead>
+              <tr>
+                {['Product', 'Source', 'Category', 'Price', 'Stock', 'Rating', 'Actions'].map(h => (
+                  <th key={h} style={thStyle}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? [...Array(5)].map((_, i) => (
+                <tr key={i}>{[...Array(7)].map((_, j) => (
+                  <td key={j} style={tdStyle}><div className="skeleton h-4 rounded w-full" /></td>
+                ))}</tr>
+              )) : filteredProducts.map(product => {
+                const isByAdmin  = !product.createdBy || product.createdBy?.role === 'admin';
+                const sellerName = product.createdBy?.name || null;
+
+                return (
+                  <tr key={product._id} className="transition-colors"
+                    onMouseOver={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.03)'}
+                    onMouseOut={e  => e.currentTarget.style.backgroundColor = 'transparent'}>
+
+                    {/* Product */}
+                    <td style={tdStyle}>
+                      <div className="flex items-center gap-3">
+                        <img src={product.images?.[0]?.url} alt=""
+                          className="w-12 h-14 object-cover flex-shrink-0"
+                          style={{ backgroundColor: '#0a0a0a' }} />
+                        <div>
+                          <p className="font-body font-medium text-sm text-white line-clamp-1">{product.name}</p>
+                          <p className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>{product.brand}</p>
+                          <div className="flex gap-1 mt-1">
+                            {product.isFeatured   && <span className="badge-gold text-[9px]">Featured</span>}
+                            {product.isNewArrival  && <span className="badge-black text-[9px]">New</span>}
+                            {product.isBestSeller  && <span className="badge-black text-[9px]">Best</span>}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* ── Source (Admin / Seller name) ── */}
+                    <td style={tdStyle}>
+                      {isByAdmin ? (
+                        <span style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '4px',
+                          padding: '3px 8px', borderRadius: '20px', fontSize: '10px',
+                          backgroundColor: `${GOLD}15`, color: GOLD,
+                          border: `1px solid ${GOLD}30`, fontFamily: 'inherit', fontWeight: '600',
+                        }}>
+                          👑 Admin
+                        </span>
+                      ) : (
+                        <span style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '4px',
+                          padding: '3px 8px', borderRadius: '20px', fontSize: '10px',
+                          backgroundColor: 'rgba(96,165,250,0.1)', color: '#60a5fa',
+                          border: '1px solid rgba(96,165,250,0.25)', fontFamily: 'inherit',
+                        }}>
+                          <FiUser size={9} />
+                          {sellerName || 'Seller'}
+                        </span>
+                      )}
+                    </td>
+
+                    {/* Category */}
+                    <td style={tdStyle}>
+                      <span className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.6)' }}>
+                        {product.category}
+                      </span>
+                    </td>
+
+                    {/* Price */}
+                    <td style={tdStyle}>
+                      <p className="font-body text-sm font-medium text-white">
+                        ₹{(product.discountPrice || product.price)?.toLocaleString()}
+                      </p>
+                      {product.discountPrice && (
+                        <p className="font-body text-xs line-through" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                          ₹{product.price?.toLocaleString()}
+                        </p>
+                      )}
+                    </td>
+
+                    {/* Stock */}
+                    <td style={tdStyle}>
+                      <span className="font-body text-sm font-medium"
+                        style={{ color: product.stock === 0 ? '#f87171' : product.stock < 10 ? '#fbbf24' : '#4ade80' }}>
+                        {product.stock}
+                      </span>
+                    </td>
+
+                    {/* Rating */}
+                    <td style={tdStyle}>
+                      <div className="flex items-center gap-1">
+                        <FiStar size={12} style={{ color: GOLD }} className="fill-current" />
+                        <span className="font-body text-sm text-white">{product.ratings || 0}</span>
+                        <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                          ({product.numReviews})
+                        </span>
+                      </div>
+                    </td>
+
+                    {/* Actions */}
+                    <td style={tdStyle}>
+                      <div className="flex items-center gap-2">
+                        <Link to={`/admin/products/${product._id}/edit`}
+                          className="w-8 h-8 flex items-center justify-center transition-all"
+                          style={{ border: `1px solid ${BORDER}`, color: 'rgba(255,255,255,0.4)' }}
+                          onMouseOver={e => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.color = GOLD; }}
+                          onMouseOut={e  => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.color = 'rgba(255,255,255,0.4)'; }}>
+                          <FiEdit2 size={13} />
+                        </Link>
+                        <button onClick={() => handleDelete(product._id)} disabled={deleting === product._id}
+                          className="w-8 h-8 flex items-center justify-center transition-all"
+                          style={{ border: `1px solid ${BORDER}`, color: 'rgba(255,255,255,0.4)' }}
+                          onMouseOver={e => { e.currentTarget.style.borderColor = '#f87171'; e.currentTarget.style.color = '#f87171'; }}
+                          onMouseOut={e  => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.color = 'rgba(255,255,255,0.4)'; }}>
+                          <FiTrash2 size={13} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+
+          {!loading && filteredProducts.length === 0 && (
+            <div style={{ padding: '48px', textAlign: 'center' }}>
+              <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '14px', fontFamily: 'inherit' }}>
+                No products found.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Pagination */}
+        {pagination.pages > 1 && (
+          <div className="flex justify-center gap-2 mt-6">
+            {[...Array(pagination.pages)].map((_, i) => (
+              <button key={i} onClick={() => setPage(i + 1)}
+                className="w-8 h-8 text-sm font-body transition-all"
+                style={{
+                  backgroundColor: page === i + 1 ? GOLD : 'transparent',
+                  color: page === i + 1 ? '#fff' : 'rgba(255,255,255,0.4)',
+                  border: `1px solid ${page === i + 1 ? GOLD : BORDER}`,
+                }}>{i + 1}</button>
+            ))}
           </div>
-        </form>
+        )}
       </div>
     </div>
   );

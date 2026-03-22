@@ -13,22 +13,10 @@ connectDB();
 
 const app = express();
 
-// ── Security middleware ───────────────────────────────────────────
-app.use(helmet());
-app.use(morgan('dev'));
-
-// ── Trust proxy (required for Render/Vercel) ──────────────────────
+// ── Trust proxy (required for Render) ────────────────────────────
 app.set('trust proxy', 1);
 
-// ── Rate limiting ─────────────────────────────────────────────────
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: process.env.NODE_ENV === 'production' ? 500 : 0,
-  message: 'Too many requests from this IP, please try again later.',
-});
-app.use('/api/', limiter);
-
-// ── CORS ──────────────────────────────────────────────────────────
+// ── CORS must come BEFORE everything else ────────────────────────
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:5174',
@@ -37,7 +25,7 @@ const allowedOrigins = [
   process.env.CLIENT_URL,
 ].filter(Boolean);
 
-app.use(cors({
+const corsOptions = {
   origin: (origin, callback) => {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
@@ -48,7 +36,23 @@ app.use(cors({
   credentials:    true,
   methods:        ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+};
+
+app.options('*', cors(corsOptions)); // ✅ handle preflight first
+app.use(cors(corsOptions));          // ✅ then all requests
+
+// ── Security & logging AFTER cors ────────────────────────────────
+app.use(helmet());
+app.use(morgan('dev'));
+
+// ── Rate limiting ─────────────────────────────────────────────────
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: process.env.NODE_ENV === 'production' ? 500 : 10000,
+  skip: () => process.env.NODE_ENV === 'development',
+  message: 'Too many requests from this IP, please try again later.',
+});
+app.use('/api/', limiter);
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -59,10 +63,10 @@ app.use(session({
   resave:            false,
   saveUninitialized: false,
   cookie: {
-    secure:   process.env.NODE_ENV === 'production', // true on Render (HTTPS)
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' required for cross-domain
+    secure:   process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     httpOnly: true,
-    maxAge:   24 * 60 * 60 * 1000, // 1 day
+    maxAge:   24 * 60 * 60 * 1000,
   },
 }));
 

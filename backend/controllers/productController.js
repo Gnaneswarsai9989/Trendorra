@@ -13,7 +13,6 @@ exports.getProducts = async (req, res) => {
 
     const query = {};
 
-    // ── Full-text search (now includes subCategory) ────────────────────────
     if (search) {
       const searchRegex = new RegExp(search, 'i');
       query.$or = [
@@ -27,30 +26,23 @@ exports.getProducts = async (req, res) => {
       ];
     }
 
-    // ── Category filters ───────────────────────────────────────────────────
     if (category)    query.category    = category;
     if (subCategory) query.subCategory = subCategory;
-
-    // ── Brand ──────────────────────────────────────────────────────────────
     if (brand) query.brand = { $in: brand.split(',') };
 
-    // ── Price range ────────────────────────────────────────────────────────
     if (minPrice || maxPrice) {
       query.price = {};
       if (minPrice) query.price.$gte = Number(minPrice);
       if (maxPrice) query.price.$lte = Number(maxPrice);
     }
 
-    // ── Size / color ───────────────────────────────────────────────────────
     if (size)  query.sizes          = { $in: size.split(',') };
     if (color) query['colors.name'] = { $in: color.split(',') };
 
-    // ── Flags ──────────────────────────────────────────────────────────────
     if (featured    === 'true') query.isFeatured   = true;
     if (newArrival  === 'true') query.isNewArrival  = true;
     if (bestSeller  === 'true') query.isBestSeller  = true;
 
-    // ── Sort ───────────────────────────────────────────────────────────────
     const sortOptions = {
       'price-asc':  { price: 1 },
       'price-desc': { price: -1 },
@@ -60,10 +52,10 @@ exports.getProducts = async (req, res) => {
     };
     const sortBy = sortOptions[sort] || { createdAt: -1 };
 
-    // ── Paginate ───────────────────────────────────────────────────────────
     const skip  = (Number(page) - 1) * Number(limit);
     const total = await Product.countDocuments(query);
     const products = await Product.find(query)
+      .populate('createdBy', 'name role email') // ← populate seller info
       .sort(sortBy)
       .skip(skip)
       .limit(Number(limit));
@@ -87,7 +79,8 @@ exports.getProducts = async (req, res) => {
 // @route GET /api/products/:id
 exports.getProduct = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id).populate('createdBy', 'name');
+    const product = await Product.findById(req.params.id)
+      .populate('createdBy', 'name role email');
     if (!product)
       return res.status(404).json({ success: false, message: 'Product not found' });
     res.json({ success: true, product });
