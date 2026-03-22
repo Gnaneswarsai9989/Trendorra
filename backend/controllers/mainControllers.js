@@ -80,7 +80,7 @@ exports.createOrder = async (req, res) => {
     }
 
     // ── Zone-based delivery charge ──────────────────────────────
-    let shippingPrice = 99; // default
+    let shippingPrice = 0; // no shipping fee — delivery charge used instead
     let deliveryZone  = 'FAR_STATE';
     try {
       // Get first seller's address for delivery calculation
@@ -106,18 +106,16 @@ exports.createOrder = async (req, res) => {
         shippingPrice = delivery.charge;
         deliveryZone  = delivery.zone;
       } else {
-        // Admin product — use default zone pricing
-        shippingPrice = subtotal >= 999 ? 0 : 60;
+        // Admin product — default zone pricing
+        shippingPrice = 0;
       }
     } catch (e) {
       console.error('Delivery charge error:', e.message);
-      shippingPrice = subtotal >= 999 ? 0 : 99;
+      shippingPrice = 99;
     }
-    // Free delivery for orders above ₹999
-    if (subtotal >= 999) shippingPrice = 0;
 
-    const taxPrice   = Math.round(subtotal * 0.18);
-    const totalPrice = Math.max(0, subtotal + shippingPrice + taxPrice - discountAmount);
+    const taxPrice   = 0;
+    const totalPrice = Math.max(0, subtotal + shippingPrice - discountAmount);
 
     const paymentStatus = paymentMethod === 'COD' ? 'Pending' : 'Paid';
     const isPaid        = paymentMethod !== 'COD';
@@ -578,7 +576,14 @@ exports.deleteMyOrders = async (req, res) => {
 exports.getCart = async (req, res) => {
   try {
     let cart = await Cart.findOne({ user: req.user._id })
-      .populate('items.product', 'name images price stock sizes colors');
+      .populate({
+        path: 'items.product',
+        select: 'name images price stock sizes colors createdBy',
+        populate: {
+          path: 'createdBy',
+          select: 'name role sellerInfo',
+        },
+      });
     if (!cart) cart = await Cart.create({ user: req.user._id, items: [] });
     res.json({ success: true, cart });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }

@@ -274,6 +274,98 @@ router.post('/webhook', async (req, res) => {
   }
 });
 
+
+// ══════════════════════════════════════════════════════════════════
+// GET DELIVERY CHARGES FOR CUSTOMER
+// GET /api/delivery/charges?customerPincode=500001&customerCity=Hyderabad&customerState=Telangana
+// Called from checkout page to get zone-based delivery charge
+// No auth required — public endpoint
+// Returns: zone, charge, label, all zones for display
+// ══════════════════════════════════════════════════════════════════
+router.get('/charges', async (req, res) => {
+  try {
+    const { customerPincode, customerCity, customerState, productId } = req.query;
+
+    // Zone definitions and charges
+    const ZONES = {
+      SAME_CITY:    { charge: 40,  label: 'Zone 1 — Same City',    days: '1-2 days'  },
+      SAME_STATE:   { charge: 60,  label: 'Zone 2 — Same State',   days: '2-3 days'  },
+      NEARBY_STATE: { charge: 80,  label: 'Zone 3 — Nearby State', days: '3-5 days'  },
+      FAR_STATE:    { charge: 100, label: 'Zone 4 — Rest of India', days: '5-7 days'  },
+    };
+
+    const NEARBY_STATES = {
+      'Maharashtra':    ['Gujarat','Goa','Madhya Pradesh','Karnataka','Telangana','Chhattisgarh'],
+      'Delhi':          ['Haryana','Uttar Pradesh','Rajasthan','Punjab'],
+      'Karnataka':      ['Kerala','Tamil Nadu','Andhra Pradesh','Telangana','Maharashtra','Goa'],
+      'Tamil Nadu':     ['Kerala','Karnataka','Andhra Pradesh','Puducherry'],
+      'Gujarat':        ['Maharashtra','Rajasthan','Madhya Pradesh'],
+      'West Bengal':    ['Bihar','Jharkhand','Odisha','Sikkim','Assam'],
+      'Telangana':      ['Andhra Pradesh','Maharashtra','Karnataka','Chhattisgarh','Odisha'],
+      'Andhra Pradesh': ['Telangana','Karnataka','Tamil Nadu','Odisha'],
+      'Rajasthan':      ['Gujarat','Madhya Pradesh','Uttar Pradesh','Haryana','Punjab','Delhi'],
+      'Uttar Pradesh':  ['Delhi','Haryana','Rajasthan','Madhya Pradesh','Bihar','Jharkhand'],
+      'Kerala':         ['Karnataka','Tamil Nadu'],
+      'Punjab':         ['Haryana','Delhi','Himachal Pradesh','Rajasthan'],
+      'Haryana':        ['Delhi','Punjab','Rajasthan','Uttar Pradesh'],
+    };
+
+    // Get seller address from product if productId provided
+    let sellerCity  = '';
+    let sellerState = '';
+    let sellerPincode = '';
+
+    if (productId) {
+      try {
+        const Product = require('../models/Product');
+        const product = await Product.findById(productId).populate('createdBy', 'sellerInfo role');
+        if (product?.createdBy?.role === 'seller') {
+          sellerCity    = product.createdBy.sellerInfo?.address?.city    || '';
+          sellerState   = product.createdBy.sellerInfo?.address?.state   || '';
+          sellerPincode = product.createdBy.sellerInfo?.address?.pincode || '';
+        }
+      } catch (e) { /* ignore */ }
+    }
+
+    // Determine zone
+    const uCity  = (customerCity  || '').trim().toLowerCase();
+    const sCity  = sellerCity.trim().toLowerCase();
+    const uState = (customerState || '').trim();
+    const sState = sellerState.trim();
+
+    let zoneName = 'FAR_STATE';
+
+    if (sCity && uCity && uCity === sCity) {
+      zoneName = 'SAME_CITY';
+    } else if (sState && uState.toLowerCase() === sState.toLowerCase()) {
+      zoneName = 'SAME_STATE';
+    } else if (sState && (NEARBY_STATES[sState] || []).some(s => s.toLowerCase() === uState.toLowerCase())) {
+      zoneName = 'NEARBY_STATE';
+    }
+
+    const zone = ZONES[zoneName];
+
+    res.json({
+      success: true,
+      zone:    zoneName,
+      charge:  zone.charge,
+      label:   zone.label,
+      days:    zone.days,
+      // Return all zones for display in checkout
+      allZones: Object.entries(ZONES).map(([key, val]) => ({
+        key,
+        ...val,
+        active: key === zoneName,
+      })),
+      sellerCity,
+      sellerState,
+    });
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // ── Mode info ──────────────────────────────────────────────────────
 router.get('/mode', protect, admin, (req, res) => {
   res.json({

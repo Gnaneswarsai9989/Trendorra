@@ -325,7 +325,7 @@ exports.cancelShipment = async (waybill) => {
 exports.getDeliveryZoneInfo = () => ({
   zones:       DELIVERY_CHARGES,
   mode:        PROTOTYPE_MODE ? 'prototype' : 'live',
-  provider:    PROTOTYPE_MODE ? 'Zone-based flat rates' : 'Shiprocket',
+  provider:    PROTOTYPE_MODE ? 'Zone-based rates (no free delivery)' : 'Shiprocket',
   message:     PROTOTYPE_MODE
     ? 'Set PROTOTYPE_MODE=false in .env to enable live Shiprocket rates'
     : 'Live rates from Shiprocket API',

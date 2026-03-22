@@ -102,6 +102,7 @@ export const deliveryAPI = {
   cancelOrder:  (orderId)                   => API.post(`/delivery/cancel/${orderId}`),
   // ✅ NEW: Check if pincode is serviceable by Shiprocket
   checkPincode: (pincode, sellerPincode='') => API.get(`/delivery/check-pincode`, { params: { pincode, sellerPincode } }),
+  getCharges:   (params)                    => API.get(`/delivery/charges`, { params }),
 };
 
 // ── Reviews ──────────────────────────────────────────────────────

@@ -12,9 +12,7 @@ export default function CartPage() {
   const { cart, updateQuantity, removeFromCart, cartTotal } = useCart();
   const navigate = useNavigate();
   const items = cart.items || [];
-  const shipping = cartTotal >= 999 ? 0 : 99;
-  const tax = Math.round(cartTotal * 0.18);
-  const total = cartTotal + shipping + tax;
+  const total = cartTotal;
 
   if (items.length === 0) return (
     <div className="min-h-[70vh] flex flex-col items-center justify-center text-center px-6"
@@ -111,26 +109,18 @@ export default function CartPage() {
           <div className="p-8 sticky top-32" style={{ backgroundColor: BG2, border: `1px solid ${BORDER}` }}>
             <h2 className="font-display text-2xl font-light text-white mb-6">Order Summary</h2>
             <div className="space-y-3 mb-6 pb-6" style={{ borderBottom: `1px solid ${BORDER}` }}>
-              {[
-                { label: 'Subtotal', value: `₹${cartTotal.toLocaleString()}` },
-                { label: 'Shipping', value: shipping === 0 ? 'FREE' : `₹${shipping}`, green: shipping === 0 },
-                { label: 'GST (18%)', value: `₹${tax.toLocaleString()}` },
-              ].map(row => (
-                <div key={row.label} className="flex justify-between font-body text-sm">
-                  <span style={{ color: 'rgba(255,255,255,0.45)' }}>{row.label}</span>
-                  <span style={{ color: row.green ? '#4ade80' : '#fff' }}>{row.value}</span>
-                </div>
-              ))}
+              <div className="flex justify-between font-body text-sm">
+                <span style={{ color: 'rgba(255,255,255,0.45)' }}>Subtotal ({items.length} item{items.length > 1 ? 's' : ''})</span>
+                <span style={{ color: '#fff' }}>₹{cartTotal.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between font-body text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                <span>Delivery charge calculated at checkout</span>
+              </div>
             </div>
             <div className="flex justify-between font-body font-medium text-lg text-white mb-8">
-              <span>Total</span>
-              <span>₹{total.toLocaleString()}</span>
+              <span>Subtotal</span>
+              <span style={{ color: GOLD }}>₹{total.toLocaleString()}</span>
             </div>
-            {shipping > 0 && (
-              <p className="font-body text-xs mb-4 text-center" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                Add ₹{(999 - cartTotal).toLocaleString()} more for free shipping
-              </p>
-            )}
             <button onClick={() => navigate('/checkout')}
               className="w-full py-4 flex items-center justify-center gap-3 font-body text-sm tracking-[0.15em] uppercase transition-colors"
               style={{ backgroundColor: GOLD, color: '#fff' }}

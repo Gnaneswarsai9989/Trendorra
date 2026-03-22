@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import { orderAPI, paymentAPI, couponAPI } from '../services/api';
+import { orderAPI, paymentAPI, couponAPI, deliveryAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { FiCheck, FiMapPin, FiCreditCard, FiShoppingBag, FiTruck, FiShield, FiChevronDown } from 'react-icons/fi';
 
@@ -73,12 +73,14 @@ export default function CheckoutPage() {
   });
 
   const items = cart.items || [];
-  const [shipping,        setShipping]        = useState(99);
+  const [shipping,        setShipping]        = useState(0);
   const [deliveryZone,    setDeliveryZone]    = useState('');
   const [notServiceable,  setNotServiceable]  = useState(false);
   const [serviceMsg,      setServiceMsg]      = useState('');
   const [checkingPin,     setCheckingPin]     = useState(false);
-  const [pinValid,        setPinValid]        = useState(null); // null=unchecked, true=valid, false=invalid
+  const [pinValid,        setPinValid]        = useState(null);
+  const [zoneLabel,       setZoneLabel]       = useState('');
+  const [zoneDays,        setZoneDays]        = useState('');
 
   // Recalculate delivery charge when address city/state changes
   // ── Pincode validation + Shiprocket serviceability check ────────
@@ -105,7 +107,7 @@ export default function CheckoutPage() {
           setNotServiceable(true);
           setPinValid(false);
           setServiceMsg(`Pincode ${pin} is not valid. Please enter a correct pincode.`);
-          setShipping(99);
+          setShipping(0);
           setCheckingPin(false);
           return;
         }
@@ -128,7 +130,7 @@ export default function CheckoutPage() {
             setNotServiceable(true);
             setPinValid(false);
             setServiceMsg(`Delivery not available to pincode ${pin}. Please try a different address.`);
-            setShipping(99);
+            setShipping(0);
           } else {
             // All good — serviceable
             setNotServiceable(false);
@@ -156,47 +158,35 @@ export default function CheckoutPage() {
       });
   }, [address.pincode]);
 
-  // ── Calculate delivery charge based on city/state ─────────────
+  // ── Calculate zone-based delivery charge from backend ───────────
   useEffect(() => {
-    if (!address.city || !address.state) { setShipping(99); setDeliveryZone(''); return; }
-    if (notServiceable) return; // already marked not serviceable
+    if (!address.pincode || address.pincode.length !== 6) { setShipping(0); setDeliveryZone(''); setZoneLabel(''); setZoneDays(''); return; }
+    if (!address.city || !address.state) { setShipping(0); setDeliveryZone(''); return; }
+    if (notServiceable) return;
 
-    const NEARBY = {
-      'Maharashtra':    ['Gujarat','Goa','Madhya Pradesh','Karnataka','Telangana'],
-      'Delhi':          ['Haryana','Uttar Pradesh','Rajasthan','Punjab'],
-      'Karnataka':      ['Kerala','Tamil Nadu','Andhra Pradesh','Telangana','Maharashtra'],
-      'Tamil Nadu':     ['Kerala','Karnataka','Andhra Pradesh'],
-      'Gujarat':        ['Maharashtra','Rajasthan','Madhya Pradesh'],
-      'Telangana':      ['Andhra Pradesh','Maharashtra','Karnataka'],
-      'Andhra Pradesh': ['Telangana','Karnataka','Tamil Nadu'],
-      'Uttar Pradesh':  ['Delhi','Haryana','Rajasthan','Bihar'],
-      'Kerala':         ['Karnataka','Tamil Nadu'],
-      'Punjab':         ['Haryana','Delhi','Rajasthan'],
-      'Haryana':        ['Delhi','Punjab','Rajasthan','Uttar Pradesh'],
-    };
+    // Get first product ID to look up seller address on backend
+    const productId = cart.items?.[0]?.product?._id || cart.items?.[0]?.product || '';
 
-    const sellerState = cart.items?.[0]?.product?.createdBy?.sellerInfo?.address?.state || '';
-    const sellerCity  = cart.items?.[0]?.product?.createdBy?.sellerInfo?.address?.city  || '';
-    const uCity  = address.city.trim().toLowerCase();
-    const sCity  = sellerCity.trim().toLowerCase();
-    const uState = address.state.trim();
-    const sState = sellerState.trim();
-
-    if (cartTotal >= 999) { setShipping(0); setDeliveryZone('FREE'); return; }
-
-    let zone = 'FAR_STATE'; let charge = 100;
-    if (sCity && uCity && uCity === sCity)                                            { zone = 'SAME_CITY';    charge = 40; }
-    else if (sState && uState.toLowerCase() === sState.toLowerCase())                 { zone = 'SAME_STATE';   charge = 60; }
-    else if (sState && (NEARBY[sState]||[]).some(s=>s.toLowerCase()===uState.toLowerCase())) { zone = 'NEARBY_STATE'; charge = 80; }
-    else                                                                              { zone = 'FAR_STATE';    charge = 100; }
-
-    setShipping(charge);
-    setDeliveryZone(zone);
-    setNotServiceable(false);
-    setServiceMsg('');
-  }, [address.city, address.state, cartTotal]);
-  const tax = Math.round(cartTotal * 0.18);
-  const total = cartTotal + shipping + tax - couponDiscount;
+    deliveryAPI.getCharges({
+      customerCity:    address.city,
+      customerState:   address.state,
+      customerPincode: address.pincode || '',
+      productId,
+    }).then(res => {
+      if (res.success) {
+        setShipping(res.charge);
+        setDeliveryZone(res.zone);
+        setZoneLabel(res.label);
+        setZoneDays(res.days);
+      }
+    }).catch(() => {
+      // Fallback if backend fails — keep 0 until pincode entered
+      setShipping(0);
+      setDeliveryZone('');
+    });
+  }, [address.city, address.state, address.pincode, cartTotal]);
+  const tax = 0;
+  const total = cartTotal + (address.pincode?.length === 6 ? shipping : 0) - couponDiscount;
 
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) { toast.error('Enter a coupon code'); return; }
@@ -359,9 +349,17 @@ export default function CheckoutPage() {
           <div className="px-5 py-4 space-y-2.5" style={{ borderBottom: `1px solid ${BORDER}` }}>
             {[
               { l: `Subtotal (${items.length} item${items.length !== 1 ? 's' : ''})`, v: `₹${cartTotal.toLocaleString()}` },
-              { l: `Delivery${deliveryZone && deliveryZone !== 'FREE' ? ` (${deliveryZone.replace('_',' ')})` : ''}`, v: notServiceable ? '❌ Not available' : shipping === 0 ? 'FREE ✓' : `₹${shipping}`, green: shipping === 0, red: notServiceable },
-              { l: 'GST (18%)', v: `₹${tax.toLocaleString()}` },
-            ].map(row => (
+              { l: zoneLabel || `Delivery${deliveryZone ? ` (${deliveryZone.replace('_',' ')})` : ''}`,
+            v: notServiceable
+              ? '❌ Not available'
+              : address.pincode?.length === 6 && shipping > 0
+              ? `₹${shipping}`
+              : address.pincode?.length === 6
+              ? '⏳ Calculating...'
+              : 'Enter pincode',
+            muted: !address.pincode || address.pincode.length < 6,
+            red: notServiceable },
+                ].map(row => (
               <div key={row.l} className="flex items-center justify-between text-sm font-body">
                 <span style={{ color: 'rgba(255,255,255,0.45)' }}>{row.l}</span>
                 <span style={{ color: row.green ? '#4ade80' : 'rgba(255,255,255,0.75)' }}>{row.v}</span>
