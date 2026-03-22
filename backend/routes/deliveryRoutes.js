@@ -46,8 +46,9 @@ router.post('/ready/:orderId', protect, sellerOrAdmin, async (req, res) => {
 
     if (!order)
       return res.status(404).json({ success: false, message: 'Order not found' });
-    if (order.orderStatus !== 'Processing')
-      return res.status(400).json({ success: false, message: `Order is already ${order.orderStatus}` });
+    // Allow both Processing and Confirmed (seller may have confirmed manually first)
+    if (!['Processing', 'Confirmed'].includes(order.orderStatus))
+      return res.status(400).json({ success: false, message: `Cannot mark ready — order is ${order.orderStatus}` });
 
     let waybill = null;
 

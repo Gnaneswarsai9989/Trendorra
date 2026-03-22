@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { productAPI, orderAPI, authAPI, deliveryAPI } from '../../services/api';
+import { productAPI, orderAPI, authAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
+import axios from 'axios';
 import {
   FiPackage, FiShoppingBag, FiDollarSign, FiTrendingUp,
   FiPlus, FiEdit2, FiTrash2, FiLogOut, FiUser,
   FiArrowRight, FiStar, FiAlertCircle, FiMapPin,
   FiCreditCard, FiPercent, FiTruck, FiSave,
   FiBarChart2, FiX, FiCheck, FiRefreshCw, FiAlertTriangle,
-  FiArrowLeft, FiClock, FiFileText, FiShield, FiCheckCircle,
+  FiArrowLeft, FiClock, FiFileText, FiShield,
 } from 'react-icons/fi';
 
 const BG     = '#0a0a0a';
@@ -27,11 +28,13 @@ const FIXED_FEE = (price) => {
   if (price <= 100000) return 150;
   return 200;
 };
-const calcEarnings = (price) => {
-  const p = Number(price) || 0;
-  const commission = Math.round(p * COMMISSION_RATE);
-  const fixed = FIXED_FEE(p);
-  return { commission, fixed, total_deduction: commission + fixed, earnings: p - commission - fixed };
+const calcEarnings = (price, deliveryCharge = 0) => {
+  const p          = Number(price) || 0;
+  const dc         = Number(deliveryCharge) || 0;
+  const productVal = Math.max(0, p - dc);          // ✅ subtract delivery first
+  const commission = Math.round(productVal * COMMISSION_RATE);
+  const fixed      = FIXED_FEE(productVal);
+  return { commission, fixed, deliveryCharge: dc, productVal, total_deduction: commission + fixed, earnings: Math.max(0, productVal - commission - fixed) };
 };
 
 const DELIVERY_ZONES = [
@@ -444,8 +447,7 @@ export default function SellerDashboard() {
   const [showResetOrders,  setShowResetOrders]  = useState(false);
   const [showResetRevenue, setShowResetRevenue] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
-  const [markingReady,   setMarkingReady]   = useState(null);
-  const [confirmingOrder, setConfirmingOrder] = useState(null);
+  const [markingReady, setMarkingReady] = useState(null);
   const [legalDoc, setLegalDoc] = useState(null); // key of open legal doc
 
   useEffect(() => {
@@ -470,9 +472,10 @@ export default function SellerDashboard() {
   const u = currentUser || user;
   const validOrders     = orders.filter(o => o.orderStatus !== 'Cancelled');
   const grossRevenue    = validOrders.reduce((s, o) => s + (o.totalPrice || 0), 0);
-  const netEarnings     = validOrders.reduce((s, o) => s + calcEarnings(o.totalPrice || 0).earnings, 0);
-  const totalCommission = validOrders.reduce((s, o) => s + calcEarnings(o.totalPrice || 0).commission, 0);
-  const totalFixed      = validOrders.reduce((s, o) => s + calcEarnings(o.totalPrice || 0).fixed, 0);
+  const totalDelivery   = validOrders.reduce((s, o) => s + (o.deliveryCharge || 0), 0);
+  const netEarnings     = validOrders.reduce((s, o) => s + calcEarnings(o.totalPrice || 0, o.deliveryCharge || 0).earnings, 0);
+  const totalCommission = validOrders.reduce((s, o) => s + calcEarnings(o.totalPrice || 0, o.deliveryCharge || 0).commission, 0);
+  const totalFixed      = validOrders.reduce((s, o) => s + calcEarnings(o.totalPrice || 0, o.deliveryCharge || 0).fixed, 0);
 
   const handleDeleteProduct = async (id) => {
     if (!window.confirm('Delete this product?')) return;
@@ -497,25 +500,19 @@ export default function SellerDashboard() {
   const handleMarkReady = async (orderId) => {
     setMarkingReady(orderId);
     try {
-      const res = await deliveryAPI.markReady(orderId);
-      toast.success(res.waybill
-        ? `📦 Pickup scheduled! Tracking: ${res.waybill}`
-        : '✅ Order confirmed & ready for pickup');
+      const token = localStorage.getItem('trendora_token');
+      const res = await axios.post(
+        `/api/delivery/ready/${orderId}`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success(res.data.waybill
+        ? `📦 Pickup scheduled! Tracking: ${res.data.waybill}`
+        : '✅ Order marked as ready for pickup');
       loadData();
     } catch (e) {
-      toast.error(e?.message || 'Failed to schedule pickup');
+      toast.error(e?.response?.data?.message || 'Failed to schedule pickup');
     } finally { setMarkingReady(null); }
-  };
-
-  const handleConfirmOrder = async (orderId) => {
-    setConfirmingOrder(orderId);
-    try {
-      await orderAPI.confirm(orderId);
-      toast.success('✅ Order confirmed!');
-      loadData();
-    } catch (e) {
-      toast.error(e?.message || 'Failed to confirm order');
-    } finally { setConfirmingOrder(null); }
   };
 
   // ── ✅ FIXED: Reset Orders — permanently deletes from DB ─────────
@@ -727,7 +724,7 @@ export default function SellerDashboard() {
                       <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '13px', fontFamily: 'inherit' }}>No orders yet. Add products to start selling!</p>
                     </div>
                   ) : orders.slice(0, 5).map(order => {
-                    const { earnings } = calcEarnings(order.totalPrice || 0);
+                    const { earnings } = calcEarnings(order.totalPrice || 0, order.deliveryCharge || 0);
                     const s = statusStyle(order.orderStatus);
                     return (
                       <div key={order._id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px', borderBottom: `1px solid ${BORDER}` }}>
@@ -825,46 +822,48 @@ export default function SellerDashboard() {
                   ) : (
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                       <thead><tr>
-                        {['Order ID', 'Date', 'Sale Price', '-Commission', '-Fixed', 'You Earn', 'Tracking', 'Status', 'Action'].map(h => (
+                        {['Order ID', 'Date', 'Sale Price', '−Delivery', 'Product Val', '−10% Comm', '−Fixed', 'You Earn', 'Status', 'Action'].map(h => (
                           <th key={h} style={{ color: 'rgba(255,255,255,0.35)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '12px 14px', textAlign: 'left', borderBottom: `1px solid ${BORDER}`, backgroundColor: '#0d0d0d', whiteSpace: 'nowrap' }}>{h}</th>
                         ))}
                       </tr></thead>
                       <tbody>
                         {orders.map(order => {
-                          const { commission, fixed, earnings } = calcEarnings(order.totalPrice || 0);
+                          const dc = order.deliveryCharge || order.shippingPrice || 0;
+                          const { commission, fixed, productVal, deliveryCharge: dc2, earnings } = calcEarnings(order.totalPrice || 0, dc);
                           const s = statusStyle(order.orderStatus);
-                                          return (
+                          const canMarkReady = ['Processing', 'Confirmed'].includes(order.orderStatus); // ✅ both statuses
+                          return (
                             <tr key={order._id}>
                               <td style={{ padding: '11px 14px', borderBottom: `1px solid ${BORDER}` }}><span style={{ color: GOLD, fontSize: '12px', fontFamily: 'inherit' }}>#{order._id.slice(-8).toUpperCase()}</span></td>
                               <td style={{ padding: '11px 14px', borderBottom: `1px solid ${BORDER}` }}><span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', fontFamily: 'inherit' }}>{new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span></td>
-                              <td style={{ padding: '11px 14px', borderBottom: `1px solid ${BORDER}` }}><span style={{ color: '#fff', fontSize: '13px', fontWeight: '500', fontFamily: 'inherit' }}>₹{order.totalPrice?.toLocaleString()}</span></td>
-                              <td style={{ padding: '11px 14px', borderBottom: `1px solid ${BORDER}` }}><span style={{ color: '#f87171', fontSize: '12px', fontFamily: 'inherit' }}>-₹{commission}</span></td>
-                              <td style={{ padding: '11px 14px', borderBottom: `1px solid ${BORDER}` }}><span style={{ color: '#fbbf24', fontSize: '12px', fontFamily: 'inherit' }}>-₹{fixed}</span></td>
-                              <td style={{ padding: '11px 14px', borderBottom: `1px solid ${BORDER}` }}><span style={{ color: '#4ade80', fontSize: '13px', fontWeight: '700', fontFamily: 'inherit' }}>₹{earnings}</span></td>
-                              <td style={{ padding: '11px 14px', borderBottom: `1px solid ${BORDER}` }}>
-                                {order.trackingId
-                                  ? <span style={{ color: '#60a5fa', fontSize: '11px', fontFamily: 'inherit' }}>{order.trackingId}</span>
-                                  : <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: 'inherit' }}>—</span>}
-                              </td>
+                              <td style={{ padding: '11px 14px', borderBottom: `1px solid ${BORDER}` }}><span style={{ color: '#fff', fontSize: '13px', fontWeight: '600', fontFamily: 'inherit' }}>₹{order.totalPrice?.toLocaleString()}</span></td>
+                              <td style={{ padding: '11px 14px', borderBottom: `1px solid ${BORDER}` }}><span style={{ color: '#60a5fa', fontSize: '11px', fontFamily: 'inherit' }}>−₹{dc}</span></td>
+                              <td style={{ padding: '11px 14px', borderBottom: `1px solid ${BORDER}` }}><span style={{ color: 'rgba(255,255,255,0.55)', fontSize: '11px', fontFamily: 'inherit' }}>₹{(productVal || (order.totalPrice - dc) || 0).toLocaleString()}</span></td>
+                              <td style={{ padding: '11px 14px', borderBottom: `1px solid ${BORDER}` }}><span style={{ color: '#f87171', fontSize: '12px', fontFamily: 'inherit' }}>−₹{commission}</span></td>
+                              <td style={{ padding: '11px 14px', borderBottom: `1px solid ${BORDER}` }}><span style={{ color: '#fbbf24', fontSize: '12px', fontFamily: 'inherit' }}>−₹{fixed}</span></td>
+                              <td style={{ padding: '11px 14px', borderBottom: `1px solid ${BORDER}` }}><span style={{ color: order.orderStatus === 'Cancelled' ? '#f87171' : '#4ade80', fontSize: '13px', fontWeight: '700', fontFamily: 'inherit' }}>{order.orderStatus === 'Cancelled' ? '—' : `₹${earnings}`}</span></td>
                               <td style={{ padding: '11px 14px', borderBottom: `1px solid ${BORDER}` }}><span style={{ fontSize: '10px', padding: '3px 8px', borderRadius: '20px', color: s.color, backgroundColor: s.bg, fontFamily: 'inherit', whiteSpace: 'nowrap' }}>{order.orderStatus}</span></td>
                               <td style={{ padding: '11px 14px', borderBottom: `1px solid ${BORDER}` }}>
-                                {order.orderStatus === 'Processing' && (
-                                  <button onClick={() => handleConfirmOrder(order._id)} disabled={confirmingOrder === order._id}
-                                    style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '5px 10px', backgroundColor: 'rgba(96,165,250,0.12)', border: '1px solid rgba(96,165,250,0.3)', borderRadius: '5px', color: '#60a5fa', fontSize: '11px', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
-                                    {confirmingOrder === order._id ? <FiRefreshCw size={10} style={{ animation: 'spin 1s linear infinite' }} /> : <FiCheckCircle size={10} />}
-                                    {confirmingOrder === order._id ? 'Confirming…' : 'Confirm Order'}
-                                  </button>
-                                )}
-                                {order.orderStatus === 'Confirmed' && (
-                                  <button onClick={() => handleMarkReady(order._id)} disabled={markingReady === order._id}
-                                    style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '5px 10px', backgroundColor: `${GOLD}18`, border: `1px solid ${GOLD}35`, borderRadius: '5px', color: GOLD, fontSize: '11px', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
-                                    {markingReady === order._id ? <FiRefreshCw size={10} style={{ animation: 'spin 1s linear infinite' }} /> : <FiTruck size={10} />}
-                                    {markingReady === order._id ? 'Scheduling…' : 'Ready for Pickup'}
-                                  </button>
-                                )}
-                                {!['Processing', 'Confirmed'].includes(order.orderStatus) && (
-                                  <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: 'inherit' }}>—</span>
-                                )}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                  {order.orderStatus === 'Processing' && (
+                                    <button onClick={() => handleConfirmOrder(order._id)} disabled={confirmingOrder === order._id}
+                                      style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '5px 10px', backgroundColor: 'rgba(96,165,250,0.12)', border: '1px solid rgba(96,165,250,0.3)', borderRadius: '5px', color: '#60a5fa', fontSize: '11px', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+                                      {confirmingOrder === order._id ? <FiRefreshCw size={10} style={{ animation: 'spin 1s linear infinite' }} /> : <FiCheckCircle size={10} />}
+                                      {confirmingOrder === order._id ? 'Confirming…' : 'Confirm Order'}
+                                    </button>
+                                  )}
+                                  {/* ✅ FIXED: show for both Processing AND Confirmed */}
+                                  {canMarkReady && (
+                                    <button onClick={() => handleMarkReady(order._id)} disabled={markingReady === order._id}
+                                      style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '5px 10px', backgroundColor: `${GOLD}18`, border: `1px solid ${GOLD}35`, borderRadius: '5px', color: GOLD, fontSize: '11px', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+                                      {markingReady === order._id ? <FiRefreshCw size={10} style={{ animation: 'spin 1s linear infinite' }} /> : <FiTruck size={10} />}
+                                      {markingReady === order._id ? 'Scheduling…' : 'Ready for Pickup'}
+                                    </button>
+                                  )}
+                                  {!['Processing', 'Confirmed', 'Cancelled'].includes(order.orderStatus) && (
+                                    <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: 'inherit' }}>—</span>
+                                  )}
+                                </div>
                               </td>
                             </tr>
                           );
@@ -981,10 +980,12 @@ export default function SellerDashboard() {
                 <div style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '20px' }}>
                   <p style={{ color: GOLD, fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', margin: '0 0 16px', fontFamily: 'inherit' }}>Revenue Breakdown</p>
                   {[
-                    { label: 'Gross Revenue (Total Sales)', value: `₹${grossRevenue.toLocaleString()}`,    color: '#fff'    },
-                    { label: '– Commission (10%)',           value: `₹${totalCommission.toLocaleString()}`, color: '#f87171' },
-                    { label: '– Fixed Platform Fees',        value: `₹${totalFixed.toLocaleString()}`,      color: '#fbbf24' },
-                    { label: '= Your Net Earnings',          value: `₹${netEarnings.toLocaleString()}`,     color: '#4ade80' },
+                    { label: 'Gross Revenue (Total Paid by Customers)',    value: `₹${grossRevenue.toLocaleString()}`,    color: '#fff'    },
+                    { label: '– Delivery Charges (Goes to Courier)',       value: `₹${totalDelivery.toLocaleString()}`,   color: '#60a5fa' },
+                    { label: '= Product Value (Commission Base)',           value: `₹${(grossRevenue - totalDelivery).toLocaleString()}`, color: 'rgba(255,255,255,0.5)' },
+                    { label: '– Commission 10% of Product Value',          value: `₹${totalCommission.toLocaleString()}`, color: '#f87171' },
+                    { label: '– Fixed Platform Fees',                      value: `₹${totalFixed.toLocaleString()}`,      color: '#fbbf24' },
+                    { label: '= Your Net Earnings',                        value: `₹${netEarnings.toLocaleString()}`,     color: '#4ade80' },
                   ].map(({ label, value, color }) => (
                     <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: `1px solid ${BORDER}` }}>
                       <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', fontFamily: 'inherit' }}>{label}</span>
