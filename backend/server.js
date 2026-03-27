@@ -1,109 +1,81 @@
-const express    = require('express');
-const cors       = require('cors');
-const helmet     = require('helmet');
-const morgan     = require('morgan');
-const rateLimit  = require('express-rate-limit');
-const dotenv     = require('dotenv');
-const session    = require('express-session');
-const passport   = require('passport');
-const connectDB  = require('./config/db');
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
+const dotenv = require('dotenv');
+const connectDB = require('./config/db');
 
 dotenv.config();
 connectDB();
 
 const app = express();
 
-// ── Trust proxy (required for Render) ────────────────────────────
-app.set('trust proxy', 1);
-
-// ── CORS must come BEFORE everything else ────────────────────────
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:5174',
-  'https://trendorra.vercel.app',
-  'https://trendorra-black.vercel.app',
-  process.env.CLIENT_URL,
-].filter(Boolean);
-
-const corsOptions = {
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials:    true,
-  methods:        ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-};
-
-app.options('*', cors(corsOptions)); // ✅ handle preflight first
-app.use(cors(corsOptions));          // ✅ then all requests
-
-// ── Security & logging AFTER cors ────────────────────────────────
+// Security middleware
 app.use(helmet());
 app.use(morgan('dev'));
 
-// ── Rate limiting ─────────────────────────────────────────────────
+// CORS — must come before rate limiter so preflight OPTIONS requests get headers
+app.use(cors({
+  origin: function (origin, callback) {
+    const allowed = [
+      "http://localhost:5173",
+      "http://localhost:5174"
+    ];
+    if (!origin || allowed.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("CORS not allowed"));
+    }
+  },
+  credentials: true
+}));
+
+// Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: process.env.NODE_ENV === 'production' ? 500 : 10000,
-  skip: () => process.env.NODE_ENV === 'development',
-  message: 'Too many requests from this IP, please try again later.',
+  max: 100,
+  message: 'Too many requests from this IP, please try again later.'
 });
 app.use('/api/', limiter);
 
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// ↓ Increased to 100mb to support video uploads via multipart/form-data
+app.use(express.json({ limit: '100mb' }));
+app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 
-// ── Session (required for passport) ──────────────────────────────
-app.use(session({
-  secret:            process.env.SESSION_SECRET || 'trendorra_secret',
-  resave:            false,
-  saveUninitialized: false,
-  cookie: {
-    secure:   process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    httpOnly: true,
-    maxAge:   24 * 60 * 60 * 1000,
-  },
-}));
+// Serve static files (logo, etc.) from /public
+app.use(express.static(require('path').join(__dirname, 'public')));
 
-// ── Passport ──────────────────────────────────────────────────────
-app.use(passport.initialize());
-app.use(passport.session());
-
-// ── Routes ────────────────────────────────────────────────────────
-app.use('/api/auth',          require('./routes/authRoutes'));
-app.use('/api/products',      require('./routes/productRoutes'));
-app.use('/api/reviews',       require('./routes/reviewRoutes'));
-app.use('/api/cart',          require('./routes/cartRoutes'));
-app.use('/api/wishlist',      require('./routes/wishlistRoutes'));
-app.use('/api/orders',        require('./routes/orderRoutes'));
-app.use('/api/users',         require('./routes/userRoutes'));
-app.use('/api/payment',       require('./routes/paymentRoutes'));
-app.use('/api/coupons',       require('./routes/couponRoutes'));
+// Routes
+app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/products', require('./routes/productRoutes'));
+app.use('/api/reviews', require('./routes/reviewRoutes'));
+app.use('/api/cart', require('./routes/cartRoutes'));
+app.use('/api/wishlist', require('./routes/wishlistRoutes'));
+app.use('/api/orders', require('./routes/orderRoutes'));
+app.use('/api/users', require('./routes/userRoutes'));
+app.use('/api/payment', require('./routes/paymentRoutes'));
+app.use('/api/coupons', require('./routes/couponRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
-app.use('/api/upload',        require('./routes/uploadRoutes'));
-app.use('/api/delivery',      require('./routes/deliveryRoutes'));
+app.use('/api/upload', require('./routes/uploadRoutes'));
+app.use('/api/delivery', require('./routes/deliveryRoutes'));
+app.use('/api/settings', require('./routes/settingsRoutes'));
 
-// ── Health check ──────────────────────────────────────────────────
+// Health check
 app.get('/', (req, res) => {
   res.json({ message: 'Trendorra API is running!', status: 'OK' });
 });
 
-// ── Global error handler ──────────────────────────────────────────
+// Error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(err.statusCode || 500).json({
     success: false,
     message: err.message || 'Internal Server Error',
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
   });
 });
 
-// ── Start server ──────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Trendorra server running on port ${PORT}`);

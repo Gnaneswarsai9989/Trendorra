@@ -5,48 +5,48 @@ import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import {
   FiArrowLeft, FiSave, FiX, FiImage, FiChevronDown, FiCheck,
-  FiUpload, FiStar, FiZap, FiAward,
+  FiUpload, FiStar, FiZap, FiAward, FiVideo,
 } from 'react-icons/fi';
 import { CATEGORIES, getSubCategoryNames, getGroupedSubCategories } from '../../constants/categories';
 
-const BG     = '#0a0a0a';
-const CARD   = '#111111';
+const BG = '#0a0a0a';
+const CARD = '#111111';
 const BORDER = 'rgba(255,255,255,0.08)';
-const GOLD   = '#C9A84C';
+const GOLD = '#C9A84C';
 
 // ── Presets ──────────────────────────────────────────────────────────────────
 const PRESET_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'Free Size'];
 const PRESET_COLORS = [
-  { name: 'Black',  hex: '#000000' },
-  { name: 'White',  hex: '#FFFFFF' },
-  { name: 'Red',    hex: '#EF4444' },
-  { name: 'Blue',   hex: '#3B82F6' },
-  { name: 'Navy',   hex: '#1E3A5F' },
-  { name: 'Green',  hex: '#22C55E' },
+  { name: 'Black', hex: '#000000' },
+  { name: 'White', hex: '#FFFFFF' },
+  { name: 'Red', hex: '#EF4444' },
+  { name: 'Blue', hex: '#3B82F6' },
+  { name: 'Navy', hex: '#1E3A5F' },
+  { name: 'Green', hex: '#22C55E' },
   { name: 'Yellow', hex: '#EAB308' },
   { name: 'Orange', hex: '#F97316' },
-  { name: 'Pink',   hex: '#EC4899' },
+  { name: 'Pink', hex: '#EC4899' },
   { name: 'Purple', hex: '#A855F7' },
-  { name: 'Grey',   hex: '#6B7280' },
-  { name: 'Brown',  hex: '#92400E' },
-  { name: 'Beige',  hex: '#D4B896' },
+  { name: 'Grey', hex: '#6B7280' },
+  { name: 'Brown', hex: '#92400E' },
+  { name: 'Beige', hex: '#D4B896' },
   { name: 'Maroon', hex: '#7F1D1D' },
-  { name: 'Khaki',  hex: '#BDB76B' },
+  { name: 'Khaki', hex: '#BDB76B' },
 ];
 
 const FIXED_FEE = (price) => {
-  if (price <= 500)    return 20;
-  if (price <= 1000)   return 30;
-  if (price <= 5000)   return 40;
-  if (price <= 10000)  return 80;
-  if (price <= 50000)  return 120;
+  if (price <= 500) return 20;
+  if (price <= 1000) return 30;
+  if (price <= 5000) return 40;
+  if (price <= 10000) return 80;
+  if (price <= 50000) return 120;
   if (price <= 100000) return 150;
   return 200;
 };
 const calcEarnings = (price) => {
-  const p          = Number(price) || 0;
+  const p = Number(price) || 0;
   const commission = Math.round(p * 0.10);
-  const fixed      = FIXED_FEE(p);
+  const fixed = FIXED_FEE(p);
   return { commission, fixed, earnings: p - commission - fixed };
 };
 const inp = {
@@ -114,7 +114,7 @@ function ImageUploader({ images, onChange }) {
                 cursor: 'pointer', opacity: 0, transition: 'opacity 0.15s',
               }}
               onMouseOver={e => e.currentTarget.style.opacity = '1'}
-              onMouseOut={e  => e.currentTarget.style.opacity = '0'}
+              onMouseOut={e => e.currentTarget.style.opacity = '0'}
             >
               <FiX size={10} style={{ color: '#fff' }} />
             </button>
@@ -128,7 +128,7 @@ function ImageUploader({ images, onChange }) {
           backgroundColor: '#0d0d0d', transition: 'border-color 0.2s',
         }}
           onMouseOver={e => { if (!uploading) e.currentTarget.style.borderColor = GOLD; }}
-          onMouseOut={e  => { if (!uploading) e.currentTarget.style.borderColor = BORDER; }}
+          onMouseOut={e => { if (!uploading) e.currentTarget.style.borderColor = BORDER; }}
         >
           <input type="file" multiple accept="image/*" style={{ display: 'none' }}
             onChange={handleFileChange} disabled={uploading} />
@@ -157,6 +157,117 @@ function ImageUploader({ images, onChange }) {
   );
 }
 
+/* ── NEW: Video Uploader ─────────────────────────────────────────────────── */
+function VideoUploader({ videos, onChange }) {
+  const [uploading, setUploading] = useState(false);
+  const getUrl = (vid) => (typeof vid === 'string' ? vid : vid?.url || '');
+
+  const handleFileChange = async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    if (videos.length + files.length > 2) { toast.error('Max 2 videos'); return; }
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      files.forEach(f => formData.append('videos', f));
+      const res = await uploadAPI.uploadVideos(formData);
+      onChange([...videos, ...res.videos]);
+      toast.success(`${res.videos.length} video(s) uploaded!`);
+    } catch {
+      toast.error('Failed to upload videos');
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
+
+  const removeVideo = (index) => onChange(videos.filter((_, i) => i !== index));
+
+  return (
+    <div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '12px' }}>
+        {videos.map((vid, i) => (
+          <div key={i} style={{
+            position: 'relative', width: '120px', height: '90px',
+            border: `1px solid ${BORDER}`, borderRadius: '6px',
+            overflow: 'hidden', backgroundColor: '#0d0d0d', flexShrink: 0,
+          }}>
+            <video
+              src={getUrl(vid)}
+              muted
+              loop
+              playsInline
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              onMouseOver={e => e.target.play()}
+              onMouseOut={e => { e.target.pause(); e.target.currentTime = 0; }}
+            />
+            <div style={{
+              position: 'absolute', inset: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(0,0,0,0.22)', pointerEvents: 'none',
+            }}>
+              <FiVideo size={18} style={{ color: 'rgba(255,255,255,0.55)' }} />
+            </div>
+            <span style={{
+              position: 'absolute', bottom: 0, left: 0, right: 0,
+              backgroundColor: 'rgba(0,0,0,0.55)', color: 'rgba(255,255,255,0.55)',
+              fontSize: '8px', fontWeight: 600, textAlign: 'center',
+              padding: '2px', fontFamily: 'inherit',
+            }}>VIDEO {i + 1}</span>
+            <button type="button" onClick={() => removeVideo(i)}
+              style={{
+                position: 'absolute', top: '3px', right: '3px',
+                width: '18px', height: '18px', borderRadius: '50%',
+                backgroundColor: '#ef4444', border: 'none',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', opacity: 0, transition: 'opacity 0.15s',
+              }}
+              onMouseOver={e => e.currentTarget.style.opacity = '1'}
+              onMouseOut={e => e.currentTarget.style.opacity = '0'}
+            >
+              <FiX size={10} style={{ color: '#fff' }} />
+            </button>
+          </div>
+        ))}
+        {videos.length < 2 && (
+          <label style={{
+            width: '120px', height: '90px', flexShrink: 0,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            border: `2px dashed ${uploading ? GOLD + '40' : BORDER}`, borderRadius: '6px',
+            cursor: uploading ? 'not-allowed' : 'pointer',
+            backgroundColor: '#0d0d0d', transition: 'border-color 0.2s',
+          }}
+            onMouseOver={e => { if (!uploading) e.currentTarget.style.borderColor = GOLD; }}
+            onMouseOut={e => { if (!uploading) e.currentTarget.style.borderColor = BORDER; }}
+          >
+            <input type="file" multiple accept="video/*" style={{ display: 'none' }}
+              onChange={handleFileChange} disabled={uploading} />
+            {uploading ? (
+              <>
+                <div style={{
+                  width: '20px', height: '20px', border: `2px solid ${GOLD}`,
+                  borderTopColor: 'transparent', borderRadius: '50%',
+                  animation: 'spin 0.7s linear infinite', marginBottom: '4px',
+                }} />
+                <span style={{ color: GOLD, fontSize: '9px', fontFamily: 'inherit' }}>Uploading</span>
+              </>
+            ) : (
+              <>
+                <FiVideo size={18} style={{ color: 'rgba(255,255,255,0.25)', marginBottom: '4px' }} />
+                <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', fontFamily: 'inherit', textAlign: 'center', lineHeight: 1.3 }}>Add Video</span>
+              </>
+            )}
+          </label>
+        )}
+      </div>
+      <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: 'inherit' }}>
+        Hover to preview · MP4, MOV, WEBM · Max 50MB each · Up to 2 videos
+      </p>
+    </div>
+  );
+}
+/* ── END NEW ─────────────────────────────────────────────────────────────── */
+
 /* ── Size Selector ───────────────────────────────────────────────────────── */
 function SizeSelector({ value, onChange }) {
   const toggle = (size) => {
@@ -172,10 +283,10 @@ function SizeSelector({ value, onChange }) {
             style={{
               padding: '7px 14px', fontSize: '12px', fontFamily: 'inherit',
               borderRadius: '6px', cursor: 'pointer', transition: 'all 0.15s',
-              backgroundColor: active ? GOLD              : 'transparent',
-              border:          active ? `1px solid ${GOLD}` : '1px solid rgba(255,255,255,0.15)',
-              color:           active ? '#000'            : 'rgba(255,255,255,0.55)',
-              fontWeight:      active ? 700               : 400,
+              backgroundColor: active ? GOLD : 'transparent',
+              border: active ? `1px solid ${GOLD}` : '1px solid rgba(255,255,255,0.15)',
+              color: active ? '#000' : 'rgba(255,255,255,0.55)',
+              fontWeight: active ? 700 : 400,
             }}
           >
             {size}
@@ -299,11 +410,11 @@ function BadgeToggle({ active, onToggle, icon, label, description, activeColor, 
 
 /* ── SubCategoryDropdown ─────────────────────────────────────────────────── */
 function SubCategoryDropdown({ category, value, onChange }) {
-  const [open,   setOpen]   = useState(false);
+  const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const ref       = useRef(null);
+  const ref = useRef(null);
   const searchRef = useRef(null);
-  const grouped  = getGroupedSubCategories(category);
+  const grouped = getGroupedSubCategories(category);
   const allNames = getSubCategoryNames(category);
   const filtered = search.trim()
     ? allNames.filter(n => n.toLowerCase().includes(search.toLowerCase()))
@@ -316,7 +427,7 @@ function SubCategoryDropdown({ category, value, onChange }) {
   useEffect(() => { if (open) setTimeout(() => searchRef.current?.focus(), 60); }, [open]);
   useEffect(() => { onChange(''); setSearch(''); }, [category]);
   const select = name => { onChange(name); setOpen(false); setSearch(''); };
-  const noop   = allNames.length === 0;
+  const noop = allNames.length === 0;
   return (
     <div ref={ref} style={{ position: 'relative', width: '100%' }}>
       <button type="button" disabled={noop} onClick={() => setOpen(p => !p)}
@@ -394,8 +505,8 @@ function DropItem({ name, active, onSelect }) {
         border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
         transition: 'background 0.12s, color 0.12s',
       }}
-      onMouseEnter={e => { if (!active) { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = '#fff'; }}}
-      onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.75)'; }}}
+      onMouseEnter={e => { if (!active) { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = '#fff'; } }}
+      onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.75)'; } }}
     >
       <span>{name}</span>
       {active && <FiCheck size={13} style={{ color: GOLD, flexShrink: 0 }} />}
@@ -405,18 +516,18 @@ function DropItem({ name, active, onSelect }) {
 
 /* ── Main component ──────────────────────────────────────────────────────── */
 export default function SellerProductForm() {
-  const { id }   = useParams();
+  const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const isEdit   = Boolean(id);
+  const isEdit = Boolean(id);
 
   const [form, setForm] = useState({
     name: '', description: '', price: '', discountPrice: '', category: '', subCategory: '',
-    stock: '', images: [], sizes: [], colors: [],
+    stock: '', images: [], videos: [], sizes: [], colors: [],
     brand: '', tags: '', material: '', careInstructions: '',
     isNewArrival: false, isBestSeller: false, isFeatured: false,
   });
-  const [loading,  setLoading]  = useState(false);
+  const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(isEdit);
 
   useEffect(() => {
@@ -425,23 +536,24 @@ export default function SellerProductForm() {
         .then(res => {
           const p = res.product;
           setForm({
-            name:             p.name             || '',
-            description:      p.description      || '',
-            price:            p.price            || '',
-            discountPrice:    p.discountPrice     || '',
-            category:         p.category         || '',
-            subCategory:      p.subCategory      || '',
-            stock:            p.stock            || '',
-            images:           p.images           || [],
-            sizes:            p.sizes            || [],
-            colors:           (p.colors || []).map(c => typeof c === 'string' ? c : c.name),
-            brand:            p.brand            || '',
-            tags:             Array.isArray(p.tags) ? p.tags.join(', ') : (p.tags || ''),
-            material:         p.material         || '',
+            name: p.name || '',
+            description: p.description || '',
+            price: p.price || '',
+            discountPrice: p.discountPrice || '',
+            category: p.category || '',
+            subCategory: p.subCategory || '',
+            stock: p.stock || '',
+            images: p.images || [],
+            videos: p.videos || [],
+            sizes: p.sizes || [],
+            colors: (p.colors || []).map(c => typeof c === 'string' ? c : c.name),
+            brand: p.brand || '',
+            tags: Array.isArray(p.tags) ? p.tags.join(', ') : (p.tags || ''),
+            material: p.material || '',
             careInstructions: p.careInstructions || '',
-            isNewArrival:     p.isNewArrival     || false,
-            isBestSeller:     p.isBestSeller     || false,
-            isFeatured:       p.isFeatured       || false,
+            isNewArrival: p.isNewArrival || false,
+            isBestSeller: p.isBestSeller || false,
+            isFeatured: p.isFeatured || false,
           });
         })
         .catch(() => toast.error('Failed to load product'))
@@ -458,7 +570,6 @@ export default function SellerProductForm() {
     if (!form.name || !form.price || !form.category || !form.stock) {
       toast.error('Please fill all required fields'); return;
     }
-    // Validate discount price
     if (form.discountPrice && Number(form.discountPrice) >= Number(form.price)) {
       toast.error('Discount price must be less than selling price'); return;
     }
@@ -469,18 +580,17 @@ export default function SellerProductForm() {
         const found = PRESET_COLORS.find(p => p.name === c);
         return found ? { name: found.name, hex: found.hex } : { name: c, hex: '#888888' };
       });
-      // Parse tags string → array
       const tagsArray = form.tags
         ? form.tags.split(',').map(t => t.trim()).filter(Boolean)
         : [];
       const payload = {
         ...form,
-        price:            Number(form.price),
-        discountPrice:    form.discountPrice ? Number(form.discountPrice) : undefined,
-        stock:            Number(form.stock),
-        colors:           colorsAsObjects,
-        tags:             tagsArray,
-        seller:           user?._id,
+        price: Number(form.price),
+        discountPrice: form.discountPrice ? Number(form.discountPrice) : undefined,
+        stock: Number(form.stock),
+        colors: colorsAsObjects,
+        tags: tagsArray,
+        seller: user?._id,
       };
       if (isEdit) {
         await productAPI.update(id, payload);
@@ -506,8 +616,31 @@ export default function SellerProductForm() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: BG }}>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Product Form Mobile Responsive ── */
+        @media (max-width: 900px) {
+          .pf-layout { grid-template-columns: 1fr !important; }
+          .pf-sidebar { position: static !important; }
+        }
+        @media (max-width: 600px) {
+          .pf-pricing-grid { grid-template-columns: 1fr 1fr !important; }
+          .pf-categ-grid { grid-template-columns: 1fr !important; gap: 12px !important; }
+          .pf-brand-tags { grid-template-columns: 1fr !important; gap: 12px !important; }
+          .pf-mat-care { grid-template-columns: 1fr !important; gap: 12px !important; }
+          .pf-earnings-grid { grid-template-columns: 1fr 1fr !important; }
+          .pf-content { padding: 16px !important; }
+          .pf-topbar { padding: 0 12px !important; }
+        }
+        @media (max-width: 400px) {
+          .pf-pricing-grid { grid-template-columns: 1fr !important; }
+          .pf-earnings-grid { grid-template-columns: 1fr 1fr !important; }
+        }
+      `}</style>
+
       {/* ── Top bar ── */}
-      <div style={{
+      <div className="pf-topbar" style={{
         backgroundColor: '#050505', borderBottom: `1px solid ${BORDER}`,
         padding: '0 24px', display: 'flex', alignItems: 'center',
         justifyContent: 'space-between', height: '52px',
@@ -521,13 +654,13 @@ export default function SellerProductForm() {
         </div>
         <Link to="/"
           style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'rgba(255,255,255,0.4)', fontSize: '12px', fontFamily: 'inherit', textDecoration: 'none', padding: '6px 12px', border: `1px solid ${BORDER}`, borderRadius: '6px' }}
-          onMouseOver={e => { e.currentTarget.style.borderColor = GOLD;   e.currentTarget.style.color = GOLD; }}
-          onMouseOut={e  => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.color = 'rgba(255,255,255,0.4)'; }}>
-          <FiArrowLeft size={13} /> Back to Trendorra
+          onMouseOver={e => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.color = GOLD; }}
+          onMouseOut={e => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.color = 'rgba(255,255,255,0.4)'; }}>
+          <FiArrowLeft size={13} /> <span style={{ display: 'inline' }}>Back</span>
         </Link>
       </div>
 
-      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '32px 24px' }}>
+      <div className="pf-content" style={{ maxWidth: '900px', margin: '0 auto', padding: '32px 24px' }}>
         <button onClick={() => navigate('/seller/dashboard')}
           style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: '13px', fontFamily: 'inherit', marginBottom: '24px' }}>
           <FiArrowLeft size={14} /> Back to Seller Dashboard
@@ -537,7 +670,7 @@ export default function SellerProductForm() {
         </h1>
 
         <form onSubmit={handleSubmit}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '24px' }}>
+          <div className="pf-layout" style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '24px' }}>
 
             {/* ── LEFT COLUMN ── */}
             <div>
@@ -549,58 +682,56 @@ export default function SellerProductForm() {
                 <input style={{ ...inp, marginBottom: '16px' }} value={form.name}
                   onChange={e => set('name', e.target.value)} placeholder="e.g. Classic Oversized Tee"
                   onFocus={e => e.target.style.borderColor = GOLD}
-                  onBlur={e  => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} required />
+                  onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} required />
 
                 <label style={lbl}>Description</label>
                 <textarea style={{ ...inp, marginBottom: '16px', minHeight: '100px', resize: 'vertical' }}
                   value={form.description} onChange={e => set('description', e.target.value)}
                   placeholder="Describe your product…"
                   onFocus={e => e.target.style.borderColor = GOLD}
-                  onBlur={e  => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
+                  onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
 
-                {/* ── NEW: Brand + Tags ── */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '16px' }}>
+                <div className="pf-brand-tags" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '16px' }}>
                   <div>
                     <label style={lbl}>Brand</label>
                     <input style={{ ...inp, marginBottom: 0 }} value={form.brand}
                       onChange={e => set('brand', e.target.value)} placeholder="e.g. Trendorra"
                       onFocus={e => e.target.style.borderColor = GOLD}
-                      onBlur={e  => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
+                      onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
                   </div>
                   <div>
                     <label style={lbl}>Tags (comma separated)</label>
                     <input style={{ ...inp, marginBottom: 0 }} value={form.tags}
                       onChange={e => set('tags', e.target.value)} placeholder="e.g. cotton, casual, summer"
                       onFocus={e => e.target.style.borderColor = GOLD}
-                      onBlur={e  => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
+                      onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
                   </div>
                 </div>
 
-                {/* ── NEW: Material + Care Instructions ── */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '16px' }}>
+                <div className="pf-mat-care" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '16px' }}>
                   <div>
                     <label style={lbl}>Material</label>
                     <input style={{ ...inp, marginBottom: 0 }} value={form.material}
                       onChange={e => set('material', e.target.value)} placeholder="e.g. 100% Cotton"
                       onFocus={e => e.target.style.borderColor = GOLD}
-                      onBlur={e  => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
+                      onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
                   </div>
                   <div>
                     <label style={lbl}>Care Instructions</label>
                     <input style={{ ...inp, marginBottom: 0 }} value={form.careInstructions}
                       onChange={e => set('careInstructions', e.target.value)} placeholder="e.g. Machine wash cold"
                       onFocus={e => e.target.style.borderColor = GOLD}
-                      onBlur={e  => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
+                      onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <div className="pf-categ-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                   <div>
                     <label style={lbl}>Category *</label>
                     <select style={{ ...inp, marginBottom: 0, appearance: 'none', cursor: 'pointer' }}
                       value={form.category} onChange={e => set('category', e.target.value)}
                       onFocus={e => e.target.style.borderColor = GOLD}
-                      onBlur={e  => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} required>
+                      onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} required>
                       <option value="">Select category</option>
                       {CATEGORIES.map(c => <option key={c} value={c} style={{ backgroundColor: '#0d0d0d' }}>{c}</option>)}
                     </select>
@@ -615,31 +746,29 @@ export default function SellerProductForm() {
               {/* Pricing & Stock */}
               <div style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '24px', marginBottom: '16px' }}>
                 <p style={{ color: GOLD, fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', margin: '0 0 18px', fontFamily: 'inherit' }}>Pricing & Stock</p>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '14px', marginBottom: '16px' }}>
+                <div className="pf-pricing-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '14px', marginBottom: '16px' }}>
                   <div>
                     <label style={lbl}>Selling Price (₹) *</label>
                     <input type="number" style={{ ...inp, marginBottom: 0 }} value={form.price}
                       onChange={e => set('price', e.target.value)} placeholder="0"
                       onFocus={e => e.target.style.borderColor = GOLD}
-                      onBlur={e  => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} min="0" required />
+                      onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} min="0" required />
                   </div>
-                  {/* ── NEW: Discount Price ── */}
                   <div>
                     <label style={lbl}>Discount Price (₹)</label>
                     <input type="number" style={{ ...inp, marginBottom: 0 }} value={form.discountPrice}
                       onChange={e => set('discountPrice', e.target.value)} placeholder="0"
                       onFocus={e => e.target.style.borderColor = GOLD}
-                      onBlur={e  => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} min="0" />
+                      onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} min="0" />
                   </div>
                   <div>
                     <label style={lbl}>Stock Quantity *</label>
                     <input type="number" style={{ ...inp, marginBottom: 0 }} value={form.stock}
                       onChange={e => set('stock', e.target.value)} placeholder="0"
                       onFocus={e => e.target.style.borderColor = GOLD}
-                      onBlur={e  => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} min="0" required />
+                      onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} min="0" required />
                   </div>
                 </div>
-                {/* Discount badge hint */}
                 {form.discountPrice && Number(form.discountPrice) > 0 && Number(form.price) > 0 && Number(form.discountPrice) < Number(form.price) && (
                   <div style={{ marginBottom: '12px', padding: '8px 12px', backgroundColor: 'rgba(74,222,128,0.06)', border: '1px solid rgba(74,222,128,0.2)', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ color: '#4ade80', fontSize: '12px', fontFamily: 'inherit' }}>
@@ -650,12 +779,12 @@ export default function SellerProductForm() {
                 {Number(form.price) > 0 && (
                   <div style={{ backgroundColor: '#0d0d0d', border: `1px solid ${GOLD}25`, borderRadius: '8px', padding: '14px' }}>
                     <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 10px', fontFamily: 'inherit' }}>Your Earnings Preview</p>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '8px' }}>
+                    <div className="pf-earnings-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '8px' }}>
                       {[
-                        { label: 'Selling Price',  value: `₹${Number(form.price).toLocaleString()}`, color: '#fff'    },
-                        { label: '10% Commission', value: `- ₹${commission}`,                        color: '#f87171' },
-                        { label: 'Fixed Fee',      value: `- ₹${fixed}`,                             color: '#fbbf24' },
-                        { label: 'You Earn',       value: `₹${earnings}`,                            color: '#4ade80' },
+                        { label: 'Selling Price', value: `₹${Number(form.price).toLocaleString()}`, color: '#fff' },
+                        { label: '10% Commission', value: `- ₹${commission}`, color: '#f87171' },
+                        { label: 'Fixed Fee', value: `- ₹${fixed}`, color: '#fbbf24' },
+                        { label: 'You Earn', value: `₹${earnings}`, color: '#4ade80' },
                       ].map(({ label, value, color }) => (
                         <div key={label} style={{ textAlign: 'center', padding: '8px', backgroundColor: '#1a1a1a', borderRadius: '6px' }}>
                           <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', margin: '0 0 3px', fontFamily: 'inherit' }}>{label}</p>
@@ -671,6 +800,13 @@ export default function SellerProductForm() {
               <div style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '24px', marginBottom: '16px' }}>
                 <p style={{ color: GOLD, fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', margin: '0 0 18px', fontFamily: 'inherit' }}>Product Images</p>
                 <ImageUploader images={form.images} onChange={imgs => set('images', imgs)} />
+
+                <div style={{ borderTop: `1px solid ${BORDER}`, marginTop: '20px', paddingTop: '20px' }}>
+                  <p style={{ color: GOLD, fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', margin: '0 0 14px', fontFamily: 'inherit' }}>
+                    Product Videos <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', letterSpacing: '0.05em', textTransform: 'none', fontWeight: 400 }}>(optional · max 2)</span>
+                  </p>
+                  <VideoUploader videos={form.videos} onChange={vids => set('videos', vids)} />
+                </div>
               </div>
 
               {/* Sizes & Colors */}
@@ -698,7 +834,6 @@ export default function SellerProductForm() {
                   Enable badges to feature this product in special collections.
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {/* ── NEW: Featured Product badge ── */}
                   <BadgeToggle active={form.isFeatured} onToggle={() => set('isFeatured', !form.isFeatured)}
                     icon={<FiAward size={15} style={{ color: form.isFeatured ? '#a78bfa' : 'rgba(255,255,255,0.3)' }} />}
                     label="Featured Product" description="Highlighted in Featured section & homepage banner"
@@ -720,7 +855,7 @@ export default function SellerProductForm() {
                       </span>
                     )}
                     {form.isNewArrival && (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', backgroundColor: 'rgba(96,165,250,0.12)', border: '1px solid rgba(96,165,250,0.3)', borderRadius: '20px', color: '#60a5fa', fontSize: '11px', fontFamily: 'inherit' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', padding: '4px 10px', backgroundColor: 'rgba(96,165,250,0.12)', border: '1px solid rgba(96,165,250,0.3)', borderRadius: '20px', color: '#60a5fa', fontSize: '11px', fontFamily: 'inherit' }}>
                         <FiZap size={10} /> New Arrival
                       </span>
                     )}
@@ -736,7 +871,7 @@ export default function SellerProductForm() {
             </div>
 
             {/* ── RIGHT COLUMN — sticky summary ── */}
-            <div>
+            <div className="pf-sidebar">
               <div style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '20px', position: 'sticky', top: '20px' }}>
                 <p style={{ color: GOLD, fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', margin: '0 0 16px', fontFamily: 'inherit' }}>Product Summary</p>
                 {firstImageUrl ? (
@@ -769,18 +904,19 @@ export default function SellerProductForm() {
                   </div>
                 )}
                 {[
-                  { label: 'Name',        value: form.name             || '—' },
-                  { label: 'Brand',       value: form.brand            || '—' },
-                  { label: 'Category',    value: form.category         || '—' },
-                  { label: 'SubCategory', value: form.subCategory      || '—' },
-                  { label: 'Price',       value: form.price ? `₹${Number(form.price).toLocaleString()}` : '—' },
-                  { label: 'Discount',    value: form.discountPrice ? `₹${Number(form.discountPrice).toLocaleString()}` : '—' },
-                  { label: 'Stock',       value: form.stock            || '—' },
-                  { label: 'Sizes',       value: form.sizes.length ? form.sizes.join(', ') : '—' },
-                  { label: 'Colors',      value: form.colors.length ? form.colors.join(', ') : '—' },
-                  { label: 'Material',    value: form.material         || '—' },
-                  { label: 'Images',      value: form.images.length ? `${form.images.length} uploaded` : '—' },
-                  { label: 'Badges',      value: [form.isFeatured && 'Featured', form.isNewArrival && 'New Arrival', form.isBestSeller && 'Best Seller'].filter(Boolean).join(', ') || '—' },
+                  { label: 'Name', value: form.name || '—' },
+                  { label: 'Brand', value: form.brand || '—' },
+                  { label: 'Category', value: form.category || '—' },
+                  { label: 'SubCategory', value: form.subCategory || '—' },
+                  { label: 'Price', value: form.price ? `₹${Number(form.price).toLocaleString()}` : '—' },
+                  { label: 'Discount', value: form.discountPrice ? `₹${Number(form.discountPrice).toLocaleString()}` : '—' },
+                  { label: 'Stock', value: form.stock || '—' },
+                  { label: 'Sizes', value: form.sizes.length ? form.sizes.join(', ') : '—' },
+                  { label: 'Colors', value: form.colors.length ? form.colors.join(', ') : '—' },
+                  { label: 'Material', value: form.material || '—' },
+                  { label: 'Images', value: form.images.length ? `${form.images.length} uploaded` : '—' },
+                  { label: 'Videos', value: form.videos.length ? `${form.videos.length} uploaded` : '—' },
+                  { label: 'Badges', value: [form.isFeatured && 'Featured', form.isNewArrival && 'New Arrival', form.isBestSeller && 'Best Seller'].filter(Boolean).join(', ') || '—' },
                 ].map(({ label, value }) => (
                   <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${BORDER}` }}>
                     <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px', fontFamily: 'inherit' }}>{label}</span>

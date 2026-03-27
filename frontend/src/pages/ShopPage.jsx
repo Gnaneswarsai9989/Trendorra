@@ -16,18 +16,17 @@ const SORT_OPTIONS = [
   { label: 'Most Popular',       value: 'popular'    },
 ];
 
-// ─── Colour palette: Black · Gold · Brown ─────────────────────────────────────
-const BG_GRADIENT  = 'linear-gradient(160deg, #100c08 0%, #0a0806 50%, #050403 100%)';
-const SURFACE      = 'rgba(22, 16, 10, 0.96)';
-const SURFACE_SOFT = 'rgba(18, 13, 8, 0.82)';
-const SURFACE_CARD = 'rgba(26, 19, 11, 0.99)';
+const BG_GRADIENT  = 'linear-gradient(160deg, #0d0d0d 0%, #080808 50%, #030303 100%)';
+const SURFACE      = 'rgba(18, 18, 18, 0.96)';
+const SURFACE_SOFT = 'rgba(15, 15, 15, 0.82)';
+const SURFACE_CARD = 'rgba(22, 22, 22, 0.99)';
 const GOLD         = '#c9a84c';
 const GOLD_LIGHT   = '#dbbe6a';
-const BORDER       = 'rgba(180, 140, 60, 0.18)';
+const BORDER       = 'rgba(255, 255, 255, 0.12)';
 const BORDER_HOVER = 'rgba(201, 168, 76, 0.40)';
-const TEXT_PRIMARY = '#f0e8d8';
-const TEXT_MUTED   = '#a08c6e';
-const TEXT_SOFT    = 'rgba(160, 140, 110, 0.60)';
+const TEXT_PRIMARY = '#f8f8f8';
+const TEXT_MUTED   = '#a8a8a8';
+const TEXT_SOFT    = 'rgba(255, 255, 255, 0.45)';
 // ──────────────────────────────────────────────────────────────────────────────
 
 // ─── Custom Sort Dropdown (replaces native <select>) ──────────────────────────
@@ -197,9 +196,9 @@ function PillBtn({ label, active, onClick }) {
         padding:      '7px 16px',
         fontSize:     '12px',
         borderRadius: '999px',
-        background:   active ? `linear-gradient(135deg, ${GOLD}, #9a7530)` : 'rgba(22,16,10,0.90)',
+        background:   active ? `linear-gradient(135deg, ${GOLD}, #a07830)` : 'rgba(18,18,18,0.90)',
         border:       `1px solid ${active ? GOLD : BORDER}`,
-        color:        active ? '#0a0806' : TEXT_MUTED,
+        color:        active ? '#030303' : TEXT_MUTED,
         cursor:       'pointer',
         fontFamily:   'inherit',
         fontWeight:   active ? 600 : 400,
@@ -313,9 +312,9 @@ export default function ShopPage() {
                     padding:      '5px 12px',
                     fontSize:     '11px',
                     borderRadius: '999px',
-                    background:   active ? `linear-gradient(135deg, ${GOLD}, #9a7530)` : 'transparent',
+                    background:   active ? `linear-gradient(135deg, ${GOLD}, #a07830)` : 'transparent',
                     border:       `1px solid ${active ? GOLD : BORDER}`,
-                    color:        active ? '#0a0806' : TEXT_MUTED,
+                    color:        active ? '#030303' : TEXT_MUTED,
                     cursor:       'pointer',
                     fontFamily:   'inherit',
                     transition:   'all 0.15s',
@@ -407,9 +406,9 @@ export default function ShopPage() {
                 style={{
                   padding:      '5px 12px', fontSize: '11px',
                   borderRadius: '999px',
-                  background:   active ? `linear-gradient(135deg, ${GOLD}, #9a7530)` : SURFACE_SOFT,
+                  background:   active ? `linear-gradient(135deg, ${GOLD}, #a07830)` : SURFACE_SOFT,
                   border:       `1px solid ${active ? GOLD : BORDER}`,
-                  color:        active ? '#0a0806' : TEXT_MUTED,
+                  color:        active ? '#030303' : TEXT_MUTED,
                   cursor:       'pointer', fontFamily: 'inherit',
                   fontWeight:   active ? 600 : 400, transition: 'all 0.15s',
                 }}
@@ -453,7 +452,7 @@ export default function ShopPage() {
                   width:        '3px',
                   height:       '36px',
                   borderRadius: '2px',
-                  background:   `linear-gradient(to bottom, ${GOLD_LIGHT}, ${GOLD}, #9a7530)`,
+                  background:   `linear-gradient(to bottom, #d4d4d4, ${GOLD}, #a07830)`,
                   flexShrink:   0,
                 }} />
               )}
@@ -477,7 +476,7 @@ export default function ShopPage() {
                   whiteSpace:   'nowrap',
                 }}>
                   {filters.search
-                    ? `"${filters.search}"`
+                    ? filters.search
                     : filters.category
                     ? `Shop ${filters.category}`
                     : 'Discover Everything'}
@@ -675,8 +674,8 @@ export default function ShopPage() {
                   onClick={clearFilters}
                   style={{
                     padding: '10px 28px', fontSize: '12px', borderRadius: '999px',
-                    background: `linear-gradient(135deg, ${GOLD_LIGHT}, ${GOLD}, #9a7530)`,
-                    color: '#0a0806', border: 'none', cursor: 'pointer',
+                    background: `linear-gradient(135deg, ${GOLD}, #a07830)`,
+                    color: '#030303', border: 'none', cursor: 'pointer',
                     fontFamily: 'inherit', fontWeight: 600,
                   }}
                 >
@@ -704,8 +703,8 @@ export default function ShopPage() {
                           style={{
                             width:        '38px', height: '38px',
                             borderRadius: '50%', fontSize: '12px',
-                            background:   active ? `linear-gradient(135deg, ${GOLD}, #9a7530)` : 'transparent',
-                            color:        active ? '#0a0806' : TEXT_SOFT,
+                            background:   active ? `linear-gradient(135deg, ${GOLD}, #a07830)` : 'transparent',
+                            color:        active ? '#030303' : TEXT_SOFT,
                             border:       `1px solid ${active ? GOLD : 'rgba(160,130,80,0.22)'}`,
                             cursor:       'pointer', fontFamily: 'inherit',
                             fontWeight:   active ? 700 : 400, transition: 'all 0.15s',
@@ -747,7 +746,7 @@ export default function ShopPage() {
                 position:    'fixed', left: 0, top: 0,
                 height:      '100%', width: '300px',
                 zIndex:      50, padding: '24px', overflowY: 'auto',
-                background:  `linear-gradient(to bottom, #100c08, #0a0806, #050403)`,
+                background:  `linear-gradient(to bottom, #0d0d0d, #080808, #030303)`,
                 borderRight: `1px solid ${BORDER}`,
                 boxShadow:   '12px 0 40px rgba(0,0,0,0.60)',
               }}

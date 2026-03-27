@@ -74,6 +74,20 @@ router.post('/forgot-password', forgotPassword);
 router.post('/reset-password',  resetPassword);
 router.put('/seller-info',      protect, updateSellerInfo);
 
+// ── Seller: toggle their own no-returns policy (only if admin approved)
+router.patch('/no-returns', protect, async (req, res) => {
+  try {
+    const seller = await User.findById(req.user._id);
+    if (!seller || seller.role !== 'seller')
+      return res.status(403).json({ success: false, message: 'Seller only' });
+    if (!seller.sellerInfo.noReturnsApproved)
+      return res.status(403).json({ success: false, message: 'Admin has not approved no-returns for your account' });
+    seller.sellerInfo.noReturnsEnabled = !!req.body.enabled;
+    await seller.save();
+    res.json({ success: true, noReturnsEnabled: seller.sellerInfo.noReturnsEnabled });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+});
+
 // ── Google OAuth Routes ───────────────────────────────────────────
 router.get('/google',
   passport.authenticate('google', { scope: ['profile', 'email'] })

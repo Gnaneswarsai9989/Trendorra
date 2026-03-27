@@ -288,7 +288,7 @@ exports.processPayout = async (req, res) => {
 // ══════════════════════════════════════════════════════════════════
 // CLEAR SELLER PAYOUT HISTORY
 // ══════════════════════════════════════════════════════════════════
-exports.clearPayoutHistory = async (req, res) => {
+  exports.clearPayoutHistory = async (req, res) => {
   try {
     const seller = await User.findById(req.params.id);
     if (!seller || seller.role !== 'seller')
@@ -304,3 +304,31 @@ exports.clearPayoutHistory = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// ══════════════════════════════════════════════════════════════════
+// TOGGLE NO-RETURNS APPROVAL (admin only)
+// PATCH /api/users/:id/no-returns-approval  { approved: true/false }
+// ══════════════════════════════════════════════════════════════════
+exports.toggleNoReturnsApproval = async (req, res) => {
+  try {
+    const { approved } = req.body;   // true → grant, false → revoke
+    const seller = await User.findById(req.params.id);
+    if (!seller || seller.role !== 'seller')
+      return res.status(404).json({ success: false, message: 'Seller not found' });
+
+    seller.sellerInfo.noReturnsApproved = !!approved;
+    // If admin revokes approval, also disable the seller's toggle
+    if (!approved) seller.sellerInfo.noReturnsEnabled = false;
+    await seller.save();
+
+    console.log(`📦 No-returns approval ${approved ? 'granted' : 'revoked'} for ${seller.email}`);
+    res.json({
+      success: true,
+      message: `No-returns ${approved ? 'approved' : 'revoked'} for ${seller.name}`,
+      seller,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+

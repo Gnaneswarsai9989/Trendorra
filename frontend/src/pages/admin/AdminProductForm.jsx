@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { productAPI, uploadAPI } from '../../services/api';
 import toast from 'react-hot-toast';
-import { FiArrowLeft, FiUpload, FiX, FiSave } from 'react-icons/fi';
+import { FiArrowLeft, FiUpload, FiX, FiSave, FiVideo } from 'react-icons/fi';
 
 const BG = '#0a0a0a'; const CARD = '#1a1a1a';
 const BORDER = 'rgba(255,255,255,0.08)'; const GOLD = '#C9A84C';
@@ -17,26 +17,27 @@ const labelStyle = {
   letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '6px',
 };
 const focusGold = (e) => e.target.style.borderColor = GOLD;
-const blurGray  = (e) => e.target.style.borderColor = 'rgba(255,255,255,0.1)';
+const blurGray = (e) => e.target.style.borderColor = 'rgba(255,255,255,0.1)';
 
-const CATEGORIES   = ['Men', 'Women', 'Streetwear', 'Accessories', 'Kids'];
-const SIZES        = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'Free Size'];
-const SUB_CATS     = {
-  Men:         ['T-Shirts', 'Shirts', 'Jeans', 'Trousers', 'Jackets', 'Ethnic Wear', 'Sportswear'],
-  Women:       ['Tops', 'Dresses', 'Jeans', 'Sarees', 'Kurtis', 'Skirts', 'Jackets'],
-  Streetwear:  ['Hoodies', 'Oversized Tees', 'Joggers', 'Caps', 'Sneakers'],
+const CATEGORIES = ['Men', 'Women', 'Streetwear', 'Accessories', 'Kids'];
+const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'Free Size'];
+const SUB_CATS = {
+  Men: ['T-Shirts', 'Shirts', 'Jeans', 'Trousers', 'Jackets', 'Ethnic Wear', 'Sportswear'],
+  Women: ['Tops', 'Dresses', 'Jeans', 'Sarees', 'Kurtis', 'Skirts', 'Jackets'],
+  Streetwear: ['Hoodies', 'Oversized Tees', 'Joggers', 'Caps', 'Sneakers'],
   Accessories: ['Bags', 'Belts', 'Watches', 'Sunglasses', 'Jewelry', 'Scarves'],
-  Kids:        ['Boys', 'Girls', 'Infants', 'School Wear', 'Party Wear'],
+  Kids: ['Boys', 'Girls', 'Infants', 'School Wear', 'Party Wear'],
 };
 
 export default function AdminProductForm() {
-  const { id }     = useParams();
-  const navigate   = useNavigate();
-  const isEdit     = Boolean(id);
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const isEdit = Boolean(id);
 
-  const [loading,   setLoading]   = useState(false);
+  const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [fetching,  setFetching]  = useState(isEdit);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [fetching, setFetching] = useState(isEdit);
 
   const [form, setForm] = useState({
     name: '', description: '', price: '', discountPrice: '',
@@ -47,6 +48,7 @@ export default function AdminProductForm() {
     tags: '',
   });
   const [images, setImages] = useState([]);   // [{ url, public_id }]
+  const [videos, setVideos] = useState([]);   // [{ url, public_id }]
   const [colorInput, setColorInput] = useState({ name: '', hex: '#000000' });
 
   // Load existing product if editing
@@ -57,24 +59,25 @@ export default function AdminProductForm() {
       .then(res => {
         const p = res.product;
         setForm({
-          name:              p.name || '',
-          description:       p.description || '',
-          price:             p.price || '',
-          discountPrice:     p.discountPrice || '',
-          category:          p.category || 'Men',
-          subCategory:       p.subCategory || '',
-          brand:             p.brand || 'Trendorra',
-          stock:             p.stock || '',
-          material:          p.material || '',
-          careInstructions:  p.careInstructions || '',
-          sizes:             p.sizes || [],
-          colors:            p.colors || [],
-          isFeatured:        p.isFeatured || false,
-          isNewArrival:      p.isNewArrival || false,
-          isBestSeller:      p.isBestSeller || false,
-          tags:              (p.tags || []).join(', '),
+          name: p.name || '',
+          description: p.description || '',
+          price: p.price || '',
+          discountPrice: p.discountPrice || '',
+          category: p.category || 'Men',
+          subCategory: p.subCategory || '',
+          brand: p.brand || 'Trendorra',
+          stock: p.stock || '',
+          material: p.material || '',
+          careInstructions: p.careInstructions || '',
+          sizes: p.sizes || [],
+          colors: p.colors || [],
+          isFeatured: p.isFeatured || false,
+          isNewArrival: p.isNewArrival || false,
+          isBestSeller: p.isBestSeller || false,
+          tags: (p.tags || []).join(', '),
         });
         setImages(p.images || []);
+        setVideos(p.videos || []);
       })
       .catch(() => toast.error('Product not found'))
       .finally(() => setFetching(false));
@@ -110,7 +113,25 @@ export default function AdminProductForm() {
     finally { setUploading(false); }
   };
 
+  // ── NEW: video upload handler ──────────────────────────────────────────────
+  const handleVideoUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    if (videos.length + files.length > 2) { toast.error('Max 2 videos'); return; }
+    setUploadingVideo(true);
+    try {
+      const formData = new FormData();
+      files.forEach(f => formData.append('videos', f));
+      const res = await uploadAPI.uploadVideos(formData);
+      setVideos(p => [...p, ...(res.videos || [])]);
+      toast.success(`${files.length} video(s) uploaded`);
+    } catch { toast.error('Video upload failed'); }
+    finally { setUploadingVideo(false); }
+  };
+  // ──────────────────────────────────────────────────────────────────────────
+
   const removeImage = (i) => setImages(p => p.filter((_, idx) => idx !== i));
+  const removeVideo = (i) => setVideos(p => p.filter((_, idx) => idx !== i)); // NEW
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -123,11 +144,12 @@ export default function AdminProductForm() {
     try {
       const payload = {
         ...form,
-        price:         Number(form.price),
+        price: Number(form.price),
         discountPrice: form.discountPrice ? Number(form.discountPrice) : 0,
-        stock:         Number(form.stock),
-        tags:          form.tags.split(',').map(t => t.trim()).filter(Boolean),
+        stock: Number(form.stock),
+        tags: form.tags.split(',').map(t => t.trim()).filter(Boolean),
         images,
+        videos, // NEW
       };
 
       if (isEdit) {
@@ -208,9 +230,11 @@ export default function AdminProductForm() {
               </div>
             </div>
 
-            {/* Images */}
+            {/* Images & Videos */}
             <div className="p-6" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: '12px' }}>
-              <h3 className="font-body text-xs tracking-[0.15em] uppercase mb-4" style={{ color: 'rgba(255,255,255,0.4)' }}>Images (max 5)</h3>
+              <h3 className="font-body text-xs tracking-[0.15em] uppercase mb-4" style={{ color: 'rgba(255,255,255,0.4)' }}>Images (max 5) & Videos (max 2)</h3>
+
+              {/* Images row */}
               <div className="flex flex-wrap gap-3 mb-4">
                 {images.map((img, i) => (
                   <div key={i} className="relative w-20 h-24 flex-shrink-0">
@@ -232,6 +256,56 @@ export default function AdminProductForm() {
                   </label>
                 )}
               </div>
+
+              {/* ── NEW: Videos row ── */}
+              <div style={{ borderTop: `1px solid ${BORDER}`, paddingTop: '16px', marginTop: '4px' }}>
+                <p className="font-body text-[10px] tracking-[0.12em] uppercase mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                  Product Videos
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  {videos.map((vid, i) => (
+                    <div key={i} className="relative flex-shrink-0" style={{ width: '120px', height: '90px' }}>
+                      <video
+                        src={vid.url}
+                        muted
+                        loop
+                        playsInline
+                        onMouseOver={e => e.target.play()}
+                        onMouseOut={e => { e.target.pause(); e.target.currentTime = 0; }}
+                        className="w-full h-full object-cover rounded"
+                        style={{ backgroundColor: '#0a0a0a' }}
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ borderRadius: '4px', background: 'rgba(0,0,0,0.25)' }}>
+                        <FiVideo size={16} color="rgba(255,255,255,0.6)" />
+                      </div>
+                      <button type="button" onClick={() => removeVideo(i)}
+                        className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center"
+                        style={{ backgroundColor: '#f87171' }}>
+                        <FiX size={10} color="#fff" />
+                      </button>
+                      <span className="absolute bottom-0 left-0 right-0 text-center text-[9px] py-0.5 font-body"
+                        style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: 'rgba(255,255,255,0.6)', borderBottomLeftRadius: '4px', borderBottomRightRadius: '4px' }}>
+                        Video {i + 1}
+                      </span>
+                    </div>
+                  ))}
+                  {videos.length < 2 && (
+                    <label className="flex flex-col items-center justify-center cursor-pointer rounded flex-shrink-0"
+                      style={{ width: '120px', height: '90px', border: `2px dashed rgba(255,255,255,0.15)`, backgroundColor: '#050505' }}>
+                      <FiVideo size={16} style={{ color: 'rgba(255,255,255,0.3)' }} />
+                      <span className="font-body text-[10px] mt-1 text-center" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                        {uploadingVideo ? 'Uploading…' : 'Add Video'}
+                      </span>
+                      <span className="font-body text-[9px] mt-0.5" style={{ color: 'rgba(255,255,255,0.18)' }}>MP4, MOV, WEBM</span>
+                      <input type="file" accept="video/*" multiple className="hidden" onChange={handleVideoUpload} disabled={uploadingVideo} />
+                    </label>
+                  )}
+                </div>
+                <p className="font-body text-[10px] mt-2" style={{ color: 'rgba(255,255,255,0.2)' }}>
+                  Hover to preview · Max 2 videos · MP4 / MOV / WEBM · Max 50MB each
+                </p>
+              </div>
+              {/* ── END NEW ── */}
             </div>
 
             {/* Sizes & Colors */}
@@ -245,9 +319,9 @@ export default function AdminProductForm() {
                       className="px-3 py-1.5 font-body text-xs transition-all"
                       style={{
                         backgroundColor: form.sizes.includes(s) ? GOLD : 'transparent',
-                        color:           form.sizes.includes(s) ? '#fff' : 'rgba(255,255,255,0.4)',
-                        border:          `1px solid ${form.sizes.includes(s) ? GOLD : BORDER}`,
-                        borderRadius:    '4px',
+                        color: form.sizes.includes(s) ? '#fff' : 'rgba(255,255,255,0.4)',
+                        border: `1px solid ${form.sizes.includes(s) ? GOLD : BORDER}`,
+                        borderRadius: '4px',
                       }}>
                       {s}
                     </button>
@@ -329,7 +403,7 @@ export default function AdminProductForm() {
               <h3 className="font-body text-xs tracking-[0.15em] uppercase mb-4" style={{ color: 'rgba(255,255,255,0.4)' }}>Labels</h3>
               <div className="space-y-3">
                 {[
-                  { key: 'isFeatured',   label: 'Featured Product' },
+                  { key: 'isFeatured', label: 'Featured Product' },
                   { key: 'isNewArrival', label: 'New Arrival' },
                   { key: 'isBestSeller', label: 'Best Seller' },
                 ].map(({ key, label }) => (
@@ -347,7 +421,7 @@ export default function AdminProductForm() {
             </div>
 
             {/* Submit */}
-            <button type="submit" disabled={loading || uploading}
+            <button type="submit" disabled={loading || uploading || uploadingVideo}
               className="w-full py-3.5 font-body text-sm tracking-[0.15em] uppercase text-white flex items-center justify-center gap-2"
               style={{ backgroundColor: loading ? 'rgba(201,168,76,0.5)' : GOLD, borderRadius: '8px' }}>
               <FiSave size={15} />

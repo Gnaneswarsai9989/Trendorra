@@ -37,6 +37,10 @@ const sellerInfoSchema = new mongoose.Schema({
   },
   totalPaidOut: { type: Number, default: 0 },
 
+  // No-returns policy
+  noReturnsApproved: { type: Boolean, default: false }, // admin grants permission
+  noReturnsEnabled:  { type: Boolean, default: false }, // seller activates it (only if approved)
+
   payoutHistory: [{
 
     amount:      { type: Number },

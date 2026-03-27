@@ -9,10 +9,10 @@ import {
   FiLogOut, FiPackage, FiSettings, FiChevronRight,
   FiHome, FiGrid, FiShoppingCart, FiChevronDown,
   FiHelpCircle, FiFileText, FiShield, FiTruck,
-  FiRefreshCw, FiTag, FiMessageCircle,
+  FiRefreshCw, FiTag, FiMessageCircle, FiMenu,
 } from 'react-icons/fi';
 import logo from '../../assets/logo.png';
-import SearchOverlay from './SearchOverlay';
+import LiveSearch from './LiveSearch';
 import {
   SUB_CATEGORIES,
   SUB_CATEGORY_IMAGES,
@@ -177,15 +177,15 @@ const GOLD      = '#C9A84C';
 const GOLD_GLOW = 'rgba(201,168,76,0.10)';
 
 export default function Navbar() {
-  const [scrolled,       setScrolled]       = useState(false);
-  const [searchOpen,     setSearchOpen]     = useState(false);
-  const [searchQuery,    setSearchQuery]    = useState('');
-  const [userMenuOpen,   setUserMenuOpen]   = useState(false);
-  const [categoriesOpen, setCategoriesOpen] = useState(false);
-  const [activeCat,      setActiveCat]      = useState('Men');
-  const [isDark,         setIsDark]         = useState(() => localStorage.getItem('trendora_theme') !== 'light');
-  const [deskCatOpen,    setDeskCatOpen]    = useState(false);
-  const [deskMoreOpen,   setDeskMoreOpen]   = useState(false);
+  const [scrolled,           setScrolled]           = useState(false);
+  const [userMenuOpen,       setUserMenuOpen]       = useState(false);
+  const [mobileMoreOpen,     setMobileMoreOpen]     = useState(false);
+  const [categoriesOpen,     setCategoriesOpen]     = useState(false);
+  const [activeCat,          setActiveCat]          = useState('Men');
+  const [isDark,             setIsDark]             = useState(() => localStorage.getItem('trendora_theme') !== 'light');
+  const [deskCatOpen,        setDeskCatOpen]        = useState(false);
+  const [deskMoreOpen,       setDeskMoreOpen]       = useState(false);
+  const [mobileAccountOpen,  setMobileAccountOpen]  = useState(false);
 
   const deskCatRef  = useRef(null);
   const deskMoreRef = useRef(null);
@@ -204,7 +204,7 @@ export default function Navbar() {
 
   useEffect(() => {
     document.body.style.backgroundColor = isDark ? '#000000' : '#ffffff';
-    document.body.style.color           = isDark ? '#f0e8d8' : '#111111';
+    document.body.style.color           = isDark ? '#f5f5f5' : '#111111';
   }, [isDark]);
 
   useEffect(() => {
@@ -215,10 +215,11 @@ export default function Navbar() {
 
   useEffect(() => {
     setUserMenuOpen(false);
-    setSearchOpen(false);
     setCategoriesOpen(false);
     setDeskCatOpen(false);
     setDeskMoreOpen(false);
+    setMobileAccountOpen(false);
+    setMobileMoreOpen(false);
   }, [location]);
 
   useEffect(() => {
@@ -231,18 +232,9 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => {
-    document.body.style.overflow = searchOpen || categoriesOpen ? 'hidden' : '';
+    document.body.style.overflow = categoriesOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
-  }, [searchOpen, categoriesOpen]);
-
-  const handleSearch = e => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/shop?search=${searchQuery.trim()}`);
-      setSearchOpen(false);
-      setSearchQuery('');
-    }
-  };
+  }, [categoriesOpen]);
 
   const isActivePath = path => location.pathname === path;
   const handleLogout = () => { logout(); setCategoriesOpen(false); setUserMenuOpen(false); };
@@ -282,20 +274,21 @@ export default function Navbar() {
         <div className="md:hidden" style={{ backgroundColor: NAV_BG }}>
           <div className="relative flex items-center justify-between px-4 h-14"
             style={{ borderBottom: `1px solid ${BORDER}` }}>
-            <button onClick={() => setSearchOpen(true)}
-              className="w-9 h-9 flex items-center justify-center z-10"
-              style={{ color: TEXT }}>
-              <FiSearch size={19} />
-            </button>
-            <Link to="/" className="absolute left-0 right-0 flex items-center justify-center gap-2 pointer-events-auto">
+            <div className="flex items-center z-10">
+              <button onClick={() => setMobileMoreOpen(true)}
+                className="w-9 h-9 flex items-center justify-center -ml-1" style={{ color: TEXT }}>
+                <FiMenu size={22} />
+              </button>
+            </div>
+            <Link to="/" className="absolute left-0 right-0 flex items-center justify-center gap-2 pointer-events-auto z-0">
               <img src={logo} alt="Trendorra" className="h-9 w-auto object-contain mix-blend-lighten"
                 style={{ filter: 'brightness(1.1)' }} />
-              <span className="font-accent text-[14px] tracking-[0.28em] whitespace-nowrap"
+              <span className="font-accent text-[15px] tracking-[0.28em] whitespace-nowrap"
                 style={{ color: GOLD }}>TRENDORRA</span>
             </Link>
-            <div className="flex items-center gap-1 z-10">
-              <Link to="/wishlist" className="relative w-9 h-9 flex items-center justify-center" style={{ color: TEXT }}>
-                <FiHeart size={19} />
+            <div className="flex items-center z-10">
+              <Link to="/wishlist" className="relative w-9 h-9 flex items-center justify-center -mr-1" style={{ color: TEXT }}>
+                <FiHeart size={20} />
                 {wishlistCount > 0 && (
                   <span className="absolute top-1 right-1 text-white text-[9px] w-3.5 h-3.5 flex items-center justify-center rounded-full font-bold"
                     style={{ backgroundColor: GOLD }}>{wishlistCount}</span>
@@ -304,21 +297,9 @@ export default function Navbar() {
             </div>
           </div>
 
-          {/* Mobile search */}
-          <div style={{ backgroundColor: NAV_BG, padding: '8px 12px', borderBottom: `1px solid ${BORDER}` }}>
-            <form onSubmit={handleSearch} style={{
-              display: 'flex', alignItems: 'center',
-              backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5',
-              border: `1px solid ${isDark ? 'rgba(201,168,76,0.2)' : 'rgba(0,0,0,0.12)'}`,
-              borderRadius: '8px', overflow: 'hidden',
-            }}>
-              <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Search for products, brands & more…"
-                style={{ flex: 1, padding: '9px 14px', backgroundColor: 'transparent', border: 'none', outline: 'none', color: isDark ? '#f0e8d8' : '#111', fontSize: '13px', fontFamily: 'inherit' }} />
-              <button type="submit" style={{ padding: '0 14px', height: '38px', backgroundColor: GOLD, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <FiSearch size={16} style={{ color: '#000' }} />
-              </button>
-            </form>
+          {/* Mobile Live Search */}
+          <div style={{ backgroundColor: NAV_BG, padding: '10px 14px', borderBottom: `1px solid ${BORDER}`, zIndex: 101, position: 'relative' }}>
+            <LiveSearch isDark={isDark} isDesktop={false} placeholder="What are you looking for?" />
           </div>
 
           {/* Category pills */}
@@ -418,7 +399,7 @@ export default function Navbar() {
                               <span style={{ fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', color: cfg.color, opacity: 0.8 }}>
                                 {cfg.tag} · {cfg.count}
                               </span>
-                              <p style={{ color: '#f0e8d8', fontSize: '18px', fontWeight: 300, margin: '4px 0 0', letterSpacing: '0.05em' }}>
+                              <p style={{ color: '#f5f5f5', fontSize: '18px', fontWeight: 300, margin: '4px 0 0', letterSpacing: '0.05em' }}>
                                 Shop All {activeCat} →
                               </p>
                             </div>
@@ -494,29 +475,10 @@ export default function Navbar() {
                 )}
               </div>
 
-              {/* Search bar */}
-              <form onSubmit={handleSearch}
-                style={{
-                  flex: 1, display: 'flex', alignItems: 'center',
-                  backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5',
-                  border: `2px solid ${GOLD}`, borderRadius: '8px', overflow: 'hidden',
-                  maxWidth: '560px', transition: 'box-shadow 0.2s',
-                }}
-                onFocus={e => e.currentTarget.style.boxShadow = `0 0 0 3px ${GOLD}30`}
-                onBlur={e  => e.currentTarget.style.boxShadow = 'none'}
-              >
-                <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                  placeholder="Search for products, brands, categories…"
-                  style={{ flex: 1, padding: '11px 18px', backgroundColor: 'transparent', border: 'none', outline: 'none', color: isDark ? '#f0e8d8' : '#111', fontSize: '14px', fontFamily: 'inherit' }} />
-                <button type="submit"
-                  style={{ padding: '0 20px', height: '44px', backgroundColor: GOLD, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', flexShrink: 0, transition: 'background-color 0.15s' }}
-                  onMouseOver={e => e.currentTarget.style.backgroundColor = '#b8933f'}
-                  onMouseOut={e  => e.currentTarget.style.backgroundColor = GOLD}
-                >
-                  <FiSearch size={18} style={{ color: '#000' }} />
-                  <span style={{ color: '#000', fontSize: '13px', fontWeight: '600', fontFamily: 'inherit', letterSpacing: '0.05em' }}>Search</span>
-                </button>
-              </form>
+              {/* Live Search bar */}
+              <div style={{ flex: 1, maxWidth: '560px', zIndex: 101, position: 'relative' }}>
+                <LiveSearch isDark={isDark} isDesktop={true} />
+              </div>
 
               {/* More dropdown */}
               <div ref={deskMoreRef} style={{ position: 'relative', flexShrink: 0 }}>
@@ -636,7 +598,7 @@ export default function Navbar() {
                           className="absolute right-0 top-11 w-64 z-50 shadow-2xl"
                           style={{ backgroundColor: isDark ? '#111' : '#fff', border: `1px solid ${BORDER}`, borderRadius: '12px', overflow: 'hidden' }}>
                           <div className="px-4 py-3" style={{ borderBottom: `1px solid ${BORDER}`, backgroundColor: isDark ? '#0d0d0d' : '#f8f8f8' }}>
-                            <p className="font-body font-medium text-sm truncate" style={{ color: isDark ? '#f0e8d8' : '#111' }}>{user.name}</p>
+                            <p className="font-body font-medium text-sm truncate" style={{ color: isDark ? '#f5f5f5' : '#111' }}>{user.name}</p>
                             <p className="text-xs truncate" style={{ color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)' }}>{user.email}</p>
                             {isSeller && <span style={{ display: 'inline-block', marginTop: '4px', fontSize: '10px', letterSpacing: '0.1em', color: GOLD, backgroundColor: `${GOLD}18`, padding: '2px 8px', borderRadius: '999px', fontFamily: 'inherit' }}>SELLER</span>}
                           </div>
@@ -646,7 +608,7 @@ export default function Navbar() {
                             { to: '/wishlist',icon: FiHeart,   label: 'Wishlist'   },
                           ].map(({ to, icon: Icon, label }) => (
                             <Link key={to} to={to} className="flex items-center gap-3 px-4 py-3 text-sm font-body hover:text-gold transition-colors"
-                              style={{ color: isDark ? 'rgba(240,232,216,0.7)' : 'rgba(0,0,0,0.65)', borderBottom: `1px solid ${BORDER}` }}>
+                              style={{ color: isDark ? 'rgba(245,245,245,0.75)' : 'rgba(0,0,0,0.65)', borderBottom: `1px solid ${BORDER}` }}>
                               <Icon size={14} /> {label}
                             </Link>
                           ))}
@@ -681,10 +643,10 @@ export default function Navbar() {
                             <p style={{ color: isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.3)', fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase', fontFamily: 'inherit', margin: '0 0 6px' }}>Legal</p>
                           </div>
                           {[
-                            { to: '/legal/privacy-policy',   label: 'Privacy Policy'   },
-                            { to: '/legal/terms-of-service', label: 'Terms of Service' },
-                            { to: '/legal/refund-policy',    label: 'Refund Policy'    },
-                            { to: '/legal/shipping-policy',  label: 'Shipping Policy'  },
+                          { to: '/privacy-policy',   label: 'Privacy Policy'   },
+                            { to: '/terms-of-service', label: 'Terms of Service' },
+                            { to: '/refund-policy',    label: 'Refund Policy'    },
+                            { to: '/shipping-policy',  label: 'Shipping Policy'  },
                           ].map(({ to, label }) => (
                             <Link key={to} to={to} className="flex items-center gap-3 px-4 py-2 text-xs font-body hover:text-gold transition-colors"
                               style={{ color: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.4)', borderBottom: `1px solid ${BORDER}` }}>
@@ -716,32 +678,137 @@ export default function Navbar() {
         style={{ bottom: '12px', left: '50%', transform: 'translateX(-50%)', width: 'calc(100% - 28px)', maxWidth: '390px' }}>
         <div className="flex items-center justify-around px-2 py-2 relative"
           style={{ backgroundColor: isDark ? 'rgba(0,0,0,0.99)' : 'rgba(255,255,255,0.99)', borderRadius: '100px', border: `1px solid ${isDark ? 'rgba(201,168,76,0.20)' : 'rgba(0,0,0,0.10)'}`, boxShadow: isDark ? '0 4px 28px rgba(0,0,0,0.92), 0 0 0 1px rgba(201,168,76,0.06), inset 0 1px 0 rgba(255,255,255,0.04)' : '0 4px 24px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' }}>
-          <Link to="/" className="flex flex-col items-center justify-center gap-0.5 px-4 py-1.5 relative" style={{ minWidth: '56px' }}>
+          <Link to="/" onClick={() => { setMobileAccountOpen(false); setCategoriesOpen(false); setMobileMoreOpen(false); }} className="flex flex-col items-center justify-center gap-1 px-4 py-1.5 relative" style={{ minWidth: '56px' }}>
             {isActivePath('/') && <span className="absolute inset-0 rounded-full" style={{ backgroundColor: GOLD_GLOW }} />}
-            <FiHome size={19} strokeWidth={isActivePath('/') ? 2.5 : 1.5} style={{ color: isActivePath('/') ? GOLD : TEXT, position: 'relative' }} />
-            <span className="text-[9px] font-body tracking-wide relative" style={{ color: isActivePath('/') ? GOLD : TEXT }}>Home</span>
+            <FiHome size={20} strokeWidth={isActivePath('/') ? 2.5 : 1.5} style={{ color: isActivePath('/') ? GOLD : TEXT, position: 'relative' }} />
+            <span className="text-[10px] font-body font-medium tracking-wide relative" style={{ color: isActivePath('/') ? GOLD : TEXT }}>Home</span>
           </Link>
-          <button onClick={() => setCategoriesOpen(true)} className="flex flex-col items-center justify-center gap-0.5 px-4 py-1.5 relative" style={{ minWidth: '56px' }}>
+          <button onClick={() => { setCategoriesOpen(!categoriesOpen); setMobileAccountOpen(false); setMobileMoreOpen(false); }} className="flex flex-col items-center justify-center gap-1 px-4 py-1.5 relative" style={{ minWidth: '56px' }}>
             <span className="absolute inset-0 rounded-full transition-all" style={{ backgroundColor: categoriesOpen ? GOLD : GOLD_GLOW }} />
-            <FiGrid size={19} strokeWidth={categoriesOpen ? 2.5 : 1.5} style={{ color: categoriesOpen ? '#000000' : TEXT, position: 'relative', zIndex: 1 }} />
-            <span className="text-[9px] font-body tracking-wide relative" style={{ zIndex: 1, color: categoriesOpen ? '#000000' : TEXT }}>Categories</span>
+            <FiGrid size={20} strokeWidth={categoriesOpen ? 2.5 : 1.5} style={{ color: categoriesOpen ? '#000000' : TEXT, position: 'relative', zIndex: 1 }} />
+            <span className="text-[10px] font-body font-medium tracking-wide relative" style={{ zIndex: 1, color: categoriesOpen ? '#000000' : TEXT }}>Categories</span>
           </button>
-          <Link to={user ? '/profile' : '/login'} className="flex flex-col items-center justify-center gap-0.5 px-3 py-2 relative" style={{ minWidth: '56px' }}>
-            <span className="absolute inset-0 rounded-full" style={{ backgroundColor: (isActivePath('/profile') || isActivePath('/login')) ? GOLD : GOLD_GLOW }} />
-            {user ? <span className="text-[13px] font-body font-semibold relative z-10" style={{ color: '#fff' }}>{user.name?.charAt(0).toUpperCase()}</span>
-                  : <FiUser size={19} strokeWidth={1.5} style={{ color: '#fff', position: 'relative', zIndex: 1 }} />}
-            <span className="text-[9px] font-body tracking-wide relative z-10" style={{ color: (isActivePath('/profile') || isActivePath('/login')) ? '#fff' : 'rgba(255,255,255,0.8)' }}>Account</span>
-          </Link>
-          <Link to="/cart" className="flex flex-col items-center justify-center gap-0.5 px-4 py-1.5 relative" style={{ minWidth: '56px' }}>
+          <button onClick={() => { if (!user) navigate('/login'); else { setMobileAccountOpen(!mobileAccountOpen); setCategoriesOpen(false); setMobileMoreOpen(false); } }} className="flex flex-col items-center justify-center gap-1 px-3 py-1.5 relative" style={{ minWidth: '56px', background: 'none', border: 'none', cursor: 'pointer' }}>
+            <span className="absolute inset-0 rounded-full" style={{ backgroundColor: mobileAccountOpen ? GOLD : GOLD_GLOW }} />
+            {user ? <span className="text-[14px] font-body font-bold relative z-10 flex items-center justify-center" style={{ color: '#fff', width: '20px', height: '20px' }}>{user.name?.charAt(0).toUpperCase()}</span>
+                  : <FiUser size={20} strokeWidth={1.5} style={{ color: '#fff', position: 'relative', zIndex: 1 }} />}
+            <span className="text-[10px] font-body font-medium tracking-wide relative z-10" style={{ color: mobileAccountOpen ? '#fff' : 'rgba(255,255,255,0.8)' }}>Account</span>
+          </button>
+          <Link to="/cart" onClick={() => { setMobileAccountOpen(false); setCategoriesOpen(false); setMobileMoreOpen(false); }} className="flex flex-col items-center justify-center gap-1 px-4 py-1.5 relative" style={{ minWidth: '56px' }}>
             {isActivePath('/cart') && <span className="absolute inset-0 rounded-full" style={{ backgroundColor: GOLD_GLOW }} />}
             <div className="relative z-10">
-              <FiShoppingCart size={19} strokeWidth={isActivePath('/cart') ? 2.5 : 1.5} style={{ color: isActivePath('/cart') ? GOLD : TEXT }} />
-              {cartCount > 0 && <span className="absolute -top-2 -right-2.5 text-white text-[8px] w-3.5 h-3.5 flex items-center justify-center rounded-full font-bold" style={{ backgroundColor: GOLD }}>{cartCount}</span>}
+              <FiShoppingCart size={20} strokeWidth={isActivePath('/cart') ? 2.5 : 1.5} style={{ color: isActivePath('/cart') ? GOLD : TEXT }} />
+              {cartCount > 0 && <span className="absolute -top-1.5 -right-2.5 text-white text-[9px] w-4 h-4 flex items-center justify-center rounded-full font-bold" style={{ backgroundColor: GOLD }}>{cartCount}</span>}
             </div>
-            <span className="text-[9px] font-body tracking-wide relative z-10" style={{ color: isActivePath('/cart') ? GOLD : TEXT }}>Cart</span>
+            <span className="text-[10px] font-body font-medium tracking-wide relative z-10" style={{ color: isActivePath('/cart') ? GOLD : TEXT }}>Cart</span>
           </Link>
         </div>
       </nav>
+
+      {/* ══ MOBILE ACCOUNT OVERLAY ══ */}
+      <AnimatePresence>
+        {mobileAccountOpen && user && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
+              className="fixed z-[90] md:hidden" style={{ top: 0, left: 0, right: 0, bottom: '76px', background: 'rgba(0,0,0,0.85)' }}
+              onClick={() => setMobileAccountOpen(false)} />
+            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'tween', duration: 0.35, ease: 'easeOut' }}
+              className="fixed left-0 right-0 z-[95] md:hidden flex flex-col"
+              style={{ top: 0, bottom: '76px', background: '#0a0a0a', borderTop: `1px solid ${BORDER}` }}>
+
+              {/* Header */}
+              <div style={{ padding: '24px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#050505', flexShrink: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: 0 }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: `${GOLD}22`, border: `1px solid ${GOLD}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <span style={{ color: GOLD, fontSize: '20px', fontWeight: '700' }}>{user.name?.charAt(0).toUpperCase()}</span>
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <h2 style={{ color: '#fff', fontSize: '18px', fontWeight: '600', margin: '0 0 4px', fontFamily: 'Cinzel, serif', letterSpacing: '0.05em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.name}</h2>
+                    <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</p>
+                  </div>
+                </div>
+                <button onClick={() => setMobileAccountOpen(false)} style={{ background: 'rgba(255,255,255,0.05)', border: `1px solid ${BORDER}`, borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0 }}>
+                  <FiX size={18} />
+                </button>
+              </div>
+
+              {/* Scrollable Content */}
+              <div style={{ overflowY: 'auto', flex: 1 }}>
+                
+                {/* Account links */}
+                <div style={{ padding: '12px 16px' }}>
+                  <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', margin: '0 0 12px 4px', fontWeight: '600' }}>Your Account</p>
+                  <div style={{ backgroundColor: '#111', borderRadius: '12px', border: `1px solid ${BORDER}`, overflow: 'hidden' }}>
+                    {[
+                      { to: '/profile', icon: FiUser,    label: 'My Profile',  desc: 'Edit account details' },
+                      { to: '/orders',  icon: FiPackage, label: 'My Orders',   desc: 'Track & manage orders' },
+                      { to: '/wishlist',icon: FiHeart,   label: 'Wishlist',    desc: 'Saved items' },
+                    ].map(({ to, icon: Icon, label, desc }, i) => (
+                      <Link key={to} to={to} onClick={() => setMobileAccountOpen(false)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px', textDecoration: 'none', borderBottom: i < 2 ? `1px solid ${BORDER}` : 'none' }}>
+                        <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: `${GOLD}12`, border: `1px solid ${GOLD}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <Icon size={16} style={{ color: GOLD }} />
+                        </div>
+                        <div>
+                          <p style={{ color: '#f5f5f5', fontSize: '15px', fontWeight: '500', margin: 0, marginBottom: '2px' }}>{label}</p>
+                          <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px', margin: 0 }}>{desc}</p>
+                        </div>
+                        <FiChevronRight size={16} style={{ color: 'rgba(255,255,255,0.2)', marginLeft: 'auto', flexShrink: 0 }} />
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Seller Section */}
+                {isSeller && (
+                  <div style={{ padding: '0 16px 12px' }}>
+                    <p style={{ color: `${GOLD}80`, fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', margin: '0 0 12px 4px', fontWeight: '600' }}>Seller Central</p>
+                    <Link to="/seller/dashboard" onClick={() => setMobileAccountOpen(false)}
+                      style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px', textDecoration: 'none', background: 'linear-gradient(135deg, rgba(201,168,76,0.1) 0%, rgba(201,168,76,0.02) 100%)', border: `1px solid ${GOLD}40`, borderRadius: '12px' }}>
+                      <div style={{ width: '42px', height: '42px', borderRadius: '10px', background: `${GOLD}22`, border: `1px solid ${GOLD}50`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <FiShoppingBag size={18} style={{ color: GOLD }} />
+                      </div>
+                      <div>
+                        <p style={{ color: GOLD, fontSize: '15px', fontWeight: '600', margin: 0, marginBottom: '2px' }}>Seller Dashboard</p>
+                        <p style={{ color: `${GOLD}70`, fontSize: '12px', margin: 0 }}>{user?.sellerInfo?.businessName || 'Manage your store'}</p>
+                      </div>
+                      <FiChevronRight size={16} style={{ color: `${GOLD}60`, marginLeft: 'auto', flexShrink: 0 }} />
+                    </Link>
+                  </div>
+                )}
+
+                {/* Legal section */}
+                <div style={{ padding: '12px 16px' }}>
+                  <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', margin: '0 0 12px 4px', fontWeight: '600' }}>Legal</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    {[
+                      { to: '/privacy-policy',   label: 'Privacy Policy',   icon: FiShield   },
+                      { to: '/terms-of-service', label: 'Terms of Service', icon: FiFileText },
+                      { to: '/refund-policy',    label: 'Refund Policy',    icon: FiRefreshCw},
+                      { to: '/shipping-policy',  label: 'Shipping Policy',  icon: FiTruck    },
+                    ].map(({ to, label, icon: Icon }) => (
+                      <Link key={to} to={to} onClick={() => setMobileAccountOpen(false)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 12px', background: '#111', border: `1px solid ${BORDER}`, borderRadius: '10px', textDecoration: 'none' }}>
+                        <Icon size={14} style={{ color: 'rgba(255,255,255,0.4)', flexShrink: 0 }} />
+                        <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', lineHeight: 1.2, fontWeight: '500' }}>{label}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Logout */}
+                <div style={{ padding: '24px 16px 40px' }}>
+                  <button onClick={() => { handleLogout(); setMobileAccountOpen(false); }}
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '16px', background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: '12px', cursor: 'pointer' }}>
+                    <FiLogOut size={16} style={{ color: '#f87171' }} />
+                    <span style={{ color: '#f87171', fontSize: '15px', fontWeight: '600', letterSpacing: '0.05em' }}>Sign Out</span>
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* ══ MOBILE CATEGORIES OVERLAY ══ */}
       <AnimatePresence>
@@ -763,7 +830,7 @@ export default function Navbar() {
                   </div>
                   <div style={{ minWidth: 0 }}>
                     <p style={{ fontSize: '9px', letterSpacing: '0.24em', color: 'rgba(201,168,76,0.60)', margin: '0 0 2px', textTransform: 'uppercase' }}>Trendorra</p>
-                    <h2 style={{ fontSize: '16px', fontWeight: 400, color: '#f0e8d8', margin: 0, letterSpacing: '0.03em', whiteSpace: 'nowrap' }}>Shop Collection</h2>
+                    <h2 style={{ fontSize: '16px', fontWeight: 400, color: '#f5f5f5', margin: 0, letterSpacing: '0.03em', whiteSpace: 'nowrap' }}>Shop Collection</h2>
                   </div>
                 </div>
                 <button onClick={() => setCategoriesOpen(false)} style={{ width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(240,232,216,0.70)', cursor: 'pointer' }}>
@@ -848,7 +915,7 @@ export default function Navbar() {
                             {CAT_CONFIG[activeCat].tag} · {CAT_CONFIG[activeCat].count}
                           </span>
                           <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
-                            <h3 style={{ fontSize: '26px', fontWeight: 300, color: '#f0e8d8', margin: 0, letterSpacing: '-0.01em', lineHeight: 1 }}>{activeCat}</h3>
+                            <h3 style={{ fontSize: '26px', fontWeight: 300, color: '#f5f5f5', margin: 0, letterSpacing: '-0.01em', lineHeight: 1 }}>{activeCat}</h3>
                             <span style={{ fontSize: '11px', color: `${CAT_CONFIG[activeCat].color}80` }}>→</span>
                           </div>
                         </div>
@@ -890,38 +957,15 @@ export default function Navbar() {
                           style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderRadius: '18px', background: `linear-gradient(135deg, ${CAT_CONFIG[activeCat].color}20, ${CAT_CONFIG[activeCat].color}08)`, border: `1px solid ${CAT_CONFIG[activeCat].color}30`, cursor: 'pointer', transition: 'all 0.15s' }}>
                           <div>
                             <p style={{ fontSize: '9px', color: `${CAT_CONFIG[activeCat].color}70`, margin: '0 0 3px', letterSpacing: '0.14em', textTransform: 'uppercase' }}>Full collection</p>
-                            <p style={{ fontSize: '15px', color: '#f0e8d8', margin: 0, fontWeight: 300, letterSpacing: '0.02em' }}>Shop all {activeCat}</p>
+                            <p style={{ fontSize: '15px', color: '#f5f5f5', margin: 0, fontWeight: 300, letterSpacing: '0.02em' }}>Shop all {activeCat}</p>
                           </div>
-                          <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: `linear-gradient(135deg, ${GOLD}, #7a5c18)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: `0 4px 16px ${GOLD}35` }}>
+                          <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: `linear-gradient(135deg, ${GOLD}, #a07830)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: `0 4px 16px ${GOLD}35` }}>
                             <FiChevronRight size={18} style={{ color: '#000000' }} />
                           </div>
                         </button>
                       </div>
 
-                      {/* Legal links */}
-                      <div style={{ margin: '0 12px 24px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', overflow: 'hidden' }}>
-                        <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase', padding: '10px 14px 6px', margin: 0, fontFamily: 'inherit' }}>Legal</p>
-                        {[
-                          { to: '/legal/privacy-policy',   label: 'Privacy Policy'   },
-                          { to: '/legal/terms-of-service', label: 'Terms of Service' },
-                          { to: '/legal/refund-policy',    label: 'Refund Policy'    },
-                          { to: '/legal/shipping-policy',  label: 'Shipping Policy'  },
-                          { to: '/legal/cookie-policy',    label: 'Cookie Policy'    },
-                          { to: '/legal/disclaimer',       label: 'Disclaimer'       },
-                        ].map(({ to, label }, i) => (
-                          <Link key={to} to={to} onClick={() => setCategoriesOpen(false)}
-                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', textDecoration: 'none', borderTop: i > 0 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}
-                            onTouchStart={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.06)'}
-                            onTouchEnd={e   => e.currentTarget.style.backgroundColor = 'transparent'}
-                          >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                              <FiFileText size={13} style={{ color: 'rgba(255,255,255,0.25)', flexShrink: 0 }} />
-                              <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', fontFamily: 'inherit' }}>{label}</span>
-                            </div>
-                            <FiChevronRight size={12} style={{ color: 'rgba(255,255,255,0.2)' }} />
-                          </Link>
-                        ))}
-                      </div>
+                      {/* Legal links removed from here */}
                     </motion.div>
                   </AnimatePresence>
                 </div>
@@ -931,7 +975,76 @@ export default function Navbar() {
         )}
       </AnimatePresence>
 
-      <SearchOverlay isOpen={searchOpen} onClose={() => setSearchOpen(false)} isDark={isDark} />
+      {/* ══ MOBILE MORE OVERLAY ══ */}
+      <AnimatePresence>
+        {mobileMoreOpen && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
+              className="fixed z-[90] md:hidden" style={{ top: 0, left: 0, right: 0, bottom: '76px', background: 'rgba(0,0,0,0.85)' }}
+              onClick={() => setMobileMoreOpen(false)} />
+            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'tween', duration: 0.35, ease: 'easeOut' }}
+              className="fixed left-0 right-0 z-[95] md:hidden flex flex-col"
+              style={{ top: 0, bottom: '76px', background: '#0a0a0a', borderTop: `1px solid ${BORDER}`, overflowY: 'auto' }}>
+              
+              <div style={{ padding: '24px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#050505', flexShrink: 0 }}>
+                <h2 style={{ color: '#fff', fontSize: '18px', fontWeight: '600', margin: 0, fontFamily: 'Cinzel, serif', letterSpacing: '0.05em' }}>More Options</h2>
+                <button onClick={() => setMobileMoreOpen(false)} style={{ background: 'rgba(255,255,255,0.05)', border: `1px solid ${BORDER}`, borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0 }}>
+                  <FiX size={18} />
+                </button>
+              </div>
+
+              <div style={{ overflowY: 'auto', flex: 1, padding: '24px 16px' }}>
+                <div style={{ backgroundColor: '#111', borderRadius: '12px', border: `1px solid ${BORDER}`, overflow: 'hidden' }}>
+                  <Link to={isSeller ? '/seller/dashboard' : '/seller/register'} onClick={() => setMobileMoreOpen(false)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px', textDecoration: 'none', borderBottom: `1px solid ${BORDER}` }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: `${GOLD}15`, border: `1px solid ${GOLD}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <FiShoppingBag size={18} style={{ color: GOLD }} />
+                    </div>
+                    <div>
+                      <p style={{ color: '#f5f5f5', fontSize: '15px', fontWeight: '500', margin: '0 0 2px' }}>{isSeller ? 'Seller Dashboard' : 'Become a Seller'}</p>
+                      <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px', margin: 0 }}>{isSeller ? (user?.sellerInfo?.businessName || 'My Store') : 'Sell on Trendorra'}</p>
+                    </div>
+                    <FiChevronRight size={16} style={{ color: 'rgba(255,255,255,0.2)', marginLeft: 'auto', flexShrink: 0 }} />
+                  </Link>
+                  <Link to="/orders" onClick={() => setMobileMoreOpen(false)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px', textDecoration: 'none', borderBottom: `1px solid ${BORDER}` }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(96,165,250,0.12)', border: '1px solid rgba(96,165,250,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <FiTruck size={18} style={{ color: '#60a5fa' }} />
+                    </div>
+                    <div>
+                      <p style={{ color: '#f5f5f5', fontSize: '15px', fontWeight: '500', margin: '0 0 2px' }}>Track Order</p>
+                      <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px', margin: 0 }}>Check delivery status</p>
+                    </div>
+                    <FiChevronRight size={16} style={{ color: 'rgba(255,255,255,0.2)', marginLeft: 'auto', flexShrink: 0 }} />
+                  </Link>
+                  <Link to="/shop" onClick={() => setMobileMoreOpen(false)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px', textDecoration: 'none', borderBottom: `1px solid ${BORDER}` }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <FiTag size={18} style={{ color: '#4ade80' }} />
+                    </div>
+                    <div>
+                      <p style={{ color: '#f5f5f5', fontSize: '15px', fontWeight: '500', margin: '0 0 2px' }}>Offers & Coupons</p>
+                      <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px', margin: 0 }}>Deals & discounts</p>
+                    </div>
+                    <FiChevronRight size={16} style={{ color: 'rgba(255,255,255,0.2)', marginLeft: 'auto', flexShrink: 0 }} />
+                  </Link>
+                  <Link to="/help" onClick={() => setMobileMoreOpen(false)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px', textDecoration: 'none' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(255,255,255,0.06)', border: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <FiHelpCircle size={18} style={{ color: 'rgba(255,255,255,0.6)' }} />
+                    </div>
+                    <div>
+                      <p style={{ color: '#f5f5f5', fontSize: '15px', fontWeight: '500', margin: '0 0 2px' }}>Help & Support</p>
+                      <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px', margin: 0 }}>FAQs & customer care</p>
+                    </div>
+                    <FiChevronRight size={16} style={{ color: 'rgba(255,255,255,0.2)', marginLeft: 'auto', flexShrink: 0 }} />
+                  </Link>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </>
   );
 }

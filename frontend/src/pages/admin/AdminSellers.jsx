@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { userAPI, orderAPI, deliveryAPI } from '../../services/api';
+import { userAPI, orderAPI, deliveryAPI, settingsAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 import {
   FiArrowLeft, FiShoppingBag, FiDollarSign, FiCheck, FiX,
   FiRefreshCw, FiEye, FiCopy, FiTrendingUp, FiPlay, FiLock,
   FiTrash2, FiAlertTriangle, FiClock, FiTruck, FiUser, FiShield,
+  FiRotateCcw,
 } from 'react-icons/fi';
 
 const BG     = '#080808';
@@ -14,24 +15,16 @@ const CARD2  = '#161616';
 const BORDER = 'rgba(255,255,255,0.07)';
 const GOLD   = '#C9A84C';
 
-const COMMISSION_RATE = 0.10;
-const FIXED_FEE = (p) => {
-  if (p <= 500)    return 20;
-  if (p <= 1000)   return 30;
-  if (p <= 5000)   return 40;
-  if (p <= 10000)  return 80;
-  if (p <= 50000)  return 120;
-  if (p <= 100000) return 150;
-  return 200;
-};
+// ✅ Dynamic: fetched from DB — defaults to 0 until admin sets them
+let _commRate  = 0;
+let _fixedCharge = 0;
 
-// ✅ FIXED: subtract deliveryCharge before commission calculation
 const calcEarnings = (price, deliveryCharge = 0) => {
   const p          = Number(price) || 0;
   const dc         = Number(deliveryCharge) || 0;
   const productVal = Math.max(0, p - dc);
-  const commission = Math.round(productVal * COMMISSION_RATE);
-  const fixed      = FIXED_FEE(productVal);
+  const commission = Math.round(productVal * (_commRate / 100));
+  const fixed      = Number(_fixedCharge) || 0;
   return { commission, fixed, deliveryCharge: dc, productVal, earnings: Math.max(0, productVal - commission - fixed) };
 };
 
@@ -156,7 +149,7 @@ function PayoutTimeline({ order }) {
 }
 
 // ── Seller Detail Modal ───────────────────────────────────────────
-function SellerModal({ seller, orders, onClose, onStatusChange, onPayout, onSimulate, simulating, onResetPayout, deliveryMode }) {
+function SellerModal({ seller, orders, onClose, onStatusChange, onPayout, onSimulate, simulating, onResetPayout, deliveryMode, onToggleNoReturns }) {
   const [showReset, setShowReset] = useState(false);
   const [resetting, setResetting] = useState(false);
 
@@ -366,7 +359,7 @@ function SellerModal({ seller, orders, onClose, onStatusChange, onPayout, onSimu
           )}
 
           {/* Action buttons */}
-          <div style={{ display: 'flex', gap: '10px' }}>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
             {seller.sellerInfo?.status !== 'approved' && (
               <button onClick={() => onStatusChange(seller._id, 'approved')}
                 style={{ flex: 1, padding: '11px', backgroundColor: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.25)', borderRadius: '8px', color: '#4ade80', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
@@ -382,6 +375,26 @@ function SellerModal({ seller, orders, onClose, onStatusChange, onPayout, onSimu
             <button onClick={() => canPayout && onPayout(seller, pending)} disabled={!canPayout}
               style={{ flex: 1, padding: '11px', backgroundColor: canPayout ? `${GOLD}18` : 'rgba(255,255,255,0.03)', border: `1px solid ${canPayout ? `${GOLD}40` : BORDER}`, borderRadius: '8px', color: canPayout ? GOLD : 'rgba(255,255,255,0.2)', fontSize: '13px', fontWeight: '600', cursor: canPayout ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
               {canPayout ? <><FiDollarSign size={13} /> Pay ₹{pending.toLocaleString()}</> : <><FiLock size={13} /> {locked > 0 ? `₹${locked.toLocaleString()} Locked` : 'Payout Locked'}</>}
+            </button>
+          </div>
+
+          {/* No-Returns Permission Toggle */}
+          <div style={{ marginTop: '10px', backgroundColor: seller.sellerInfo?.noReturnsApproved ? 'rgba(248,113,113,0.05)' : 'rgba(255,255,255,0.03)', border: `1px solid ${seller.sellerInfo?.noReturnsApproved ? 'rgba(248,113,113,0.22)' : BORDER}`, borderRadius: '10px', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <FiRotateCcw size={15} style={{ color: seller.sellerInfo?.noReturnsApproved ? '#f87171' : 'rgba(255,255,255,0.3)', flexShrink: 0 }} />
+              <div>
+                <p style={{ color: '#fff', fontSize: '13px', fontWeight: '600', margin: '0 0 2px' }}>No Returns Permission</p>
+                <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', margin: 0 }}>
+                  {seller.sellerInfo?.noReturnsApproved
+                    ? seller.sellerInfo?.noReturnsEnabled ? '🔴 Active — Seller has enabled no-returns' : '✅ Approved — Seller has not enabled it yet'
+                    : 'Not granted — seller follows standard return policy'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => onToggleNoReturns(seller._id, !seller.sellerInfo?.noReturnsApproved)}
+              style={{ padding: '7px 14px', backgroundColor: seller.sellerInfo?.noReturnsApproved ? 'rgba(248,113,113,0.12)' : 'rgba(251,191,36,0.1)', border: `1px solid ${seller.sellerInfo?.noReturnsApproved ? 'rgba(248,113,113,0.3)' : 'rgba(251,191,36,0.25)'}`, borderRadius: '7px', color: seller.sellerInfo?.noReturnsApproved ? '#f87171' : '#fbbf24', fontSize: '12px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              {seller.sellerInfo?.noReturnsApproved ? 'Revoke Permission' : 'Grant Permission'}
             </button>
           </div>
           {!canPayout && (locked > 0 || delivered.length === 0) && (
@@ -444,6 +457,11 @@ export default function AdminSellers() {
   useEffect(() => {
     fetchData();
     deliveryAPI.getMode().then(r => setDeliveryMode(r.mode)).catch(() => setDeliveryMode('prototype'));
+    // Load platform commission settings
+    settingsAPI.get().then(res => {
+      _commRate    = res.settings?.commissionRate ?? 0;
+      _fixedCharge = res.settings?.fixedCharge   ?? 0;
+    }).catch(() => {});
   }, []);
 
   const fetchData = async () => {
@@ -518,13 +536,22 @@ export default function AdminSellers() {
     finally { setSimulating(null); }
   };
 
+  const handleNoReturnsApproval = async (sellerId, approve) => {
+    try {
+      const res = await userAPI.toggleNoReturnsApproval(sellerId, approve);
+      toast.success(approve ? '✅ No-returns permission granted' : '🚫 No-returns permission revoked');
+      fetchData();
+      if (selected?._id === sellerId) setSelected(s => ({ ...s, sellerInfo: { ...s.sellerInfo, noReturnsApproved: approve, ...(!approve && { noReturnsEnabled: false }) } }));
+    } catch { toast.error('Failed to update no-returns permission'); }
+  };
+
   const totComm    = sellers.reduce((s, x) => s + getStats(x).comm, 0);
   const totPending = sellers.reduce((s, x) => s + getStats(x).pending, 0);
   const approved   = sellers.filter(s => s.sellerInfo?.status === 'approved').length;
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#080808' }}>
-      {selected && <SellerModal seller={selected} orders={getSellerOrders(selected._id)} onClose={() => setSelected(null)} onStatusChange={handleStatusChange} simulating={simulating} onSimulate={handleSimulate} onPayout={(seller, amt) => { setSelected(null); setPayoutData({ seller, amount: amt }); }} onResetPayout={handleResetPayout} deliveryMode={deliveryMode} />}
+      {selected && <SellerModal seller={selected} orders={getSellerOrders(selected._id)} onClose={() => setSelected(null)} onStatusChange={handleStatusChange} simulating={simulating} onSimulate={handleSimulate} onPayout={(seller, amt) => { setSelected(null); setPayoutData({ seller, amount: amt }); }} onResetPayout={handleResetPayout} deliveryMode={deliveryMode} onToggleNoReturns={handleNoReturnsApproval} />}
       {payoutData && <PayoutModal seller={payoutData.seller} amount={payoutData.amount} onClose={() => setPayoutData(null)} onConfirm={handlePayout} />}
 
       {/* Header */}

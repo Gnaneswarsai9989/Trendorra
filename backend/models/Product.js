@@ -6,6 +6,7 @@ const productSchema = new mongoose.Schema({
   price: { type: Number, required: [true, 'Price is required'], min: 0 },
   discountPrice: { type: Number, default: 0 },
   images: [{ url: String, public_id: String }],
+  videos: [{ url: String, public_id: String }],
   category: {
     type: String,
     required: true,
@@ -16,7 +17,7 @@ const productSchema = new mongoose.Schema({
   sizes: [{ type: String, enum: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'Free Size'] }],
   colors: [{ name: String, hex: String }],
   stock: { type: Number, required: true, default: 0 },
-sku: { type: String, sparse: true },
+  sku: { type: String, sparse: true },
   tags: [String],
   isFeatured: { type: Boolean, default: false },
   isNewArrival: { type: Boolean, default: false },

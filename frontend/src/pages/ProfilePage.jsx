@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { authAPI } from '../services/api';
-import { FiUser, FiLock, FiShoppingBag, FiHeart, FiLogOut, FiEdit3, FiSun, FiMoon, FiChevronRight, FiCheck, FiX } from 'react-icons/fi';
+import { FiUser, FiLock, FiShoppingBag, FiHeart, FiLogOut, FiEdit3, FiSun, FiMoon, FiChevronRight, FiCheck, FiX, FiFileText } from 'react-icons/fi';
 import { useTheme } from '../context/ThemeContext';
 import toast from 'react-hot-toast';
 
@@ -126,6 +126,28 @@ export function ProfilePage() {
                 style={{ left: isDark ? '22px' : '2px' }} />
             </div>
           </button>
+
+          <div className="my-1.5" style={{ height: '1px', backgroundColor: BORDER, marginLeft: '12px', marginRight: '12px' }} />
+
+          {/* Legal Links */}
+          <div className="my-3 px-3">
+            <p style={{ color: DIM, fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '8px', fontFamily: 'Jost,sans-serif', fontWeight: 'bold' }}>Legal & Info</p>
+            {[
+              { to: '/privacy-policy',   label: 'Privacy Policy'   },
+              { to: '/terms-of-service', label: 'Terms of Service' },
+              { to: '/refund-policy',    label: 'Refund Policy'    },
+              { to: '/shipping-policy',  label: 'Shipping Policy'  },
+              { to: '/cookie-policy',    label: 'Cookie Policy'    },
+            ].map(({ to, label }) => (
+              <Link key={to} to={to} className="w-full flex items-center justify-between py-2 transition-all" style={{ textDecoration: 'none' }}>
+                <div className="flex items-center gap-3">
+                  <FiFileText size={14} style={{ color: DIM }} />
+                  <span className="font-body text-sm" style={{ color: DIM }}>{label}</span>
+                </div>
+                <FiChevronRight size={13} style={{ color: 'rgba(255,255,255,0.08)' }} />
+              </Link>
+            ))}
+          </div>
 
           <div className="my-1.5" style={{ height: '1px', backgroundColor: BORDER, marginLeft: '12px', marginRight: '12px' }} />
 

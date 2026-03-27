@@ -55,7 +55,7 @@ exports.getProducts = async (req, res) => {
     const skip  = (Number(page) - 1) * Number(limit);
     const total = await Product.countDocuments(query);
     const products = await Product.find(query)
-      .populate('createdBy', 'name role email') // ← populate seller info
+      .populate('createdBy', 'name role email sellerInfo') // ← populate seller info incl. no-returns
       .sort(sortBy)
       .skip(skip)
       .limit(Number(limit));
@@ -80,7 +80,7 @@ exports.getProducts = async (req, res) => {
 exports.getProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id)
-      .populate('createdBy', 'name role email');
+      .populate('createdBy', 'name role email sellerInfo'); // ← include no-returns policy
     if (!product)
       return res.status(404).json({ success: false, message: 'Product not found' });
     res.json({ success: true, product });
