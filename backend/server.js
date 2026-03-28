@@ -5,6 +5,7 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
+const passport  = require('passport');
 
 dotenv.config();
 connectDB();
@@ -12,6 +13,7 @@ connectDB();
 const app = express();
 
 // Security middleware
+app.use(passport.initialize());
 app.use(helmet());
 app.use(morgan('dev'));
 

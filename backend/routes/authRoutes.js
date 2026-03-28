@@ -90,13 +90,13 @@ router.patch('/no-returns', protect, async (req, res) => {
 
 // ── Google OAuth Routes ───────────────────────────────────────────
 router.get('/google',
-  passport.authenticate('google', { scope: ['profile', 'email'] })
+  passport.authenticate('google', { scope: ['profile', 'email'], session: false })
 );
 
 router.get('/google/callback',
   passport.authenticate('google', {
     failureRedirect: `${process.env.CLIENT_URL}/login?error=google_failed`,
-    session: true,   // ✅ required for OAuth handshake
+    session: false,
   }),
   (req, res) => {
     const token = generateToken(req.user._id);
