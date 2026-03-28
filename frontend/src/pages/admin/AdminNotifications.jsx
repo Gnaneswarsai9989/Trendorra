@@ -42,11 +42,19 @@ export default function AdminNotifications() {
     if (!window.confirm(`Send SMS to ${stats?.withPhone} customers?`)) return;
     setSending(true); setResult(null);
     try {
-      const res = await API.post('/notifications/bulk-sms', { message: smsMessage, targetAll: true });
-      setResult({ success: true, msg: `SMS sent to ${res.sent}/${res.total} customers!` });
+      const res = await API.post('/notifications/bulk-sms', 
+        { message: smsMessage, targetAll: true },
+        { timeout: 60000 }
+      );
+      setResult({ success: true, msg: res.message || `Success! Sent to ${res.sent} customers!` });
       toast.success(`Sent to ${res.sent} customers!`);
-    } catch (err) { setResult({ success: false, msg: err.message }); toast.error(err.message); }
-    finally { setSending(false); }
+    } catch (err) {
+      const errorMsg = err.message || (typeof err === 'string' ? err : 'Failed to send SMS. Please check server logs.');
+      setResult({ success: false, msg: errorMsg });
+      toast.error(errorMsg);
+    } finally {
+      setSending(false);
+    }
   };
 
   const handleSendEmail = async () => {
@@ -54,11 +62,20 @@ export default function AdminNotifications() {
     if (!window.confirm(`Send email to ${stats?.withEmail} customers?`)) return;
     setSending(true); setResult(null);
     try {
-      const res = await API.post('/notifications/bulk-email', { subject: emailSubject, message: emailMessage, couponCode: emailCoupon, discount: emailDiscount });
-      setResult({ success: true, msg: `Email sent to ${res.sent}/${res.total} customers!` });
+      // Use a longer timeout for bulk emails (60s)
+      const res = await API.post('/notifications/bulk-email', 
+        { subject: emailSubject, message: emailMessage, couponCode: emailCoupon, discount: emailDiscount },
+        { timeout: 60000 }
+      );
+      setResult({ success: true, msg: res.message || `Success! Sent to ${res.sent} customers.` });
       toast.success(`Sent to ${res.sent} customers!`);
-    } catch (err) { setResult({ success: false, msg: err.message }); toast.error(err.message); }
-    finally { setSending(false); }
+    } catch (err) {
+      const errorMsg = err.message || (typeof err === 'string' ? err : 'Failed to send emails. Please check server logs.');
+      setResult({ success: false, msg: errorMsg });
+      toast.error(errorMsg);
+    } finally {
+      setSending(false);
+    }
   };
 
   const inputStyle = (h = '48px') => ({ backgroundColor: BG, border: `1px solid rgba(255,255,255,0.1)`, color: '#fff', width: '100%', padding: '0.75rem 1rem', fontSize: '13px', borderRadius: '8px', outline: 'none', minHeight: h, resize: h === '48px' ? 'none' : 'vertical' });
