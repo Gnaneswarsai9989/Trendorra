@@ -101,7 +101,7 @@ router.post('/bulk-email', protect, admin, async (req, res) => {
 </div>
 </body></html>`;
 
-    // Send in parallel for faster response
+    let lastError = null;
     const results = await Promise.all(users.map(async (user) => {
       try {
         await transporter.sendMail({
@@ -112,12 +112,21 @@ router.post('/bulk-email', protect, admin, async (req, res) => {
         });
         return { success: true };
       } catch (e) {
-        console.log(`Email failed for ${user.email}: ${e.message}`);
+        lastError = e.message;
+        console.error(`📧 Email failed for ${user.email}:`, e.message);
         return { success: false };
       }
     }));
 
     const sent = results.filter(r => r.success).length;
+
+    if (sent === 0 && users.length > 0) {
+      return res.status(500).json({ 
+        success: false, 
+        message: `Failed to send all 5 emails. Error: ${lastError || 'Unknown SMTP error'}`,
+        total: users.length 
+      });
+    }
 
     res.json({ success: true, message: `Email sent to ${sent}/${users.length} customers`, sent, total: users.length });
   } catch (err) {
