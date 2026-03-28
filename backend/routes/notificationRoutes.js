@@ -99,8 +99,8 @@ router.post('/bulk-email', protect, admin, async (req, res) => {
 </div>
 </body></html>`;
 
-    let sent = 0;
-    for (const user of users) {
+    // Send in parallel for faster response
+    const results = await Promise.all(users.map(async (user) => {
       try {
         await transporter.sendMail({
           from: `"Trendorra Fashion" <${process.env.EMAIL_USER}>`,
@@ -108,10 +108,14 @@ router.post('/bulk-email', protect, admin, async (req, res) => {
           subject,
           html: htmlTemplate(user.name),
         });
-        sent++;
-        if (sent % 10 === 0) await new Promise(r => setTimeout(r, 1000)); // Rate limit
-      } catch (e) { console.log(`Email failed for ${user.email}: ${e.message}`); }
-    }
+        return { success: true };
+      } catch (e) {
+        console.log(`Email failed for ${user.email}: ${e.message}`);
+        return { success: false };
+      }
+    }));
+
+    const sent = results.filter(r => r.success).length;
 
     res.json({ success: true, message: `Email sent to ${sent}/${users.length} customers`, sent, total: users.length });
   } catch (err) {
