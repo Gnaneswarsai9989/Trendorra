@@ -22,11 +22,14 @@ app.use(cors({
   origin: function (origin, callback) {
     const allowed = [
       "http://localhost:5173",
-      "http://localhost:5174"
+      "http://localhost:5174",
+      "https://trendorra-black.vercel.app",
+      "https://trendorra.onrender.com"
     ];
     if (!origin || allowed.includes(origin)) {
       callback(null, true);
     } else {
+      console.log('CORS blocked origin:', origin);
       callback(new Error("CORS not allowed"));
     }
   },
