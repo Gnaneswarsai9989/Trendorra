@@ -67,9 +67,11 @@ router.post('/bulk-email', protect, admin, async (req, res) => {
 
     const transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,
-      auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
+      port: 587,
+      secure: false, 
+      pool: true,
+      auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+      connectionTimeout: 10000,
     });
 
     const htmlTemplate = (name) => `
