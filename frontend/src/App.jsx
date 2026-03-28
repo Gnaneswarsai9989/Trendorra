@@ -27,6 +27,8 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ReturnRequestPage from './pages/ReturnRequestPage';   // ← NEW
 
+import GoogleAuthSuccess from './pages/GoogleAuthSuccess';
+
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
@@ -133,6 +135,7 @@ const AppContent = () => {
             <Route path="/orders/:id" element={<ProtectedRoute><OrderDetailPage /></ProtectedRoute>} />
             <Route path="/orders/:id/return" element={<ProtectedRoute><ReturnRequestPage /></ProtectedRoute>} />  {/* ← NEW */}
             <Route path="/order-confirmation/:id" element={<ProtectedRoute><OrderConfirmationPage /></ProtectedRoute>} />
+            <Route path="/auth/google/success" element={<GoogleAuthSuccess />} />
 
             {/* ── Admin Routes ── */}
             <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />

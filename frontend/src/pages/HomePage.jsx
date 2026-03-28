@@ -15,27 +15,27 @@ const heroSlides = [
     link: '/shop',
   },
   {
-    image: 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=1600&q=90',
-    tag: "Women's Edit",
-    title: 'Effortless\nElegance',
-    subtitle: 'From boardroom to evening soirée — style that moves with you.',
-    cta: 'Shop Women',
+    image: 'https://images.unsplash.com/photo-1617137968427-85924c800a22?w=1600&q=90',
+    tag: "Trendorra Fusion",
+    title: 'Modern\nTraditional\nFusion',
+    subtitle: 'Where heritage meets contemporary style. Discover the art of modern ethnic wear.',
+    cta: 'Shop Fusion',
     link: '/shop/women',
   },
   {
-    image: 'https://images.unsplash.com/photo-1488161628813-04466f872be2?w=1600&q=90',
-    tag: "Men's Collection",
-    title: 'Sharp.\nBold.\nUndefined.',
-    subtitle: 'Precision tailoring meets streetwear attitude.',
-    cta: 'Shop Men',
+    image: 'https://images.unsplash.com/photo-1618331835717-801e976710b2?w=1600&q=90',
+    tag: "Trending Now",
+    title: 'Street\nHeritage\nSharp.',
+    subtitle: 'High-end tailoring reimagined for the bold, style-conscious generation.',
+    cta: 'Shop Trends',
     link: '/shop/men',
   },
 ];
 
 const categories = [
   { name: 'Men', image: 'https://images.unsplash.com/photo-1488161628813-04466f872be2?w=600&q=80', link: '/shop/men', sub: 'T-Shirts, Shirts & more' },
-  { name: 'Women', image: 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=600&q=80', link: '/shop/women', sub: 'Dresses, Tops & more' },
-  { name: 'Streetwear', image: 'https://images.unsplash.com/photo-1523398002811-999ca8dec234?w=600&q=80', link: '/shop/streetwear', sub: 'Hoodies, Cargos & more' },
+  { name: 'Women', image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&q=80', link: '/shop/women', sub: 'Elegance Redefined' },
+  { name: 'Streetwear', image: 'https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?w=600&q=80', link: '/shop/streetwear', sub: 'BOLD & BEYOND' },
   { name: 'Accessories', image: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=600&q=80', link: '/shop/accessories', sub: 'Bags, Watches & more' },
 ];
 
