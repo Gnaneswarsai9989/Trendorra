@@ -1,7 +1,6 @@
-const { Resend } = require('resend');
+const axios = require('axios');
 
-// Initialize Resend
-const resend = new Resend(process.env.RESEND_API_KEY || 're_test_key');
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 
 const baseHeader = `
 <!DOCTYPE html><html><head><meta charset="utf-8"></head>
@@ -39,7 +38,7 @@ const templates = {
       <h2 style="color:#111;font-size:20px;margin-bottom:24px;text-align:center">Your order is confirmed!</h2>
       <div style="background:#f9f9f9;border-radius:8px;padding:24px;margin-bottom:30px">
         <p style="font-size:13px;color:#999;text-transform:uppercase;letter-spacing:1px;margin:0 0 8px">Order ID</p>
-        <p style="font-size:16px;color:#111;font-weight:700;margin:0 mb:16px">#${order._id}</p>
+        <p style="font-size:16px;color:#111;font-weight:700;margin:0">#${order._id}</p>
         <div style="display:flex;justify-content:space-between;margin-top:16px">
           <div><p style="font-size:11px;color:#999;margin:0">Total Paid</p><p style="font-size:18px;color:#C9A84C;font-weight:700;margin:4px 0">₹${order.totalPrice}</p></div>
           <div style="text-align:right"><p style="font-size:11px;color:#999;margin:0">Method</p><p style="font-size:14px;color:#111;margin:4px 0">${order.paymentMethod}</p></div>
@@ -73,21 +72,27 @@ const templates = {
 };
 
 const sendEmail = async (to, template) => {
-  if (!process.env.RESEND_API_KEY) {
+  if (!process.env.BREVO_API_KEY) {
     console.log(`📧 [Email skipped - No API Key] To: ${to} | Subject: ${template.subject}`);
     return;
   }
   try {
-    const data = await resend.emails.send({
-      from: process.env.EMAIL_FROM || 'Trendorra <onboarding@resend.dev>',
-      to,
+    const response = await axios.post(BREVO_API_URL, {
+      sender: { name: "Trendorra", email: "trendorashoppingsai@gmail.com" },
+      to: [{ email: to }],
       subject: template.subject,
-      html: template.html,
+      htmlContent: template.html,
+    }, {
+      headers: {
+        'api-key': process.env.BREVO_API_KEY,
+        'content-type': 'application/json',
+        'accept': 'application/json'
+      }
     });
-    console.log(`📧 Email sent via Resend → ${to} | ID: ${data.id}`);
-    return data;
+    console.log(`📧 Email sent via Brevo → ${to} | ID: ${response.data.messageId}`);
+    return response.data;
   } catch (err) {
-    console.error(`❌ Resend failed for ${to}:`, err.message);
+    console.error(`❌ Brevo failed for ${to}:`, err.response?.data?.message || err.message);
     throw err;
   }
 };

@@ -2,16 +2,16 @@ const express = require('express');
 const router = express.Router();
 const { protect, admin } = require('../middleware/auth');
 const User = require('../models/User');
-const { sendOfferSMS, sendRawSMS } = require('../utils/smsService');
-const { Resend } = require('resend');
+const { sendRawSMS } = require('../utils/smsService');
+const axios = require('axios');
 
-const resend = new Resend(process.env.RESEND_API_KEY || 're_test_key');
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 
 // @desc  Send bulk SMS to all customers
 // @route POST /api/notifications/bulk-sms
 router.post('/bulk-sms', protect, admin, async (req, res) => {
   try {
-    const { message, offer, targetAll = true, phones = [] } = req.body;
+    const { message, targetAll = true, phones = [] } = req.body;
     if (!message) return res.status(400).json({ success: false, message: 'Message is required' });
 
     let targetPhones = phones;
@@ -53,7 +53,7 @@ router.get('/stats', protect, admin, async (req, res) => {
 });
 
 
-// @desc Send bulk email to all customers via Resend
+// @desc Send bulk email to all customers via Brevo
 router.post('/bulk-email', protect, admin, async (req, res) => {
   try {
     const { subject, message, couponCode, discount } = req.body;
@@ -62,8 +62,8 @@ router.post('/bulk-email', protect, admin, async (req, res) => {
     const users = await User.find({ email: { $exists: true, $ne: '' }, role: 'user' }).select('name email');
     if (users.length === 0) return res.status(400).json({ success: false, message: 'No users found' });
 
-    if (!process.env.RESEND_API_KEY) {
-      return res.status(400).json({ success: false, message: 'Resend not configured in .env' });
+    if (!process.env.BREVO_API_KEY) {
+      return res.status(400).json({ success: false, message: 'Brevo not configured in .env' });
     }
 
     const htmlTemplate = (name) => `
@@ -97,16 +97,21 @@ router.post('/bulk-email', protect, admin, async (req, res) => {
     // Send in parallel for efficiency
     const out = await Promise.all(users.map(async (user) => {
       try {
-        await resend.emails.send({
-          from: process.env.EMAIL_FROM || 'Trendorra <onboarding@resend.dev>',
-          to: user.email,
-          subject: subject,
-          html: htmlTemplate(user.name),
+        await axios.post(BREVO_API_URL, {
+          sender: { name: "Trendorra", email: "trendorashoppingsai@gmail.com" },
+          to: [{ email: user.email, name: user.name }],
+          subject,
+          htmlContent: htmlTemplate(user.name),
+        }, {
+          headers: {
+            'api-key': process.env.BREVO_API_KEY,
+            'content-type': 'application/json'
+          }
         });
         return { success: true };
       } catch (e) {
-        lastError = e.message;
-        console.error(`📧 Resend bulk failed for ${user.email}:`, e.message);
+        lastError = e.response?.data?.message || e.message;
+        console.error(`📧 Brevo bulk failed for ${user.email}:`, lastError);
         return { success: false };
       }
     }));
@@ -116,11 +121,11 @@ router.post('/bulk-email', protect, admin, async (req, res) => {
     if (sent === 0 && users.length > 0) {
       return res.status(500).json({ 
         success: false, 
-        message: `Failed to send all ${users.length} emails via Resend. Reason: ${lastError || 'Unknown API error'}`
+        message: `Failed to send all ${users.length} emails via Brevo. Reason: ${lastError || 'Unknown API error'}`
       });
     }
 
-    res.json({ success: true, message: `Email sent to ${sent}/${users.length} customers via Resend`, sent, total: users.length });
+    res.json({ success: true, message: `Email sent to ${sent}/${users.length} customers via Brevo`, sent, total: users.length });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

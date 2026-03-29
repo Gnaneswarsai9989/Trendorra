@@ -130,14 +130,13 @@ exports.forgotPassword = async (req, res) => {
     user.resetPasswordToken  = otp;
     user.resetPasswordExpire = expire;
     await user.save();
-    if (process.env.RESEND_API_KEY) {
-      const { Resend } = require('resend');
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      await resend.emails.send({
-        from: process.env.EMAIL_FROM || 'Trendorra <onboarding@resend.dev>',
-        to:   user.email,
+    if (process.env.BREVO_API_KEY) {
+      const axios = require('axios');
+      await axios.post('https://api.brevo.com/v3/smtp/email', {
+        sender: { name: "Trendorra", email: "trendorashoppingsai@gmail.com" },
+        to: [{ email: user.email, name: user.name }],
         subject: '🔐 Password Reset OTP — Trendorra',
-        html: `
+        htmlContent: `
 <!DOCTYPE html><html><body style="font-family:Arial,sans-serif;background:#f5f5f5;margin:0;padding:20px 0">
 <div style="max-width:480px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden;border:1px solid #eee">
   <div style="background:#111;padding:24px;text-align:center">
@@ -151,6 +150,8 @@ exports.forgotPassword = async (req, res) => {
     </div>
   </div>
 </div></body></html>`,
+      }, {
+        headers: { 'api-key': process.env.BREVO_API_KEY, 'content-type': 'application/json' }
       });
     }
     res.json({ success: true, message: `OTP sent to ${email.replace(/(.{2}).*(@.*)/, '$1***$2')}` });
