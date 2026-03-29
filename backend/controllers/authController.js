@@ -130,21 +130,16 @@ exports.forgotPassword = async (req, res) => {
     user.resetPasswordToken  = otp;
     user.resetPasswordExpire = expire;
     await user.save();
-    const nodemailer = require('nodemailer');
-    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-      const transporter = nodemailer.createTransport({
-        host: 'smtp.gmail.com',
-        port: 587,
-        secure: false, // Use STARTTLS
-        auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-      });
-      await transporter.sendMail({
-        from: `"Trendorra Fashion" <${process.env.EMAIL_USER}>`,
+    if (process.env.RESEND_API_KEY) {
+      const { Resend } = require('resend');
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      await resend.emails.send({
+        from: process.env.EMAIL_FROM || 'Trendorra <onboarding@resend.dev>',
         to:   user.email,
         subject: '🔐 Password Reset OTP — Trendorra',
         html: `
 <!DOCTYPE html><html><body style="font-family:Arial,sans-serif;background:#f5f5f5;margin:0;padding:20px 0">
-<div style="max-width:480px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden">
+<div style="max-width:480px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden;border:1px solid #eee">
   <div style="background:#111;padding:24px;text-align:center">
     <h1 style="color:#C9A84C;font-size:20px;letter-spacing:4px;margin:0;font-weight:300">TRENDORRA</h1>
   </div>

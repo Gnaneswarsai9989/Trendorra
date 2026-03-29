@@ -3,7 +3,9 @@ const router = express.Router();
 const { protect, admin } = require('../middleware/auth');
 const User = require('../models/User');
 const { sendOfferSMS, sendRawSMS } = require('../utils/smsService');
-const { sendOrderConfirmedEmail } = require('../utils/emailService');
+const { Resend } = require('resend');
+
+const resend = new Resend(process.env.RESEND_API_KEY || 're_test_key');
 
 // @desc  Send bulk SMS to all customers
 // @route POST /api/notifications/bulk-sms
@@ -51,7 +53,7 @@ router.get('/stats', protect, admin, async (req, res) => {
 });
 
 
-// @desc Send bulk email to all customers
+// @desc Send bulk email to all customers via Resend
 router.post('/bulk-email', protect, admin, async (req, res) => {
   try {
     const { subject, message, couponCode, discount } = req.body;
@@ -60,24 +62,14 @@ router.post('/bulk-email', protect, admin, async (req, res) => {
     const users = await User.find({ email: { $exists: true, $ne: '' }, role: 'user' }).select('name email');
     if (users.length === 0) return res.status(400).json({ success: false, message: 'No users found' });
 
-    const nodemailer = require('nodemailer');
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      return res.status(400).json({ success: false, message: 'Email not configured in .env' });
+    if (!process.env.RESEND_API_KEY) {
+      return res.status(400).json({ success: false, message: 'Resend not configured in .env' });
     }
-
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false, 
-      pool: true,
-      auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-      connectionTimeout: 10000,
-    });
 
     const htmlTemplate = (name) => `
 <!DOCTYPE html><html><head><meta charset="utf-8"></head>
 <body style="font-family:Arial,sans-serif;background:#f5f5f5;margin:0;padding:20px 0">
-<div style="max-width:560px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden">
+<div style="max-width:560px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden;border:1px solid #eee">
   <div style="background:#111;padding:24px 40px;text-align:center">
     <h1 style="color:#C9A84C;font-size:20px;letter-spacing:4px;margin:0;font-weight:300">TRENDORRA</h1>
   </div>
@@ -91,7 +83,7 @@ router.post('/bulk-email', protect, admin, async (req, res) => {
       ${discount ? `<p style="font-size:13px;color:#666;margin-top:6px">Save ${discount}</p>` : ''}
     </div>
     <div style="text-align:center;margin:20px 0">
-      <a href="${process.env.CLIENT_URL}/shop" style="background:#C9A84C;color:#fff;text-decoration:none;padding:14px 32px;font-size:12px;letter-spacing:2px;text-transform:uppercase;border-radius:4px">Shop Now</a>
+      <a href="${process.env.CLIENT_URL}/shop" style="background:#C9A84C;color:#fff;text-decoration:none;padding:14px 32px;font-size:12px;letter-spacing:2px;text-transform:uppercase;border-radius:4px;display:inline-block">Shop Now</a>
     </div>` : ''}
   </div>
   <div style="background:#111;padding:20px 40px;text-align:center">
@@ -102,33 +94,33 @@ router.post('/bulk-email', protect, admin, async (req, res) => {
 </body></html>`;
 
     let lastError = null;
-    const results = await Promise.all(users.map(async (user) => {
+    // Send in parallel for efficiency
+    const out = await Promise.all(users.map(async (user) => {
       try {
-        await transporter.sendMail({
-          from: `"Trendorra Fashion" <${process.env.EMAIL_USER}>`,
+        await resend.emails.send({
+          from: process.env.EMAIL_FROM || 'Trendorra <onboarding@resend.dev>',
           to: user.email,
-          subject,
+          subject: subject,
           html: htmlTemplate(user.name),
         });
         return { success: true };
       } catch (e) {
         lastError = e.message;
-        console.error(`📧 Email failed for ${user.email}:`, e.message);
+        console.error(`📧 Resend bulk failed for ${user.email}:`, e.message);
         return { success: false };
       }
     }));
 
-    const sent = results.filter(r => r.success).length;
+    const sent = out.filter(x => x.success).length;
 
     if (sent === 0 && users.length > 0) {
       return res.status(500).json({ 
         success: false, 
-        message: `Failed to send all 5 emails. Error: ${lastError || 'Unknown SMTP error'}`,
-        total: users.length 
+        message: `Failed to send all ${users.length} emails via Resend. Reason: ${lastError || 'Unknown API error'}`
       });
     }
 
-    res.json({ success: true, message: `Email sent to ${sent}/${users.length} customers`, sent, total: users.length });
+    res.json({ success: true, message: `Email sent to ${sent}/${users.length} customers via Resend`, sent, total: users.length });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

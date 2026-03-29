@@ -1,31 +1,22 @@
-// backend/utils/sendEmail.js
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
+
+// Initialize Resend
+const resend = new Resend(process.env.RESEND_API_KEY || 're_test_key');
 
 const sendEmail = async ({ to, subject, html }) => {
     try {
-        const transporter = nodemailer.createTransport({
-            host: 'smtp.gmail.com',
-            port: 587,
-            secure: false, // Use STARTTLS
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS,
-            },
-        });
-
-        await transporter.sendMail({
-            from: `"Trendorra" <${process.env.EMAIL_USER}>`,
+        const data = await resend.emails.send({
+            from: process.env.EMAIL_FROM || 'Trendorra <onboarding@resend.dev>',
             to,
             subject,
             html,
         });
-
-        console.log(`✅ Email sent to ${to}`);
-    } catch (err) {
-        console.error('❌ Email send failed:', err.message);
-        // Don't throw — email failure shouldn't crash the app
+        console.log(`📧 Standalone Email sent via Resend → ${to} | ID: ${data.id}`);
+        return { success: true, data };
+    } catch (error) {
+        console.error('❌ Resend standalone failed:', error.message);
+        return { success: false, error: error.message };
     }
 };
 
 module.exports = sendEmail;
-
