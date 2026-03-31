@@ -2,11 +2,9 @@ const express = require('express');
 const router = express.Router();
 const { protect, admin } = require('../middleware/auth');
 const User = require('../models/User');
-const { Resend } = require('resend');
+const sendEmail = require('../utils/sendEmail');
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-// Send bulk email using Resend
+// Send bulk email using Nodemailer
 router.post('/bulk-email', protect, admin, async (req, res) => {
   try {
     const { subject, message, toAll = true, customerEmail = '' } = req.body;
@@ -21,30 +19,34 @@ router.post('/bulk-email', protect, admin, async (req, res) => {
 
     if (targets.length === 0) return res.status(400).json({ success: false, message: 'No target emails found' });
 
-    console.log(`Sending bulk to: ${targets.join(', ')}`);
-    
-    // Using simple parallel sending (Warning: Resend sandbox only allows your own email)
-    const results = await Promise.all(targets.map(email => 
-      resend.emails.send({
-        from: 'onboarding@resend.dev',
+    console.log(`[Email Debug] 📨 Sending to ${targets.length} targets using Gmail...`);
+
+    const results = await Promise.all(targets.map(async (email) => {
+      const htmlContent = `
+        <div style="font-family: Arial, sans-serif; padding: 20px; color: #111; border-top: 4px solid #C9A84C;">
+          <h1 style="color: #C9A84C; font-size: 20px; letter-spacing: 2px;">TRENDORRA</h1>
+          <div style="margin-top: 20px; font-size: 16px; line-height: 1.6;">
+            ${message}
+          </div>
+          <p style="margin-top: 30px; font-size: 12px; color: #999;">Explore luxury at trendorra.in</p>
+        </div>
+      `;
+
+      return await sendEmail({
         to: email,
         subject,
-        html: `<p>${message}</p>`
-      }).then(r => ({ success: true, id: r.id }))
-        .catch(e => {
-           console.error(`Failed to send to ${email}:`, e.message);
-           return { success: false, error: e.message };
-        })
-    ));
+        html: htmlContent
+      });
+    }));
 
     const sent = results.filter(r => r.success).length;
-    res.json({ success: true, message: `Email sent to ${sent}/${targets.length} from Resend`, sent, total: targets.length });
+    res.json({ success: true, message: `Sent ${sent}/${targets.length} emails`, sent, total: targets.length });
   } catch (err) {
+    console.error(`[Email Global Error] 🚨: ${err.message}`);
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
-// Stats for admin
 router.get('/stats', protect, admin, async (req, res) => {
   const total = await User.countDocuments({ role: 'user' });
   res.json({ success: true, stats: { withEmail: total } });

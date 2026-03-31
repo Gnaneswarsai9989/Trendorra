@@ -1,7 +1,7 @@
 // controllers/returnController.js
 const Order = require('../models/Order');
 const User = require('../models/User');
-const { sendEmail } = require('../utils/sendEmail');
+const sendEmail = require('../utils/sendEmail');
 
 let cloudinary;
 try { cloudinary = require('../config/cloudinary').cloudinary; } catch { cloudinary = null; }

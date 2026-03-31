@@ -1,26 +1,28 @@
-const axios = require('axios');
+const nodemailer = require('nodemailer');
 
-const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
+});
 
 const sendEmail = async ({ to, subject, html }) => {
     try {
-        const response = await axios.post(BREVO_API_URL, {
-            sender: { name: "Trendorra", email: "trendorashoppingsai@gmail.com" },
-            to: [{ email: to }],
+        const mailOptions = {
+            from: `Trendorra <${process.env.EMAIL_USER}>`,
+            to,
             subject,
-            htmlContent: html,
-        }, {
-            headers: {
-                'api-key': process.env.BREVO_API_KEY,
-                'content-type': 'application/json',
-                'accept': 'application/json'
-            }
-        });
-        console.log(`📧 Standalone Email sent via Brevo → ${to} | ID: ${response.data.messageId}`);
-        return { success: true, data: response.data };
-    } catch (error) {
-        console.error('❌ Brevo standalone failed:', error.response?.data?.message || error.message);
-        return { success: false, error: error.message };
+            html,
+        };
+
+        const info = await transporter.sendMail(mailOptions);
+        console.log(`[Nodemailer Success] Sent to ${to} | Msg ID: ${info.messageId}`);
+        return { success: true, data: info };
+    } catch (err) {
+        console.error(`[Nodemailer Error] To: ${to} | Msg: ${err.message}`);
+        return { success: false, error: err.message };
     }
 };
 

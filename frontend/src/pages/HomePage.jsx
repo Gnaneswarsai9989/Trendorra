@@ -4,6 +4,8 @@ import { motion } from 'framer-motion';
 import { productAPI } from '../services/api';
 import ProductCard from '../components/product/ProductCard';
 import { FiArrowRight } from 'react-icons/fi';
+import womenTraditional from '../assets/images/women_traditional.png';
+import womenStylish from '../assets/images/women_stylish.png';
 
 const heroSlides = [
   {
@@ -15,7 +17,7 @@ const heroSlides = [
     link: '/shop',
   },
   {
-    image: 'https://images.unsplash.com/photo-1617137968427-85924c800a22?w=1600&q=90',
+    image: womenStylish,
     tag: "Trendorra Fusion",
     title: 'Modern\nTraditional\nFusion',
     subtitle: 'Where heritage meets contemporary style. Discover the art of modern ethnic wear.',
@@ -34,7 +36,7 @@ const heroSlides = [
 
 const categories = [
   { name: 'Men', image: 'https://images.unsplash.com/photo-1488161628813-04466f872be2?w=600&q=80', link: '/shop/men', sub: 'T-Shirts, Shirts & more' },
-  { name: 'Women', image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&q=80', link: '/shop/women', sub: 'Elegance Redefined' },
+  { name: 'Women', image: womenTraditional, link: '/shop/women', sub: 'Elegance Redefined' },
   { name: 'Streetwear', image: 'https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?w=600&q=80', link: '/shop/streetwear', sub: 'BOLD & BEYOND' },
   { name: 'Accessories', image: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=600&q=80', link: '/shop/accessories', sub: 'Bags, Watches & more' },
 ];
