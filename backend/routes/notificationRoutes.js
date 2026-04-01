@@ -3,6 +3,7 @@ const router = express.Router();
 const { protect, admin } = require('../middleware/auth');
 const User = require('../models/User');
 const sendEmail = require('../utils/sendEmail');
+const { sendBulkPush } = require('../utils/pushNotificationService');
 
 // Send bulk email using Nodemailer
 router.post('/bulk-email', protect, admin, async (req, res) => {
@@ -47,9 +48,53 @@ router.post('/bulk-email', protect, admin, async (req, res) => {
   }
 });
 
+// Send bulk push using Firebase
+router.post('/bulk-sms', protect, admin, async (req, res) => {
+  try {
+    const { message, title = 'Trendorra Update', targetAll = true, customerEmail = '' } = req.body;
+
+    let targets = [];
+    if (targetAll) {
+      const users = await User.find({ role: 'user', fcmToken: { $exists: true, $ne: null } }).select('fcmToken');
+      targets = users.map(u => u.fcmToken).filter(Boolean);
+    } else {
+      if (customerEmail) {
+        const user = await User.findOne({ email: customerEmail, fcmToken: { $exists: true, $ne: null } });
+        if (user) targets = [user.fcmToken];
+      }
+    }
+
+    if (targets.length === 0) return res.status(400).json({ success: false, message: 'No target devices found with notification access' });
+
+    console.log(`[Push Debug] 🔔 Sending to ${targets.length} devices...`);
+
+    const result = await sendBulkPush(targets, { title, body: message });
+
+    res.json({ success: true, message: `Sent ${result.sent}/${targets.length} push notifications successfully`, sent: result.sent, total: targets.length });
+  } catch (err) {
+    console.error(`[Push Global Error] 🚨: ${err.message}`);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Save FCM Token
+router.post('/save-fcm-token', protect, async (req, res) => {
+  try {
+    const { fcmToken } = req.body;
+    if (!fcmToken) return res.status(400).json({ success: false, message: 'Token is required' });
+
+    await User.findByIdAndUpdate(req.user._id, { fcmToken });
+    res.json({ success: true, message: 'Token saved' });
+  } catch (err) {
+    console.error(`[FCM Save Error] 🚨: ${err.message}`);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 router.get('/stats', protect, admin, async (req, res) => {
   const total = await User.countDocuments({ role: 'user' });
-  res.json({ success: true, stats: { withEmail: total } });
+  const withPhone = await User.countDocuments({ role: 'user', phone: { $exists: true, $ne: '' } });
+  res.json({ success: true, stats: { totalUsers: total, withEmail: total, withPhone } });
 });
 
 module.exports = router;

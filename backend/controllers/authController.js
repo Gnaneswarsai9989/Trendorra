@@ -1,7 +1,7 @@
 const User = require('../models/User');
 const { generateToken } = require('../middleware/auth');
 const { sendWelcomeEmail } = require('../utils/emailService');
-const { sendWelcomeSMS } = require('../utils/smsService');
+const { sendWelcomePush } = require('../utils/pushNotificationService');
 
 // @desc Register user
 // @route POST /api/auth/register
@@ -18,9 +18,9 @@ exports.register = async (req, res) => {
     const user = await User.create({ name, email, password, phone });
     const token = generateToken(user._id);
     console.log('📧 Sending welcome email to:', user.email);
-    console.log('📱 Sending welcome SMS to:', phone || 'no phone');
+    console.log('🔔 Sending welcome push to:', user.fcmToken || 'no fcmToken');
     sendWelcomeEmail(user).catch(err => console.error('❌ Welcome email failed:', err.message));
-    if (phone) sendWelcomeSMS(user).catch(err => console.error('❌ Welcome SMS failed:', err.message));
+    if (user.fcmToken) sendWelcomePush(user).catch(err => console.error('❌ Welcome push failed:', err.message));
     res.status(201).json({
       success: true,
       token,
@@ -262,7 +262,7 @@ exports.registerSeller = async (req, res) => {
     });
     const token = generateToken(user._id);
     sendWelcomeEmail(user).catch(err => console.error('❌ Seller welcome email failed:', err.message));
-    if (phone) sendWelcomeSMS(user).catch(err => console.error('❌ Seller welcome SMS failed:', err.message));
+    if (user.fcmToken) sendWelcomePush(user).catch(err => console.error('❌ Seller welcome push failed:', err.message));
     console.log(`🏪 New seller created: ${user.email} — ${sellerInfo?.businessName || ''}`);
     return res.status(201).json({
       success: true,

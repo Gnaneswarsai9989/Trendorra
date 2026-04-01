@@ -13,10 +13,10 @@ const {
   sendOrderDeliveredEmail,
 } = require('../utils/emailService');
 const {
-  sendOrderConfirmedSMS,
-  sendOrderShippedSMS,
-  sendOrderDeliveredSMS,
-} = require('../utils/smsService');
+  sendOrderConfirmedPush,
+  sendOrderShippedPush,
+  sendOrderDeliveredPush,
+} = require('../utils/pushNotificationService');
 const deliveryService = require('../utils/deliveryService');
 
 // ── helpers ───────────────────────────────────────────────────────
@@ -150,7 +150,7 @@ exports.createOrder = async (req, res) => {
       .populate('user', 'name email phone');
 
     sendOrderConfirmedEmail(populated, req.user).catch(console.error);
-    if (req.user.phone) sendOrderConfirmedSMS(populated, req.user).catch(console.error);
+    if (req.user.fcmToken) sendOrderConfirmedPush(populated, req.user).catch(console.error);
 
     res.status(201).json({ success: true, order: populated });
   } catch (error) {
@@ -399,11 +399,11 @@ exports.updateOrderStatus = async (req, res) => {
       if (orderUser) {
         if (orderStatus === 'Shipped') {
           sendOrderShippedEmail(order, orderUser).catch(console.error);
-          if (orderUser.phone) sendOrderShippedSMS(order, orderUser).catch(console.error);
+          if (orderUser.fcmToken) sendOrderShippedPush(order, orderUser).catch(console.error);
         }
         if (orderStatus === 'Delivered') {
           sendOrderDeliveredEmail(order, orderUser).catch(console.error);
-          if (orderUser.phone) sendOrderDeliveredSMS(order, orderUser).catch(console.error);
+          if (orderUser.fcmToken) sendOrderDeliveredPush(order, orderUser).catch(console.error);
         }
       }
     } catch (e) { console.error('Notification error:', e.message); }

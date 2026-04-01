@@ -66,6 +66,7 @@ const userSchema = new mongoose.Schema({
   // password not required for Google users
   password: { type: String, minlength: 6, select: false },
   phone:    String,
+  fcmToken: { type: String, default: null },
   avatar:   { type: String, default: '' },
 
   // ── UPDATED: added 'seller' to role enum ──
