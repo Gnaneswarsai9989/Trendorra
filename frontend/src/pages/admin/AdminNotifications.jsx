@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FiArrowLeft, FiSend, FiSmartphone, FiMail, FiUsers, FiMessageSquare, FiCheck, FiAlertCircle } from 'react-icons/fi';
+import { FiArrowLeft, FiSend, FiSmartphone, FiMail, FiUsers, FiMessageSquare, FiCheck, FiAlertCircle, FiUploadCloud } from 'react-icons/fi';
 import API from '../../services/api';
 import toast from 'react-hot-toast';
 
@@ -26,11 +26,13 @@ export default function AdminNotifications() {
   const [tab, setTab] = useState('sms');
   const [stats, setStats] = useState(null);
   const [smsMessage, setSmsMessage] = useState('');
+  const [smsImage, setSmsImage] = useState('');
   const [emailSubject, setEmailSubject] = useState('');
   const [emailMessage, setEmailMessage] = useState('');
   const [emailCoupon, setEmailCoupon] = useState('');
   const [emailDiscount, setEmailDiscount] = useState('');
   const [sending, setSending] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [result, setResult] = useState(null);
 
   useEffect(() => {
@@ -43,7 +45,7 @@ export default function AdminNotifications() {
     setSending(true); setResult(null);
     try {
       const res = await API.post('/notifications/bulk-sms', 
-        { message: smsMessage, targetAll: true },
+        { message: smsMessage, targetAll: true, imageUrl: smsImage.trim() || undefined },
         { timeout: 60000 }
       );
       setResult({ success: true, msg: res.message || `Success! Sent to ${res.sent} customers!` });
@@ -54,6 +56,25 @@ export default function AdminNotifications() {
       toast.error(errorMsg);
     } finally {
       setSending(false);
+    }
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const fd = new FormData();
+    fd.append('image', file);
+
+    setUploadingImage(true);
+    try {
+      const res = await API.post('/upload/image', fd, { headers: { "Content-Type": "multipart/form-data" } });
+      setSmsImage(res.url);
+      toast.success('Image uploaded to Cloudinary');
+    } catch (err) {
+      toast.error('Failed to upload image');
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -145,8 +166,25 @@ export default function AdminNotifications() {
                     <textarea value={smsMessage} onChange={e => setSmsMessage(e.target.value)} rows={5} maxLength={160}
                       placeholder="Type your push notification message... keep under 160 characters"
                       style={inputStyle('120px')}
+                      className="mb-4"
                       onFocus={e => e.target.style.borderColor = GOLD}
                       onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
+
+                    <div className="flex justify-between mb-2 mt-4">
+                      <label style={labelStyle}>Promo Image URL (Optional)</label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input value={smsImage} onChange={e => setSmsImage(e.target.value)}
+                        placeholder="Paste URL or upload image"
+                        style={inputStyle()}
+                        onFocus={e => e.target.style.borderColor = GOLD}
+                        onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
+                      <label className="flex items-center justify-center cursor-pointer transition-all hover:opacity-80 shrink-0"
+                        style={{ backgroundColor: CARD, border: `1px dashed ${GOLD}`, color: GOLD, width: '48px', height: '48px', borderRadius: '8px' }}>
+                        {uploadingImage ? '⏳' : <FiUploadCloud size={18} />}
+                        <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploadingImage} />
+                      </label>
+                    </div>
                   </div>
 
                   {/* Phone preview */}

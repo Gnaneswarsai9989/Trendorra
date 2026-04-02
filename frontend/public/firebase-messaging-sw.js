@@ -23,7 +23,8 @@ messaging.onBackgroundMessage((payload) => {
   const notifTitle = title || 'Trendorra';
   const notifOptions = {
     body:    body || 'You have a new notification',
-    icon:    '/logo.png',
+    icon:    payload.notification?.icon || '/logo.png',
+    image:   payload.notification?.image || payload.data?.image, // <-- Added Image support
     badge:   '/logo.png',
     vibrate: [200, 100, 200],
     data:    payload.data || {},

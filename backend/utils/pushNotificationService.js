@@ -62,21 +62,22 @@ const sendPush = async (fcmToken, { title, body, data = {} }) => {
 };
 
 // ── Bulk send (multicast) ────────────────────────────────────
-const sendBulkPush = async (fcmTokens, { title, body, data = {} }) => {
+const sendBulkPush = async (fcmTokens, { title, body, imageUrl, data = {} }) => {
   const validTokens = fcmTokens.filter(Boolean);
   if (!validTokens.length) return { success: false, reason: 'No tokens' };
 
   try {
     const result = await messaging.sendEachForMulticast({
       tokens: validTokens,
-      notification: { title, body },
+      notification: { title, body, ...(imageUrl && { image: imageUrl }) },
       data: { ...data },
       webpush: {
         notification: {
           title,
           body,
-          icon: '/logo.png',
-          badge: '/logo.png',
+          icon: 'https://trendorra.in/logo.png', // Needs absolute URL for some OS
+          ...(imageUrl && { image: imageUrl }),
+          badge: 'https://trendorra.in/logo.png',
         },
         fcmOptions: { link: data.url || 'https://trendorra.in' },
       },

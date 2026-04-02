@@ -51,7 +51,7 @@ router.post('/bulk-email', protect, admin, async (req, res) => {
 // Send bulk push using Firebase
 router.post('/bulk-sms', protect, admin, async (req, res) => {
   try {
-    const { message, title = 'Trendorra Update', targetAll = true, customerEmail = '' } = req.body;
+    const { message, title = 'Trendorra Update', targetAll = true, customerEmail = '', imageUrl } = req.body;
 
     let targets = [];
     if (targetAll) {
@@ -66,9 +66,9 @@ router.post('/bulk-sms', protect, admin, async (req, res) => {
 
     if (targets.length === 0) return res.status(400).json({ success: false, message: 'No target devices found with notification access' });
 
-    console.log(`[Push Debug] 🔔 Sending to ${targets.length} devices...`);
+    console.log(`[Push Debug] 🔔 Sending to ${targets.length} devices with image: ${!!imageUrl}`);
 
-    const result = await sendBulkPush(targets, { title, body: message });
+    const result = await sendBulkPush(targets, { title, body: message, imageUrl });
 
     res.json({ success: true, message: `Sent ${result.sent}/${targets.length} push notifications successfully`, sent: result.sent, total: targets.length });
   } catch (err) {
