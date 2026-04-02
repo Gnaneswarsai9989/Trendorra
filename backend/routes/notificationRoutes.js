@@ -51,7 +51,7 @@ router.post('/bulk-email', protect, admin, async (req, res) => {
 // Send bulk push using Firebase
 router.post('/bulk-sms', protect, admin, async (req, res) => {
   try {
-    const { message, title = 'Trendorra Update', targetAll = true, customerEmail = '', imageUrl } = req.body;
+    const { message, title = 'Trendorra', targetAll = true, customerEmail = '', imageUrl } = req.body;
 
     let targets = [];
     if (targetAll) {
