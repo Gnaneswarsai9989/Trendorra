@@ -75,11 +75,11 @@ const sendBulkPush = async (fcmTokens, { title, body, imageUrl, data = {} }) => 
         notification: {
           title,
           body,
-          icon: 'https://trendorra.in/logo.png', // Needs absolute URL for some OS
+          icon: '/logo.png', // Fallback to relative so it works anywhere
           ...(imageUrl && { image: imageUrl }),
-          badge: 'https://trendorra.in/logo.png',
+          badge: '/logo.png',
         },
-        fcmOptions: { link: data.url || 'https://trendorra.in' },
+        fcmOptions: { link: data.url || '/' },
       },
     });
     console.log(`🔔 Bulk push: ${result.successCount}/${validTokens.length} sent`);
