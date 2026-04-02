@@ -115,7 +115,17 @@ const isDashboardRoute = (path) =>
 
 const AppContent = () => {
   const { pathname } = useLocation();
+  const { isLoggedIn } = useAuth();
   const fullScreen = isDashboardRoute(pathname);
+
+  // Sync existing permission token on login
+  useEffect(() => {
+    if (isLoggedIn && Notification.permission === 'granted') {
+      import('./firebase').then(({ requestNotificationPermission }) => {
+        requestNotificationPermission().catch(() => {});
+      });
+    }
+  }, [isLoggedIn]);
 
   // Focus foreground messages
   useEffect(() => {

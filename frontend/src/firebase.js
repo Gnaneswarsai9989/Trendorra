@@ -51,7 +51,7 @@ export const requestNotificationPermission = async () => {
 // ── Save FCM token to backend ────────────────────────────────
 export const saveFcmToken = async (token) => {
   try {
-    const authToken = localStorage.getItem('token');
+    const authToken = localStorage.getItem('trendora_token');
     if (!authToken) return; // Not logged in — skip
     await fetch(`${API_URL}/api/notifications/save-fcm-token`, {
       method:  'POST',

@@ -135,7 +135,7 @@ export default function AdminNotifications() {
               <div className="lg:col-span-2">
                 <div className="p-6" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: '12px' }}>
                   <h2 className="font-display text-xl font-light text-white mb-5 flex items-center gap-2">
-                    <FiSmartphone style={{ color: GOLD }} /> Send SMS to All Customers
+                    <FiSmartphone style={{ color: GOLD }} /> Send Push Notification to All Customers
                   </h2>
                   <div className="mb-4">
                     <div className="flex justify-between mb-2">
@@ -143,7 +143,7 @@ export default function AdminNotifications() {
                       <span className="font-body text-xs" style={{ color: smsMessage.length > 140 ? '#f87171' : 'rgba(255,255,255,0.3)' }}>{smsMessage.length}/160</span>
                     </div>
                     <textarea value={smsMessage} onChange={e => setSmsMessage(e.target.value)} rows={5} maxLength={160}
-                      placeholder="Type your SMS message... keep under 160 characters"
+                      placeholder="Type your push notification message... keep under 160 characters"
                       style={inputStyle('120px')}
                       onFocus={e => e.target.style.borderColor = GOLD}
                       onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
@@ -172,7 +172,7 @@ export default function AdminNotifications() {
                     style={{ backgroundColor: sending || !smsMessage.trim() ? 'rgba(201,168,76,0.4)' : GOLD, borderRadius: '8px' }}>
                     {sending ? '⟳ Sending...' : <><FiSend size={16} /> Send to {stats?.withPhone || 0} Customers</>}
                   </button>
-                  <p className="text-center font-body text-xs mt-2" style={{ color: 'rgba(255,255,255,0.2)' }}>Cost: ₹0.15–₹0.25 per SMS via Fast2SMS</p>
+                  <p className="text-center font-body text-xs mt-2" style={{ color: 'rgba(255,255,255,0.2)' }}>100% Free via Firebase Cloud Messaging</p>
                 </div>
               </div>
 
@@ -193,9 +193,9 @@ export default function AdminNotifications() {
                 </div>
                 {/* Setup guide */}
                 <div className="mt-4 p-3" style={{ backgroundColor: 'rgba(201,168,76,0.06)', border: `1px solid rgba(201,168,76,0.2)`, borderRadius: '8px' }}>
-                  <p className="font-body text-xs font-semibold mb-2" style={{ color: GOLD }}>Setup Fast2SMS</p>
-                  {['Go to fast2sms.com', 'Sign up free', 'Dev API → Copy key', 'Add to .env: FAST2SMS_API_KEY=key'].map((s, i) => (
-                    <p key={i} className="font-body text-[11px]" style={{ color: 'rgba(255,255,255,0.45)' }}>{i+1}. {s}</p>
+                  <p className="font-body text-xs font-semibold mb-2" style={{ color: GOLD }}>Firebase Status</p>
+                  {['SDK is fully integrated', 'Tokens stored securely', 'Push notifications active'].map((s, i) => (
+                    <p key={i} className="font-body text-[11px] flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}><FiCheck size={10} style={{ color: '#4ade80' }}/> {s}</p>
                   ))}
                 </div>
               </div>

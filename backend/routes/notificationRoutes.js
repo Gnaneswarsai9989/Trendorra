@@ -55,7 +55,7 @@ router.post('/bulk-sms', protect, admin, async (req, res) => {
 
     let targets = [];
     if (targetAll) {
-      const users = await User.find({ role: 'user', fcmToken: { $exists: true, $ne: null } }).select('fcmToken');
+      const users = await User.find({ fcmToken: { $exists: true, $ne: null } }).select('fcmToken');
       targets = users.map(u => u.fcmToken).filter(Boolean);
     } else {
       if (customerEmail) {
@@ -93,8 +93,8 @@ router.post('/save-fcm-token', protect, async (req, res) => {
 
 router.get('/stats', protect, admin, async (req, res) => {
   const total = await User.countDocuments({ role: 'user' });
-  const withPhone = await User.countDocuments({ role: 'user', phone: { $exists: true, $ne: '' } });
-  res.json({ success: true, stats: { totalUsers: total, withEmail: total, withPhone } });
+  const withPush = await User.countDocuments({ fcmToken: { $exists: true, $ne: null } });
+  res.json({ success: true, stats: { totalUsers: total, withEmail: total, withPhone: withPush } });
 });
 
 module.exports = router;
