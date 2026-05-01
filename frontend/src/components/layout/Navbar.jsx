@@ -10,6 +10,7 @@ import {
   FiHome, FiGrid, FiShoppingCart, FiChevronDown,
   FiHelpCircle, FiFileText, FiShield, FiTruck,
   FiRefreshCw, FiTag, FiMessageCircle, FiMenu,
+  FiFilter, FiStar, FiPercent, FiArrowRight,
 } from 'react-icons/fi';
 import logo from '../../assets/logo.png';
 import LiveSearch from './LiveSearch';
@@ -21,10 +22,9 @@ import {
 } from '../../constants/categories';
 
 const categories = ['Men', 'Women', 'Streetwear', 'Accessories'];
-
-// Use full subcategory data from constants/categories.js
 const subCategories = SUB_CATEGORIES;
 
+// ─── SVG Category Icons ───────────────────────────────────────────────────────
 const CategoryIcons = {
   All: ({ color = '#C9A84C', size = 26 }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -38,14 +38,12 @@ const CategoryIcons = {
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <circle cx="12" cy="6" r="3" fill={color} opacity="0.9"/>
       <path d="M8 10h8l1.5 10H14l-2-6-2 6H4.5L8 10z" fill={color} opacity="0.75"/>
-      <path d="M9 10L7.5 20M15 10l1.5 10" stroke={color} strokeWidth="0.5" opacity="0.4"/>
     </svg>
   ),
   Women: ({ color = '#d4827a', size = 26 }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <circle cx="12" cy="5.5" r="2.8" fill={color} opacity="0.9"/>
       <path d="M7 10c0 0 1.5-1.5 5-1.5s5 1.5 5 1.5l2 6H15l-1 5H10l-1-5H7L7 10z" fill={color} opacity="0.75"/>
-      <path d="M9 16h6" stroke={color} strokeWidth="1" opacity="0.5" strokeLinecap="round"/>
     </svg>
   ),
   Streetwear: ({ color = '#8899dd', size = 26 }) => (
@@ -60,7 +58,6 @@ const CategoryIcons = {
       <rect x="5" y="9" width="14" height="9" rx="2" fill={color} opacity="0.7"/>
       <path d="M9 9V7a3 3 0 016 0v2" stroke={color} strokeWidth="1.8" strokeLinecap="round" fill="none" opacity="0.9"/>
       <circle cx="12" cy="13.5" r="1.5" fill={color} opacity="0.9"/>
-      <rect x="11.2" y="13.5" width="1.6" height="2.5" rx="0.8" fill={color} opacity="0.9"/>
     </svg>
   ),
 };
@@ -73,7 +70,6 @@ const HeroIllustrations = {
       <path d="M20 32h30l4 30H46l-11-18-11 18H16L20 32z" fill={color} opacity="0.20"/>
       <path d="M22 32h26l3 28H44L35 42l-9 18H17L22 32z" fill={color} opacity="0.40"/>
       <circle cx="35" cy="18" r="6" fill={color} opacity="0.70"/>
-      <path d="M26 32l-3 28M44 32l3 28" stroke={color} strokeWidth="1" opacity="0.25"/>
     </svg>
   ),
   Women: ({ color = '#d4827a' }) => (
@@ -81,13 +77,11 @@ const HeroIllustrations = {
       <circle cx="35" cy="15" r="9" fill={color} opacity="0.25"/>
       <circle cx="35" cy="15" r="6" fill={color} opacity="0.65"/>
       <path d="M20 28c0 0 4-4 15-4s15 4 15 4l5 16H47l-3 14H26l-3-14H15L20 28z" fill={color} opacity="0.38"/>
-      <path d="M27 44h16" stroke={color} strokeWidth="1.5" opacity="0.55" strokeLinecap="round"/>
     </svg>
   ),
   Streetwear: ({ color = '#8899dd' }) => (
     <svg width="70" height="70" viewBox="0 0 70 70" fill="none">
       <path d="M12 26c0-7 7-14 23-14s23 7 23 14v2H12v-2z" fill={color} opacity="0.35"/>
-      <ellipse cx="35" cy="24" rx="8" ry="3.5" fill={color} opacity="0.30"/>
       <rect x="9" y="29" width="52" height="3" rx="1.5" fill={color} opacity="0.45"/>
       <path d="M14 32v20a2 2 0 002 2h38a2 2 0 002-2V32H14z" fill={color} opacity="0.30"/>
     </svg>
@@ -97,18 +91,16 @@ const HeroIllustrations = {
       <rect x="17" y="30" width="36" height="24" rx="4" fill={color} opacity="0.30"/>
       <path d="M26 30V24a9 9 0 0118 0v6" stroke={color} strokeWidth="3.5" strokeLinecap="round" fill="none" opacity="0.55"/>
       <circle cx="35" cy="41" r="4" fill={color} opacity="0.70"/>
-      <rect x="33" y="41" width="4" height="6" rx="2" fill={color} opacity="0.70"/>
-      <path d="M26 30V24a9 9 0 0118 0v6" stroke={color} strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.90"/>
     </svg>
   ),
 };
 
 const SubIcons = {
   'T-Shirts':       ({ c, size=22 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M3 7l4-3h10l4 3-3 3v10H6V10L3 7z" fill={c} opacity="0.85"/><path d="M9 4c0 1.5-1.5 3-3 3M15 4c0 1.5 1.5 3 3 3" stroke={c} strokeWidth="1.5" fill="none" opacity="0.5"/></svg>,
-  'Casual Shirts':  ({ c, size=22 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M3 7l4-3h10l4 3-3 3v10H6V10L3 7z" fill={c} opacity="0.70"/><line x1="12" y1="7" x2="12" y2="14" stroke={c} strokeWidth="1" opacity="0.6"/><line x1="10" y1="9" x2="14" y2="9" stroke={c} strokeWidth="1" opacity="0.4"/></svg>,
+  'Casual Shirts':  ({ c, size=22 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M3 7l4-3h10l4 3-3 3v10H6V10L3 7z" fill={c} opacity="0.70"/><line x1="12" y1="7" x2="12" y2="14" stroke={c} strokeWidth="1" opacity="0.6"/></svg>,
   'Formal Shirts':  ({ c, size=22 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M3 7l4-3h10l4 3-3 3v10H6V10L3 7z" fill={c} opacity="0.75"/><line x1="12" y1="6" x2="12" y2="17" stroke={c} strokeWidth="1.2" opacity="0.65"/></svg>,
   'Shirts':         ({ c, size=22 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M3 7l4-3h10l4 3-3 3v10H6V10L3 7z" fill={c} opacity="0.70"/><line x1="12" y1="7" x2="12" y2="14" stroke={c} strokeWidth="1" opacity="0.6"/></svg>,
-  'Hoodies & Sweatshirts': ({ c, size=22 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M3 8l4-4 2 3-1 2v9H4V11L3 8z" fill={c} opacity="0.80"/><path d="M21 8l-4-4-2 3 1 2v9h4V11l1-3z" fill={c} opacity="0.80"/><rect x="8" y="4" width="8" height="14" rx="2" fill={c} opacity="0.60"/><path d="M9 4c1 3 5 3 6 0" stroke={c} strokeWidth="1.5" fill="none" opacity="0.7"/></svg>,
+  'Hoodies & Sweatshirts': ({ c, size=22 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M3 8l4-4 2 3-1 2v9H4V11L3 8z" fill={c} opacity="0.80"/><path d="M21 8l-4-4-2 3 1 2v9h4V11l1-3z" fill={c} opacity="0.80"/><rect x="8" y="4" width="8" height="14" rx="2" fill={c} opacity="0.60"/></svg>,
   'Jackets & Coats': ({ c, size=22 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M3 6l4-3 2 4-1 2v8H4V9L3 6z" fill={c} opacity="0.80"/><path d="M21 6l-4-3-2 4 1 2v8h4V9l1-3z" fill={c} opacity="0.80"/><rect x="8" y="3" width="8" height="14" rx="1" fill={c} opacity="0.55"/></svg>,
   'Blazers':        ({ c, size=22 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M3 6l4-3 2 4-1 2v8H4V9L3 6z" fill={c} opacity="0.90"/><path d="M21 6l-4-3-2 4 1 2v8h4V9l1-3z" fill={c} opacity="0.90"/><rect x="8" y="3" width="8" height="14" rx="1" fill={c} opacity="0.65"/><path d="M12 3l-2 5h4l-2-5z" fill={c} opacity="0.90"/></svg>,
   'Sweaters':       ({ c, size=22 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M3 8l4-4 2 3-1 2v9H4V11L3 8z" fill={c} opacity="0.75"/><path d="M21 8l-4-4-2 3 1 2v9h4V11l1-3z" fill={c} opacity="0.75"/><rect x="8" y="4" width="8" height="14" rx="2" fill={c} opacity="0.55"/></svg>,
@@ -157,7 +149,7 @@ const SubIcons = {
   'Bags':           ({ c, size=22 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><rect x="4" y="9" width="16" height="12" rx="2" fill={c} opacity="0.80"/><path d="M9 9V7a3 3 0 016 0v2" stroke={c} strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.90"/></svg>,
   'Watches':        ({ c, size=22 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="6" stroke={c} strokeWidth="2" fill="none" opacity="0.85"/><rect x="10" y="3" width="4" height="3" rx="1" fill={c} opacity="0.70"/><rect x="10" y="18" width="4" height="3" rx="1" fill={c} opacity="0.70"/><line x1="12" y1="8" x2="12" y2="12" stroke={c} strokeWidth="1.5" strokeLinecap="round"/><line x1="12" y1="12" x2="15" y2="12" stroke={c} strokeWidth="1.5" strokeLinecap="round"/></svg>,
   'Belts':          ({ c, size=22 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><rect x="2" y="10" width="20" height="4" rx="2" fill={c} opacity="0.80"/><rect x="10" y="9" width="5" height="6" rx="1" fill={c} opacity="0.90"/><circle cx="12" cy="12" r="1.5" fill={c} opacity="1"/></svg>,
-  'Wallets':        ({ c, size=22 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><rect x="2" y="6" width="20" height="14" rx="2" fill={c} opacity="0.70"/><rect x="14" y="12" width="6" height="4" rx="2" fill={c} opacity="0.85"/><circle cx="17" cy="14" r="1" fill={c} opacity="0.50"/></svg>,
+  'Wallets':        ({ c, size=22 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><rect x="2" y="6" width="20" height="14" rx="2" fill={c} opacity="0.70"/><rect x="14" y="12" width="6" height="4" rx="2" fill={c} opacity="0.85"/></svg>,
   'Sunglasses':     ({ c, size=22 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><rect x="2" y="9" width="8" height="6" rx="3" fill={c} opacity="0.75"/><rect x="14" y="9" width="8" height="6" rx="3" fill={c} opacity="0.75"/><line x1="10" y1="12" x2="14" y2="12" stroke={c} strokeWidth="1.5" opacity="0.80"/></svg>,
   'Caps & Hats':    ({ c, size=22 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M4 14c0-5 3.5-9 8-9s8 4 8 9v1H4v-1z" fill={c} opacity="0.80"/><rect x="3" y="14" width="18" height="2.5" rx="1.25" fill={c} opacity="0.60"/></svg>,
   'Bags & Backpacks': ({ c, size=22 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><rect x="4" y="9" width="16" height="12" rx="2" fill={c} opacity="0.80"/><path d="M9 9V7a3 3 0 016 0v2" stroke={c} strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.90"/><line x1="12" y1="13" x2="12" y2="18" stroke={c} strokeWidth="1.2" opacity="0.50"/></svg>,
@@ -167,10 +159,18 @@ const SubIcons = {
 };
 
 const CAT_CONFIG = {
-  Men:         { color: '#C9A84C', bg: 'linear-gradient(135deg, #1a1a0e, #0f0f0a)', tag: 'New Season', count: '240+ styles' },
-  Women:       { color: '#d4827a', bg: 'linear-gradient(135deg, #1a1010, #0f0808)', tag: 'Trending',   count: '380+ styles' },
-  Streetwear:  { color: '#8899dd', bg: 'linear-gradient(135deg, #101418, #080a0e)', tag: 'New Drop',   count: '160+ styles' },
-  Accessories: { color: '#7ab870', bg: 'linear-gradient(135deg, #121810, #090e08)', tag: 'Curated',    count: '120+ picks'  },
+  Men:         { color: '#C9A84C', bg: 'linear-gradient(135deg, #1a1a0e 0%, #0f0f0a 100%)', tag: 'New Season', count: '240+ styles' },
+  Women:       { color: '#d4827a', bg: 'linear-gradient(135deg, #1a1010 0%, #0f0808 100%)', tag: 'Trending',   count: '380+ styles' },
+  Streetwear:  { color: '#8899dd', bg: 'linear-gradient(135deg, #101418 0%, #080a0e 100%)', tag: 'New Drop',   count: '160+ styles' },
+  Accessories: { color: '#7ab870', bg: 'linear-gradient(135deg, #121810 0%, #090e08 100%)', tag: 'Curated',    count: '120+ picks'  },
+};
+
+// Quick-filters shown per category in the desktop full-screen panel
+const QUICK_FILTERS = {
+  Men:         ['New Arrivals', 'Best Sellers', 'Under ₹999', 'Premium', 'Ethnic', 'Sports'],
+  Women:       ['New Arrivals', 'Trending Now', 'Under ₹999', 'Ethnic Wear', 'Party Wear', 'Work Wear'],
+  Streetwear:  ['New Drops', 'Limited Edition', 'Under ₹1499', 'Collab', 'Vintage', 'Unisex'],
+  Accessories: ['New In', 'Best Sellers', 'Under ₹499', 'Luxury', 'Daily Essentials', 'Gift Ideas'],
 };
 
 const GOLD      = '#C9A84C';
@@ -232,9 +232,9 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => {
-    document.body.style.overflow = categoriesOpen ? 'hidden' : '';
+    document.body.style.overflow = (categoriesOpen || deskCatOpen) ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
-  }, [categoriesOpen]);
+  }, [categoriesOpen, deskCatOpen]);
 
   const isActivePath = path => location.pathname === path;
   const handleLogout = () => { logout(); setCategoriesOpen(false); setUserMenuOpen(false); };
@@ -249,6 +249,78 @@ export default function Navbar() {
     animation: 'navDropdown 0.18s ease both',
   };
 
+  // ─── Shared sub-category card renderer ────────────────────────────────────
+  const renderSubCard = (name, cfg, onClick, size = 'md') => {
+    const SI  = SubIcons[name];
+    const img = SUB_CATEGORY_IMAGES?.[name];
+    const imgH = size === 'sm' ? '72px' : '96px';
+    const fontSize = size === 'sm' ? '11px' : '12px';
+    return (
+      <button
+        key={name}
+        onClick={onClick}
+        style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          padding: 0, borderRadius: '12px', overflow: 'hidden',
+          border: `1px solid ${isDark ? 'rgba(201,168,76,0.15)' : 'rgba(0,0,0,0.08)'}`,
+          cursor: 'pointer',
+          background: isDark
+            ? 'linear-gradient(160deg, rgba(201,168,76,0.06) 0%, rgba(0,0,0,0.4) 100%)'
+            : 'linear-gradient(160deg, rgba(201,168,76,0.06) 0%, rgba(255,255,255,0.9) 100%)',
+          transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+        }}
+        onMouseOver={e => {
+          e.currentTarget.style.borderColor = `${cfg.color}70`;
+          e.currentTarget.style.transform   = 'translateY(-3px) scale(1.02)';
+          e.currentTarget.style.boxShadow   = `0 8px 24px rgba(0,0,0,0.4), 0 0 0 1px ${cfg.color}30`;
+          e.currentTarget.style.background  = isDark ? `linear-gradient(160deg, ${cfg.color}18, rgba(0,0,0,0.5))` : `linear-gradient(160deg, ${cfg.color}12, rgba(255,255,255,1))`;
+        }}
+        onMouseOut={e => {
+          e.currentTarget.style.borderColor = isDark ? 'rgba(201,168,76,0.15)' : 'rgba(0,0,0,0.08)';
+          e.currentTarget.style.transform   = 'translateY(0) scale(1)';
+          e.currentTarget.style.boxShadow   = '0 2px 8px rgba(0,0,0,0.18)';
+          e.currentTarget.style.background  = isDark ? 'linear-gradient(160deg, rgba(201,168,76,0.06) 0%, rgba(0,0,0,0.4) 100%)' : 'linear-gradient(160deg, rgba(201,168,76,0.06) 0%, rgba(255,255,255,0.9) 100%)';
+        }}
+      >
+        {/* Image area */}
+        <div style={{
+          width: '100%', height: imgH, overflow: 'hidden', flexShrink: 0,
+          backgroundColor: isDark ? '#1a1a14' : '#f5f0e8',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          position: 'relative',
+        }}>
+          {img ? (
+            <img
+              src={img.url} alt={img.alt || name} loading="lazy"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center', display: 'block', transition: 'transform 0.4s' }}
+              onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex'; }}
+            />
+          ) : null}
+          {/* Fallback icon — always rendered but hidden when image loads */}
+          <div style={{
+            display: img ? 'none' : 'flex', position: 'absolute', inset: 0,
+            alignItems: 'center', justifyContent: 'center',
+            background: `linear-gradient(135deg, ${cfg.color}20, ${cfg.color}08)`,
+          }}>
+            {SI ? <SI c={cfg.color} size={32} /> : null}
+          </div>
+          {/* Gold shimmer overlay at bottom */}
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '32px', background: `linear-gradient(to top, ${isDark ? 'rgba(0,0,0,0.65)' : 'rgba(245,240,232,0.65)'}, transparent)`, pointerEvents: 'none' }} />
+        </div>
+        {/* Label */}
+        <span style={{
+          fontSize, color: isDark ? 'rgba(240,232,216,0.88)' : 'rgba(0,0,0,0.78)',
+          padding: '7px 6px 9px', textAlign: 'center', lineHeight: 1.25,
+          width: '100%', fontFamily: 'inherit', fontWeight: 500,
+          letterSpacing: '0.01em',
+        }}>
+          {name}
+        </span>
+      </button>
+    );
+  };
+
   return (
     <>
       <style>{`
@@ -256,21 +328,30 @@ export default function Navbar() {
           from { opacity: 0; transform: translateY(-8px); }
           to   { opacity: 1; transform: translateY(0); }
         }
-        .desk-cat-img:hover { transform: scale(1.10); }
+        @keyframes fullScreenIn {
+          from { opacity: 0; transform: translateY(-12px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .desk-subcard img:hover { transform: scale(1.08); }
+        /* Scrollbar styling for mega menu */
+        .mega-scroll::-webkit-scrollbar { width: 4px; }
+        .mega-scroll::-webkit-scrollbar-track { background: transparent; }
+        .mega-scroll::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.3); border-radius: 4px; }
+        .mega-scroll::-webkit-scrollbar-thumb:hover { background: rgba(201,168,76,0.6); }
       `}</style>
 
-      {/* Announcement bar */}
+      {/* ── Announcement bar ── */}
       <div style={{ backgroundColor: GOLD, color: '#000000' }}
         className="text-center py-2 text-[11px] tracking-[0.18em] font-body uppercase px-4 font-medium">
         Free shipping above ₹999&nbsp;&nbsp;|&nbsp;&nbsp;New Collection: Autumn/Winter 2026
       </div>
 
-      {/* Main header */}
+      {/* ── Main header ── */}
       <header
         className={`sticky top-0 w-full z-50 transition-all duration-300 ${scrolled ? 'shadow-2xl' : ''}`}
         style={{ backgroundColor: NAV_BG }}
       >
-        {/* ══ MOBILE top bar ══ */}
+        {/* ════ MOBILE TOP BAR ════ */}
         <div className="md:hidden" style={{ backgroundColor: NAV_BG }}>
           <div className="relative flex items-center justify-between px-4 h-14"
             style={{ borderBottom: `1px solid ${BORDER}` }}>
@@ -308,10 +389,18 @@ export default function Navbar() {
               {['All', ...categories].map(cat => {
                 const path   = cat === 'All' ? '/shop' : `/shop/${cat.toLowerCase()}`;
                 const active = cat === 'All' ? location.pathname === '/shop' && !location.search : location.pathname === `/shop/${cat.toLowerCase()}`;
+                const cfg    = CAT_CONFIG[cat];
+                const pillColor = cfg?.color || GOLD;
                 return (
                   <button key={cat} onClick={() => navigate(path)}
                     className="flex-shrink-0 px-4 py-1 text-[11px] font-body tracking-[0.1em] uppercase rounded-full border transition-all"
-                    style={{ backgroundColor: active ? GOLD : 'transparent', borderColor: active ? GOLD : BORDER, color: active ? '#000000' : TEXT }}>
+                    style={{
+                      backgroundColor: active ? pillColor : 'transparent',
+                      borderColor: active ? pillColor : isDark ? `${pillColor}40` : `${pillColor}60`,
+                      color: active ? '#000000' : isDark ? `${pillColor}cc` : `${pillColor}`,
+                      fontWeight: active ? '700' : '500',
+                      boxShadow: active ? `0 0 12px ${pillColor}40` : 'none',
+                    }}>
                     {cat}
                   </button>
                 );
@@ -320,7 +409,7 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* ══ DESKTOP nav ══ */}
+        {/* ════ DESKTOP NAV ════ */}
         <div className="hidden md:block" style={{ borderBottom: `1px solid ${BORDER}` }}>
           <div className="max-w-7xl mx-auto px-6 lg:px-8">
             <div className="flex items-center h-20 gap-4">
@@ -333,149 +422,33 @@ export default function Navbar() {
                   style={{ color: GOLD }}>TRENDORRA</span>
               </Link>
 
-              {/* Categories dropdown */}
+              {/* ── Categories button (triggers full-screen overlay) ── */}
               <div ref={deskCatRef} style={{ position: 'relative', flexShrink: 0 }}>
                 <button
                   onClick={() => { setDeskCatOpen(o => !o); setDeskMoreOpen(false); }}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: '6px',
-                    padding: '8px 14px', borderRadius: '6px',
-                    backgroundColor: deskCatOpen ? `${GOLD}18` : 'transparent',
-                    border: `1px solid ${deskCatOpen ? `${GOLD}40` : 'transparent'}`,
-                    color: deskCatOpen ? GOLD : TEXT,
-                    fontSize: '13px', fontFamily: 'inherit', letterSpacing: '0.08em',
-                    textTransform: 'uppercase', cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap',
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                    padding: '9px 18px', borderRadius: '8px',
+                    background: deskCatOpen
+                      ? `linear-gradient(135deg, ${GOLD}25, ${GOLD}10)`
+                      : isDark ? 'rgba(201,168,76,0.08)' : 'rgba(201,168,76,0.06)',
+                    border: `1.5px solid ${deskCatOpen ? GOLD : `${GOLD}40`}`,
+                    color: deskCatOpen ? GOLD : isDark ? `${GOLD}cc` : `${GOLD}`,
+                    fontSize: '13px', fontFamily: 'inherit', letterSpacing: '0.1em',
+                    textTransform: 'uppercase', cursor: 'pointer', transition: 'all 0.2s',
+                    whiteSpace: 'nowrap', fontWeight: '600',
+                    boxShadow: deskCatOpen ? `0 0 20px ${GOLD}30` : 'none',
                   }}
-                  onMouseOver={e => { if (!deskCatOpen) { e.currentTarget.style.color = GOLD; e.currentTarget.style.backgroundColor = `${GOLD}10`; } }}
-                  onMouseOut={e  => { if (!deskCatOpen) { e.currentTarget.style.color = TEXT; e.currentTarget.style.backgroundColor = 'transparent'; } }}
+                  onMouseOver={e => { if (!deskCatOpen) { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.color = GOLD; e.currentTarget.style.boxShadow = `0 0 16px ${GOLD}25`; } }}
+                  onMouseOut={e  => { if (!deskCatOpen) { e.currentTarget.style.borderColor = `${GOLD}40`; e.currentTarget.style.color = isDark ? `${GOLD}cc` : GOLD; e.currentTarget.style.boxShadow = 'none'; } }}
                 >
-                  <FiGrid size={14} />
-                  Categories
-                  <FiChevronDown size={13} style={{ transition: 'transform 0.2s', transform: deskCatOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+                  <FiGrid size={15} />
+                  All Categories
+                  <FiChevronDown size={13} style={{ transition: 'transform 0.25s', transform: deskCatOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
                 </button>
-
-                {/* ── DESKTOP MEGA-MENU ── */}
-                {deskCatOpen && (
-                  <div style={{ ...dropdownStyle, left: 0, width: '720px', maxHeight: '80vh', overflowY: 'auto' }}>
-                    {/* Category tabs */}
-                    <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, backgroundColor: isDark ? '#0d0d0d' : '#f8f8f8', position: 'sticky', top: 0, zIndex: 1 }}>
-                      {categories.map(cat => {
-                        const cfg = CAT_CONFIG[cat];
-                        return (
-                          <button key={cat} onClick={() => setActiveCat(cat)}
-                            style={{
-                              flex: 1, padding: '12px 8px',
-                              backgroundColor: activeCat === cat ? `${cfg.color}18` : 'transparent',
-                              border: 'none',
-                              borderBottom: activeCat === cat ? `2px solid ${cfg.color}` : '2px solid transparent',
-                              color: activeCat === cat ? cfg.color : isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)',
-                              fontSize: '12px', fontFamily: 'inherit', letterSpacing: '0.08em',
-                              textTransform: 'uppercase', cursor: 'pointer',
-                              transition: 'all 0.15s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                            }}>
-                            {(() => { const I = CategoryIcons[cat]; return I ? <I color={activeCat === cat ? cfg.color : isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'} size={18} /> : null; })()}
-                            {cat}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {/* Content panel */}
-                    {(() => {
-                      const cfg = CAT_CONFIG[activeCat];
-                      const grouped = getGroupedSubCategories(activeCat);
-                      return (
-                        <div style={{ padding: '16px' }}>
-                          {/* Hero banner */}
-                          <div
-                            onClick={() => { navigate(`/shop/${activeCat.toLowerCase()}`); setDeskCatOpen(false); }}
-                            style={{
-                              borderRadius: '10px', padding: '16px 20px', marginBottom: '16px',
-                              background: cfg.bg, border: `1px solid ${cfg.color}25`,
-                              cursor: 'pointer', display: 'flex', alignItems: 'center',
-                              justifyContent: 'space-between', position: 'relative', overflow: 'hidden',
-                            }}>
-                            <div>
-                              <span style={{ fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', color: cfg.color, opacity: 0.8 }}>
-                                {cfg.tag} · {cfg.count}
-                              </span>
-                              <p style={{ color: '#f5f5f5', fontSize: '18px', fontWeight: 300, margin: '4px 0 0', letterSpacing: '0.05em' }}>
-                                Shop All {activeCat} →
-                              </p>
-                            </div>
-                            {(() => { const H = HeroIllustrations[activeCat]; return H ? <H color={cfg.color} /> : null; })()}
-                          </div>
-
-                          {/* Grouped image-card grid */}
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            {Object.entries(grouped).map(([group, names]) => (
-                              <div key={group}>
-                                {/* Group label */}
-                                <p style={{
-                                  fontSize: '9px', letterSpacing: '0.18em', textTransform: 'uppercase',
-                                  color: cfg.color, opacity: 0.70, margin: '0 0 8px', fontFamily: 'inherit',
-                                }}>{group}</p>
-
-                                {/* 4-col image cards */}
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
-                                  {names.map(name => {
-                                    const img = SUB_CATEGORY_IMAGES[name];
-                                    const SI  = SubIcons[name];
-                                    return (
-                                      <button key={name}
-                                        onClick={() => { navigate(`/shop?category=${activeCat}&search=${encodeURIComponent(name)}`); setDeskCatOpen(false); }}
-                                        style={{
-                                          display: 'flex', flexDirection: 'column', alignItems: 'center',
-                                          padding: 0, borderRadius: '10px', overflow: 'hidden',
-                                          border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
-                                          cursor: 'pointer', background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
-                                          transition: 'all 0.18s',
-                                        }}
-                                        onMouseOver={e => {
-                                          e.currentTarget.style.borderColor = `${cfg.color}55`;
-                                          e.currentTarget.style.transform   = 'translateY(-2px)';
-                                          e.currentTarget.style.boxShadow   = '0 6px 20px rgba(0,0,0,0.35)';
-                                          e.currentTarget.style.background   = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
-                                        }}
-                                        onMouseOut={e => {
-                                          e.currentTarget.style.borderColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
-                                          e.currentTarget.style.transform   = 'translateY(0)';
-                                          e.currentTarget.style.boxShadow   = 'none';
-                                          e.currentTarget.style.background   = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)';
-                                        }}
-                                      >
-                                        {/* Image */}
-                                        <div style={{ width: '100%', height: '70px', overflow: 'hidden', backgroundColor: isDark ? '#1a1a1a' : '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                          {img ? (
-                                            <img
-                                              src={img.url} alt={img.alt} loading="lazy"
-                                              className="desk-cat-img"
-                                              style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.35s', display: 'block' }}
-                                              onError={e => { e.currentTarget.style.display = 'none'; }}
-                                            />
-                                          ) : (
-                                            SI ? <SI c={cfg.color} size={28} /> : null
-                                          )}
-                                        </div>
-                                        {/* Label */}
-                                        <span style={{ fontSize: '11px', color: isDark ? 'rgba(240,232,216,0.82)' : 'rgba(0,0,0,0.75)', fontFamily: 'inherit', padding: '5px 6px 8px', textAlign: 'center', lineHeight: 1.3, width: '100%' }}>
-                                          {name}
-                                        </span>
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </div>
-                )}
               </div>
 
-              {/* Live Search bar */}
+              {/* Live Search */}
               <div style={{ flex: 1, maxWidth: '560px', zIndex: 101, position: 'relative' }}>
                 <LiveSearch isDark={isDark} isDesktop={true} />
               </div>
@@ -504,58 +477,26 @@ export default function Navbar() {
                     <div style={{ padding: '12px 16px', borderBottom: `1px solid ${BORDER}`, backgroundColor: isDark ? '#0d0d0d' : '#f8f8f8' }}>
                       <p style={{ color: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.4)', fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', fontFamily: 'inherit', margin: 0 }}>More Options</p>
                     </div>
-                    <Link to={isSeller ? '/seller/dashboard' : '/seller/register'} onClick={() => setDeskMoreOpen(false)}
-                      style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '13px 16px', textDecoration: 'none', borderBottom: `1px solid ${BORDER}`, transition: 'background-color 0.15s' }}
-                      onMouseOver={e => e.currentTarget.style.backgroundColor = `${GOLD}0d`}
-                      onMouseOut={e  => e.currentTarget.style.backgroundColor = 'transparent'}
-                    >
-                      <div style={{ width: '34px', height: '34px', borderRadius: '8px', flexShrink: 0, backgroundColor: `${GOLD}18`, border: `1px solid ${GOLD}30`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <FiShoppingBag size={15} style={{ color: GOLD }} />
-                      </div>
-                      <div>
-                        <p style={{ color: isDark ? '#fff' : '#111', fontSize: '13px', fontWeight: '500', margin: '0 0 2px', fontFamily: 'inherit' }}>{isSeller ? 'Seller Dashboard' : 'Become a Seller'}</p>
-                        <p style={{ color: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.4)', fontSize: '11px', margin: 0, fontFamily: 'inherit' }}>{isSeller ? (user?.sellerInfo?.businessName || 'My Store') : 'Sell on Trendorra'}</p>
-                      </div>
-                    </Link>
-                    <Link to="/orders" onClick={() => setDeskMoreOpen(false)}
-                      style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '13px 16px', textDecoration: 'none', borderBottom: `1px solid ${BORDER}`, transition: 'background-color 0.15s' }}
-                      onMouseOver={e => e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'}
-                      onMouseOut={e  => e.currentTarget.style.backgroundColor = 'transparent'}
-                    >
-                      <div style={{ width: '34px', height: '34px', borderRadius: '8px', flexShrink: 0, backgroundColor: isDark ? 'rgba(96,165,250,0.12)' : 'rgba(59,130,246,0.08)', border: '1px solid rgba(96,165,250,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <FiTruck size={15} style={{ color: '#60a5fa' }} />
-                      </div>
-                      <div>
-                        <p style={{ color: isDark ? '#fff' : '#111', fontSize: '13px', fontWeight: '500', margin: '0 0 2px', fontFamily: 'inherit' }}>Track Order</p>
-                        <p style={{ color: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.4)', fontSize: '11px', margin: 0, fontFamily: 'inherit' }}>Check delivery status</p>
-                      </div>
-                    </Link>
-                    <Link to="/shop" onClick={() => setDeskMoreOpen(false)}
-                      style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '13px 16px', textDecoration: 'none', borderBottom: `1px solid ${BORDER}`, transition: 'background-color 0.15s' }}
-                      onMouseOver={e => e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'}
-                      onMouseOut={e  => e.currentTarget.style.backgroundColor = 'transparent'}
-                    >
-                      <div style={{ width: '34px', height: '34px', borderRadius: '8px', flexShrink: 0, backgroundColor: isDark ? 'rgba(74,222,128,0.1)' : 'rgba(22,163,74,0.08)', border: '1px solid rgba(74,222,128,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <FiTag size={15} style={{ color: '#4ade80' }} />
-                      </div>
-                      <div>
-                        <p style={{ color: isDark ? '#fff' : '#111', fontSize: '13px', fontWeight: '500', margin: '0 0 2px', fontFamily: 'inherit' }}>Offers & Coupons</p>
-                        <p style={{ color: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.4)', fontSize: '11px', margin: 0, fontFamily: 'inherit' }}>Deals & discounts</p>
-                      </div>
-                    </Link>
-                    <Link to="/help" onClick={() => setDeskMoreOpen(false)}
-                      style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '13px 16px', textDecoration: 'none', transition: 'background-color 0.15s' }}
-                      onMouseOver={e => e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'}
-                      onMouseOut={e  => e.currentTarget.style.backgroundColor = 'transparent'}
-                    >
-                      <div style={{ width: '34px', height: '34px', borderRadius: '8px', flexShrink: 0, backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)', border: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <FiHelpCircle size={15} style={{ color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)' }} />
-                      </div>
-                      <div>
-                        <p style={{ color: isDark ? '#fff' : '#111', fontSize: '13px', fontWeight: '500', margin: '0 0 2px', fontFamily: 'inherit' }}>Help & Support</p>
-                        <p style={{ color: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.4)', fontSize: '11px', margin: 0, fontFamily: 'inherit' }}>FAQs & customer care</p>
-                      </div>
-                    </Link>
+                    {[
+                      { to: isSeller ? '/seller/dashboard' : '/seller/register', icon: FiShoppingBag, label: isSeller ? 'Seller Dashboard' : 'Become a Seller', sub: isSeller ? (user?.sellerInfo?.businessName || 'My Store') : 'Sell on Trendorra', iconBg: `${GOLD}18`, iconBorder: `${GOLD}30`, iconColor: GOLD },
+                      { to: '/orders',  icon: FiTruck,      label: 'Track Order',      sub: 'Check delivery status',     iconBg: 'rgba(96,165,250,0.12)', iconBorder: 'rgba(96,165,250,0.25)', iconColor: '#60a5fa' },
+                      { to: '/shop',    icon: FiTag,        label: 'Offers & Coupons', sub: 'Deals & discounts',         iconBg: 'rgba(74,222,128,0.10)', iconBorder: 'rgba(74,222,128,0.25)', iconColor: '#4ade80' },
+                      { to: '/help',    icon: FiHelpCircle, label: 'Help & Support',   sub: 'FAQs & customer care',      iconBg: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)', iconBorder: BORDER, iconColor: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)' },
+                    ].map(({ to, icon: Icon, label, sub, iconBg, iconBorder, iconColor }, i, arr) => (
+                      <Link key={to} to={to} onClick={() => setDeskMoreOpen(false)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '13px 16px', textDecoration: 'none', borderBottom: i < arr.length-1 ? `1px solid ${BORDER}` : 'none', transition: 'background-color 0.15s' }}
+                        onMouseOver={e => e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'}
+                        onMouseOut={e  => e.currentTarget.style.backgroundColor = 'transparent'}
+                      >
+                        <div style={{ width: '34px', height: '34px', borderRadius: '8px', flexShrink: 0, backgroundColor: iconBg, border: `1px solid ${iconBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Icon size={15} style={{ color: iconColor }} />
+                        </div>
+                        <div>
+                          <p style={{ color: isDark ? '#fff' : '#111', fontSize: '13px', fontWeight: '500', margin: '0 0 2px', fontFamily: 'inherit' }}>{label}</p>
+                          <p style={{ color: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.4)', fontSize: '11px', margin: 0, fontFamily: 'inherit' }}>{sub}</p>
+                        </div>
+                      </Link>
+                    ))}
                   </div>
                 )}
               </div>
@@ -643,7 +584,7 @@ export default function Navbar() {
                             <p style={{ color: isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.3)', fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase', fontFamily: 'inherit', margin: '0 0 6px' }}>Legal</p>
                           </div>
                           {[
-                          { to: '/privacy-policy',   label: 'Privacy Policy'   },
+                            { to: '/privacy-policy',   label: 'Privacy Policy'   },
                             { to: '/terms-of-service', label: 'Terms of Service' },
                             { to: '/refund-policy',    label: 'Refund Policy'    },
                             { to: '/shipping-policy',  label: 'Shipping Policy'  },
@@ -671,13 +612,244 @@ export default function Navbar() {
         </div>
       </header>
 
-      {/* ══ MOBILE BOTTOM NAV ══ */}
+      {/* ════════════════════════════════════════════════════════════════════
+          DESKTOP FULL-SCREEN CATEGORY MEGA-MENU (Flipkart / Amazon style)
+          ════════════════════════════════════════════════════════════════════ */}
+      <AnimatePresence>
+        {deskCatOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="hidden md:block fixed inset-0 z-40"
+              style={{ background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(2px)' }}
+              onClick={() => setDeskCatOpen(false)}
+            />
+
+            {/* Full-screen panel */}
+            <motion.div
+              initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}
+              transition={{ type: 'tween', duration: 0.28, ease: 'easeOut' }}
+              className="hidden md:flex fixed z-50"
+              style={{
+                top: '130px', /* below announcement + header */
+                left: 0, right: 0,
+                height: 'calc(100vh - 130px)',
+                background: isDark ? '#090909' : '#ffffff',
+                borderTop: `2px solid ${GOLD}`,
+                boxShadow: `0 24px 80px rgba(0,0,0,0.8)`,
+              }}
+            >
+              {/* ── LEFT SIDEBAR: category list ── */}
+              <div style={{
+                width: '220px', flexShrink: 0,
+                background: isDark ? '#050505' : '#f7f3ea',
+                borderRight: `1px solid ${isDark ? 'rgba(201,168,76,0.20)' : 'rgba(201,168,76,0.25)'}`,
+                overflowY: 'auto', display: 'flex', flexDirection: 'column',
+              }} className="mega-scroll">
+                {/* Header */}
+                <div style={{ padding: '20px 18px 14px', borderBottom: `1px solid ${isDark ? 'rgba(201,168,76,0.15)' : 'rgba(201,168,76,0.20)'}` }}>
+                  <p style={{ color: GOLD, fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', margin: 0, fontWeight: '700' }}>Shop Categories</p>
+                </div>
+
+                {/* All */}
+                <button onClick={() => { navigate('/shop'); setDeskCatOpen(false); }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 18px',
+                    background: 'transparent', border: 'none', cursor: 'pointer',
+                    borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)'}`,
+                    transition: 'all 0.15s',
+                  }}
+                  onMouseOver={e => { e.currentTarget.style.background = `${GOLD}12`; }}
+                  onMouseOut={e  => { e.currentTarget.style.background = 'transparent'; }}
+                >
+                  <div style={{ width: '40px', height: '40px', borderRadius: '10px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${GOLD}15`, border: `1px solid ${GOLD}30` }}>
+                    <CategoryIcons.All color={GOLD} size={20} />
+                  </div>
+                  <div style={{ textAlign: 'left' }}>
+                    <p style={{ color: isDark ? '#f5f5f5' : '#111', fontSize: '14px', fontWeight: '500', margin: 0, fontFamily: 'inherit' }}>All Categories</p>
+                    <p style={{ color: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.4)', fontSize: '11px', margin: '2px 0 0', fontFamily: 'inherit' }}>Browse everything</p>
+                  </div>
+                  <FiChevronRight size={14} style={{ color: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)', marginLeft: 'auto', flexShrink: 0 }} />
+                </button>
+
+                {/* Each category */}
+                {categories.map(cat => {
+                  const cfg    = CAT_CONFIG[cat];
+                  const active = activeCat === cat;
+                  const Icon   = CategoryIcons[cat];
+                  const subs   = subCategories[cat] || [];
+                  return (
+                    <button key={cat}
+                      onClick={() => setActiveCat(cat)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 18px',
+                        background: active ? `linear-gradient(90deg, ${cfg.color}18, ${cfg.color}06)` : 'transparent',
+                        border: 'none', borderLeft: active ? `3px solid ${cfg.color}` : '3px solid transparent',
+                        borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)'}`,
+                        cursor: 'pointer', transition: 'all 0.18s', width: '100%', textAlign: 'left',
+                      }}
+                      onMouseOver={e => { if (!active) { e.currentTarget.style.background = `${cfg.color}10`; e.currentTarget.style.borderLeftColor = `${cfg.color}60`; } }}
+                      onMouseOut={e  => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderLeftColor = 'transparent'; } }}
+                    >
+                      <div style={{
+                        width: '40px', height: '40px', borderRadius: '10px', flexShrink: 0,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: active ? `${cfg.color}25` : `${cfg.color}12`,
+                        border: `1px solid ${active ? cfg.color + '60' : cfg.color + '25'}`,
+                        boxShadow: active ? `0 0 16px ${cfg.color}30` : 'none',
+                        transition: 'all 0.18s',
+                      }}>
+                        {Icon && <Icon color={active ? cfg.color : cfg.color + 'aa'} size={20} />}
+                      </div>
+                      <div>
+                        <p style={{ color: active ? cfg.color : isDark ? '#f5f5f5' : '#111', fontSize: '14px', fontWeight: active ? '600' : '500', margin: 0, fontFamily: 'inherit', transition: 'color 0.15s' }}>{cat}</p>
+                        <p style={{ color: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.4)', fontSize: '11px', margin: '2px 0 0', fontFamily: 'inherit' }}>{subs.length}+ items</p>
+                      </div>
+                      <FiChevronRight size={14} style={{ color: active ? cfg.color : isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)', marginLeft: 'auto', flexShrink: 0 }} />
+                    </button>
+                  );
+                })}
+
+                {/* Seller shortcut */}
+                <div style={{ marginTop: 'auto', borderTop: `1px solid ${isDark ? 'rgba(201,168,76,0.15)' : 'rgba(201,168,76,0.20)'}` }}>
+                  <Link to={isSeller ? '/seller/dashboard' : '/seller/register'} onClick={() => setDeskCatOpen(false)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 18px', textDecoration: 'none', background: `${GOLD}08` }}>
+                    <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: `${GOLD}18`, border: `1px solid ${GOLD}35`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <FiShoppingBag size={16} style={{ color: GOLD }} />
+                    </div>
+                    <div>
+                      <p style={{ color: GOLD, fontSize: '13px', fontWeight: '600', margin: 0, fontFamily: 'inherit' }}>{isSeller ? 'My Store' : 'Sell Here'}</p>
+                      <p style={{ color: `${GOLD}70`, fontSize: '10px', margin: '1px 0 0', fontFamily: 'inherit' }}>{isSeller ? 'Dashboard' : 'Start selling'}</p>
+                    </div>
+                  </Link>
+                </div>
+              </div>
+
+              {/* ── MAIN CONTENT PANEL ── */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                {(() => {
+                  const cfg     = CAT_CONFIG[activeCat];
+                  const grouped = getGroupedSubCategories(activeCat);
+                  const qf      = QUICK_FILTERS[activeCat] || [];
+                  return (
+                    <>
+                      {/* Top band: hero info + quick filters */}
+                      <div style={{
+                        flexShrink: 0,
+                        background: isDark
+                          ? `linear-gradient(90deg, ${cfg.color}12 0%, rgba(0,0,0,0) 60%)`
+                          : `linear-gradient(90deg, ${cfg.color}10 0%, rgba(255,255,255,0) 60%)`,
+                        borderBottom: `1px solid ${isDark ? 'rgba(201,168,76,0.12)' : 'rgba(201,168,76,0.15)'}`,
+                        padding: '14px 28px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px',
+                      }}>
+                        {/* Title */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: 0 }}>
+                          <div style={{ width: '48px', height: '48px', borderRadius: '14px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: `linear-gradient(135deg, ${cfg.color}30, ${cfg.color}12)`, border: `1.5px solid ${cfg.color}50`, boxShadow: `0 0 20px ${cfg.color}25` }}>
+                            {(() => { const I = CategoryIcons[activeCat]; return I ? <I color={cfg.color} size={24} /> : null; })()}
+                          </div>
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <h2 style={{ color: isDark ? '#fff' : '#111', fontSize: '22px', fontWeight: 300, margin: 0, letterSpacing: '0.04em', fontFamily: 'inherit' }}>{activeCat}</h2>
+                              <span style={{ fontSize: '9px', letterSpacing: '0.18em', color: cfg.color, background: `${cfg.color}18`, border: `1px solid ${cfg.color}35`, padding: '3px 10px', borderRadius: '999px', textTransform: 'uppercase', fontWeight: '600' }}>{cfg.tag}</span>
+                            </div>
+                            <p style={{ color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)', fontSize: '12px', margin: '3px 0 0', fontFamily: 'inherit' }}>{cfg.count} · Explore the full collection</p>
+                          </div>
+                        </div>
+
+                        {/* Quick filter tags */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                          {qf.map(f => (
+                            <button key={f}
+                              onClick={() => { navigate(`/shop?category=${activeCat}&filter=${encodeURIComponent(f)}`); setDeskCatOpen(false); }}
+                              style={{
+                                padding: '5px 14px', borderRadius: '999px', fontSize: '11px', letterSpacing: '0.06em',
+                                background: 'transparent', border: `1px solid ${isDark ? 'rgba(201,168,76,0.30)' : 'rgba(201,168,76,0.40)'}`,
+                                color: isDark ? `${GOLD}cc` : GOLD, cursor: 'pointer', transition: 'all 0.18s',
+                                fontFamily: 'inherit', whiteSpace: 'nowrap',
+                              }}
+                              onMouseOver={e => { e.currentTarget.style.background = GOLD; e.currentTarget.style.color = '#000'; e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.boxShadow = `0 0 12px ${GOLD}40`; }}
+                              onMouseOut={e  => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = isDark ? `${GOLD}cc` : GOLD; e.currentTarget.style.borderColor = isDark ? 'rgba(201,168,76,0.30)' : 'rgba(201,168,76,0.40)'; e.currentTarget.style.boxShadow = 'none'; }}
+                            >
+                              {f}
+                            </button>
+                          ))}
+                          <button
+                            onClick={() => { navigate(`/shop/${activeCat.toLowerCase()}`); setDeskCatOpen(false); }}
+                            style={{
+                              padding: '5px 14px', borderRadius: '999px', fontSize: '11px', letterSpacing: '0.08em',
+                              background: `linear-gradient(135deg, ${GOLD}, #a07830)`, border: 'none',
+                              color: '#000', cursor: 'pointer', fontWeight: '700', fontFamily: 'inherit',
+                              whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px',
+                              boxShadow: `0 4px 16px ${GOLD}35`,
+                            }}
+                          >
+                            Shop All <FiArrowRight size={12} />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Scrollable grid */}
+                      <div className="mega-scroll" style={{ flex: 1, overflowY: 'auto', padding: '24px 28px 32px' }}>
+                        {Object.entries(grouped).map(([group, names]) => (
+                          <div key={group} style={{ marginBottom: '32px' }}>
+                            {/* Group heading */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                              <div style={{ width: '3px', height: '18px', borderRadius: '2px', background: `linear-gradient(to bottom, ${cfg.color}, ${cfg.color}50)`, flexShrink: 0 }} />
+                              <p style={{ color: cfg.color, fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', margin: 0, fontWeight: '700', fontFamily: 'inherit' }}>{group}</p>
+                              <div style={{ flex: 1, height: '1px', background: isDark ? 'rgba(201,168,76,0.12)' : 'rgba(201,168,76,0.15)' }} />
+                              <span style={{ color: isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.30)', fontSize: '10px', fontFamily: 'inherit' }}>{names.length} items</span>
+                            </div>
+
+                            {/* 6-column uniform card grid */}
+                            <div style={{
+                              display: 'grid',
+                              gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))',
+                              gap: '12px',
+                            }}>
+                              {names.map(name =>
+                                renderSubCard(name, cfg, () => { navigate(`/shop?category=${activeCat}&search=${encodeURIComponent(name)}`); setDeskCatOpen(false); }, 'md')
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+
+              {/* ── CLOSE button ── */}
+              <button
+                onClick={() => setDeskCatOpen(false)}
+                style={{
+                  position: 'absolute', top: '16px', right: '20px',
+                  width: '36px', height: '36px', borderRadius: '50%',
+                  background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
+                  border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)',
+                  transition: 'all 0.18s',
+                }}
+                onMouseOver={e => { e.currentTarget.style.background = 'rgba(248,113,113,0.15)'; e.currentTarget.style.color = '#f87171'; e.currentTarget.style.borderColor = 'rgba(248,113,113,0.3)'; }}
+                onMouseOut={e  => { e.currentTarget.style.background = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'; e.currentTarget.style.color = isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)'; e.currentTarget.style.borderColor = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'; }}
+              >
+                <FiX size={16} />
+              </button>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ════ MOBILE BOTTOM NAV ════ */}
       <div className="md:hidden fixed z-[109]"
         style={{ bottom: 0, left: 0, right: 0, height: '76px', background: isDark ? 'linear-gradient(to top, #000000 55%, rgba(0,0,0,0) 100%)' : 'linear-gradient(to top, #ffffff 55%, rgba(255,255,255,0) 100%)', pointerEvents: 'none' }} />
       <nav className="md:hidden fixed z-[110]"
         style={{ bottom: '12px', left: '50%', transform: 'translateX(-50%)', width: 'calc(100% - 28px)', maxWidth: '390px' }}>
         <div className="flex items-center justify-around px-2 py-2 relative"
-          style={{ backgroundColor: isDark ? 'rgba(0,0,0,0.99)' : 'rgba(255,255,255,0.99)', borderRadius: '100px', border: `1px solid ${isDark ? 'rgba(201,168,76,0.20)' : 'rgba(0,0,0,0.10)'}`, boxShadow: isDark ? '0 4px 28px rgba(0,0,0,0.92), 0 0 0 1px rgba(201,168,76,0.06), inset 0 1px 0 rgba(255,255,255,0.04)' : '0 4px 24px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' }}>
+          style={{ backgroundColor: isDark ? 'rgba(0,0,0,0.99)' : 'rgba(255,255,255,0.99)', borderRadius: '100px', border: `1px solid ${isDark ? 'rgba(201,168,76,0.20)' : 'rgba(0,0,0,0.10)'}`, boxShadow: isDark ? '0 4px 28px rgba(0,0,0,0.92), 0 0 0 1px rgba(201,168,76,0.06)' : '0 4px 24px rgba(0,0,0,0.18)', backdropFilter: 'blur(24px)' }}>
           <Link to="/" onClick={() => { setMobileAccountOpen(false); setCategoriesOpen(false); setMobileMoreOpen(false); }} className="flex flex-col items-center justify-center gap-1 px-4 py-1.5 relative" style={{ minWidth: '56px' }}>
             {isActivePath('/') && <span className="absolute inset-0 rounded-full" style={{ backgroundColor: GOLD_GLOW }} />}
             <FiHome size={20} strokeWidth={isActivePath('/') ? 2.5 : 1.5} style={{ color: isActivePath('/') ? GOLD : TEXT, position: 'relative' }} />
@@ -690,9 +862,9 @@ export default function Navbar() {
           </button>
           <button onClick={() => { if (!user) navigate('/login'); else { setMobileAccountOpen(!mobileAccountOpen); setCategoriesOpen(false); setMobileMoreOpen(false); } }} className="flex flex-col items-center justify-center gap-1 px-3 py-1.5 relative" style={{ minWidth: '56px', background: 'none', border: 'none', cursor: 'pointer' }}>
             <span className="absolute inset-0 rounded-full" style={{ backgroundColor: mobileAccountOpen ? GOLD : GOLD_GLOW }} />
-            {user ? <span className="text-[14px] font-body font-bold relative z-10 flex items-center justify-center" style={{ color: '#fff', width: '20px', height: '20px' }}>{user.name?.charAt(0).toUpperCase()}</span>
+            {user ? <span className="text-[14px] font-body font-bold relative z-10 flex items-center justify-center" style={{ color: mobileAccountOpen ? '#000' : '#fff', width: '20px', height: '20px' }}>{user.name?.charAt(0).toUpperCase()}</span>
                   : <FiUser size={20} strokeWidth={1.5} style={{ color: '#fff', position: 'relative', zIndex: 1 }} />}
-            <span className="text-[10px] font-body font-medium tracking-wide relative z-10" style={{ color: mobileAccountOpen ? '#fff' : 'rgba(255,255,255,0.8)' }}>Account</span>
+            <span className="text-[10px] font-body font-medium tracking-wide relative z-10" style={{ color: mobileAccountOpen ? '#000' : 'rgba(255,255,255,0.8)' }}>Account</span>
           </button>
           <Link to="/cart" onClick={() => { setMobileAccountOpen(false); setCategoriesOpen(false); setMobileMoreOpen(false); }} className="flex flex-col items-center justify-center gap-1 px-4 py-1.5 relative" style={{ minWidth: '56px' }}>
             {isActivePath('/cart') && <span className="absolute inset-0 rounded-full" style={{ backgroundColor: GOLD_GLOW }} />}
@@ -705,7 +877,7 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* ══ MOBILE ACCOUNT OVERLAY ══ */}
+      {/* ════ MOBILE ACCOUNT OVERLAY ════ */}
       <AnimatePresence>
         {mobileAccountOpen && user && (
           <>
@@ -715,8 +887,6 @@ export default function Navbar() {
             <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'tween', duration: 0.35, ease: 'easeOut' }}
               className="fixed left-0 right-0 z-[95] md:hidden flex flex-col"
               style={{ top: 0, bottom: '76px', background: '#0a0a0a', borderTop: `1px solid ${BORDER}` }}>
-
-              {/* Header */}
               <div style={{ padding: '24px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#050505', flexShrink: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: 0 }}>
                   <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: `${GOLD}22`, border: `1px solid ${GOLD}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -731,11 +901,7 @@ export default function Navbar() {
                   <FiX size={18} />
                 </button>
               </div>
-
-              {/* Scrollable Content */}
               <div style={{ overflowY: 'auto', flex: 1 }}>
-                
-                {/* Account links */}
                 <div style={{ padding: '12px 16px' }}>
                   <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', margin: '0 0 12px 4px', fontWeight: '600' }}>Your Account</p>
                   <div style={{ backgroundColor: '#111', borderRadius: '12px', border: `1px solid ${BORDER}`, overflow: 'hidden' }}>
@@ -758,13 +924,11 @@ export default function Navbar() {
                     ))}
                   </div>
                 </div>
-
-                {/* Seller Section */}
                 {isSeller && (
                   <div style={{ padding: '0 16px 12px' }}>
                     <p style={{ color: `${GOLD}80`, fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', margin: '0 0 12px 4px', fontWeight: '600' }}>Seller Central</p>
                     <Link to="/seller/dashboard" onClick={() => setMobileAccountOpen(false)}
-                      style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px', textDecoration: 'none', background: 'linear-gradient(135deg, rgba(201,168,76,0.1) 0%, rgba(201,168,76,0.02) 100%)', border: `1px solid ${GOLD}40`, borderRadius: '12px' }}>
+                      style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px', textDecoration: 'none', background: `linear-gradient(135deg, ${GOLD}10, ${GOLD}02)`, border: `1px solid ${GOLD}40`, borderRadius: '12px' }}>
                       <div style={{ width: '42px', height: '42px', borderRadius: '10px', background: `${GOLD}22`, border: `1px solid ${GOLD}50`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <FiShoppingBag size={18} style={{ color: GOLD }} />
                       </div>
@@ -776,8 +940,6 @@ export default function Navbar() {
                     </Link>
                   </div>
                 )}
-
-                {/* Legal section */}
                 <div style={{ padding: '12px 16px' }}>
                   <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', margin: '0 0 12px 4px', fontWeight: '600' }}>Legal</p>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
@@ -795,8 +957,6 @@ export default function Navbar() {
                     ))}
                   </div>
                 </div>
-
-                {/* Logout */}
                 <div style={{ padding: '24px 16px 40px' }}>
                   <button onClick={() => { handleLogout(); setMobileAccountOpen(false); }}
                     style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '16px', background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: '12px', cursor: 'pointer' }}>
@@ -810,7 +970,7 @@ export default function Navbar() {
         )}
       </AnimatePresence>
 
-      {/* ══ MOBILE CATEGORIES OVERLAY ══ */}
+      {/* ════ MOBILE CATEGORIES OVERLAY ════ */}
       <AnimatePresence>
         {categoriesOpen && (
           <>
@@ -823,17 +983,17 @@ export default function Navbar() {
               style={{ top: 0, bottom: '76px', background: '#000000', overflow: 'hidden' }}>
 
               {/* Header */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px 13px', background: 'linear-gradient(to bottom, #111111, #000000)', borderBottom: '1px solid rgba(201,168,76,0.18)', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px 13px', background: 'linear-gradient(to bottom, #111111, #000000)', borderBottom: `1px solid ${GOLD}28`, flexShrink: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
-                  <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'linear-gradient(135deg, #1a1a1a, #0f0f0f)', border: '1px solid rgba(201,168,76,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden', boxShadow: '0 4px 16px rgba(0,0,0,0.50)' }}>
+                  <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'linear-gradient(135deg, #1a1a1a, #0f0f0f)', border: `1px solid ${GOLD}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: `0 4px 16px rgba(0,0,0,0.50)` }}>
                     <img src={logo} alt="Trendorra" style={{ width: '36px', height: '36px', objectFit: 'contain', filter: 'brightness(1.15)', mixBlendMode: 'lighten' }} />
                   </div>
                   <div style={{ minWidth: 0 }}>
-                    <p style={{ fontSize: '9px', letterSpacing: '0.24em', color: 'rgba(201,168,76,0.60)', margin: '0 0 2px', textTransform: 'uppercase' }}>Trendorra</p>
-                    <h2 style={{ fontSize: '16px', fontWeight: 400, color: '#f5f5f5', margin: 0, letterSpacing: '0.03em', whiteSpace: 'nowrap' }}>Shop Collection</h2>
+                    <p style={{ fontSize: '9px', letterSpacing: '0.24em', color: `${GOLD}70`, margin: '0 0 2px', textTransform: 'uppercase' }}>Trendorra</p>
+                    <h2 style={{ fontSize: '16px', fontWeight: 400, color: '#f5f5f5', margin: 0, letterSpacing: '0.03em' }}>Shop Collection</h2>
                   </div>
                 </div>
-                <button onClick={() => setCategoriesOpen(false)} style={{ width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(240,232,216,0.70)', cursor: 'pointer' }}>
+                <button onClick={() => setCategoriesOpen(false)} style={{ width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: `1px solid rgba(255,255,255,0.10)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(240,232,216,0.70)', cursor: 'pointer' }}>
                   <FiX size={16} />
                 </button>
               </div>
@@ -841,131 +1001,159 @@ export default function Navbar() {
               {/* Two column body */}
               <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
                 {/* Left rail */}
-                <div style={{ width: '100px', flexShrink: 0, background: '#000000', overflowY: 'auto', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+                <div style={{ width: '100px', flexShrink: 0, background: '#050505', overflowY: 'auto', display: 'flex', flexDirection: 'column', borderRight: `1px solid ${GOLD}20` }}>
+                  {/* All */}
                   <button onClick={() => { navigate('/shop'); setCategoriesOpen(false); }}
-                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '16px 0 13px', gap: '9px', background: 'transparent', border: 'none', borderBottom: '1px solid rgba(201,168,76,0.12)', borderLeft: '3px solid transparent', cursor: 'pointer' }}>
-                    <div style={{ width: '62px', height: '62px', borderRadius: '18px', background: 'linear-gradient(135deg, #1e1e1e, #111111)', border: '1.5px solid rgba(201,168,76,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <svg width="30" height="30" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="2" fill="#C9A84C" opacity="0.9"/><rect x="14" y="3" width="7" height="7" rx="2" fill="#C9A84C" opacity="0.55"/><rect x="3" y="14" width="7" height="7" rx="2" fill="#C9A84C" opacity="0.55"/><rect x="14" y="14" width="7" height="7" rx="2" fill="#C9A84C" opacity="0.9"/></svg>
+                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '16px 0 13px', gap: '9px', background: 'transparent', border: 'none', borderBottom: `1px solid ${GOLD}12`, borderLeft: '3px solid transparent', cursor: 'pointer' }}>
+                    <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: `${GOLD}18`, border: `1.5px solid ${GOLD}40`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <CategoryIcons.All color={GOLD} size={26} />
                     </div>
-                    <span style={{ fontSize: '12px', color: 'rgba(201,168,76,0.60)', fontFamily: 'inherit', letterSpacing: '0.02em' }}>All</span>
+                    <span style={{ fontSize: '11px', color: `${GOLD}80`, fontFamily: 'inherit', letterSpacing: '0.02em' }}>All</span>
                   </button>
 
                   {categories.map(cat => {
                     const cfg = CAT_CONFIG[cat]; const active = activeCat === cat; const Icon = CategoryIcons[cat];
                     return (
                       <button key={cat} onClick={() => setActiveCat(cat)}
-                        style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '16px 0 13px', gap: '9px', background: active ? `${cfg.color}12` : 'transparent', border: 'none', borderBottom: '1px solid rgba(201,168,76,0.12)', borderLeft: active ? `3px solid ${cfg.color}` : '3px solid transparent', cursor: 'pointer', transition: 'all 0.15s' }}>
-                        <div style={{ width: '62px', height: '62px', borderRadius: '18px', background: active ? `linear-gradient(135deg, ${cfg.color}50, ${cfg.color}20)` : `linear-gradient(135deg, ${cfg.color}20, ${cfg.color}08)`, border: `1.5px solid ${active ? cfg.color + '90' : cfg.color + '35'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: active ? `0 0 22px ${cfg.color}35, inset 0 1px 0 ${cfg.color}30` : 'none', transition: 'all 0.2s' }}>
-                          {Icon && <Icon color={active ? cfg.color : cfg.color + 'bb'} size={30} />}
+                        style={{
+                          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                          width: '100%', padding: '16px 0 13px', gap: '9px',
+                          background: active ? `linear-gradient(180deg, ${cfg.color}18 0%, ${cfg.color}06 100%)` : 'transparent',
+                          border: 'none', borderBottom: `1px solid ${GOLD}12`,
+                          borderLeft: active ? `3px solid ${cfg.color}` : '3px solid transparent',
+                          cursor: 'pointer', transition: 'all 0.15s',
+                        }}>
+                        <div style={{
+                          width: '56px', height: '56px', borderRadius: '16px',
+                          background: active ? `linear-gradient(135deg, ${cfg.color}45, ${cfg.color}18)` : `${cfg.color}14`,
+                          border: `1.5px solid ${active ? cfg.color + '80' : cfg.color + '30'}`,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          boxShadow: active ? `0 0 20px ${cfg.color}30, inset 0 1px 0 ${cfg.color}30` : 'none',
+                          transition: 'all 0.2s',
+                        }}>
+                          {Icon && <Icon color={active ? cfg.color : cfg.color + 'bb'} size={26} />}
                         </div>
-                        <span style={{ fontSize: '12px', lineHeight: 1.2, textAlign: 'center', color: active ? cfg.color : 'rgba(200,180,140,0.65)', fontFamily: 'inherit', fontWeight: active ? 600 : 400, transition: 'color 0.15s', letterSpacing: '0.01em', paddingLeft: '4px', paddingRight: '4px' }}>{cat}</span>
+                        <span style={{ fontSize: '11px', lineHeight: 1.2, textAlign: 'center', color: active ? cfg.color : 'rgba(200,180,140,0.55)', fontFamily: 'inherit', fontWeight: active ? 600 : 400, transition: 'color 0.15s', paddingLeft: '4px', paddingRight: '4px' }}>{cat}</span>
                       </button>
                     );
                   })}
 
-                  {isSeller ? (
-                    <Link to="/seller/dashboard" onClick={() => setCategoriesOpen(false)}
-                      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '16px 0 13px', gap: '9px', borderBottom: '1px solid rgba(201,168,76,0.12)', borderLeft: `3px solid ${GOLD}60`, backgroundColor: `${GOLD}0a`, textDecoration: 'none' }}>
-                      <div style={{ width: '62px', height: '62px', borderRadius: '18px', background: `linear-gradient(135deg, ${GOLD}45, ${GOLD}18)`, border: `1.5px solid ${GOLD}70`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 16px ${GOLD}30` }}>
-                        <FiShoppingBag size={22} style={{ color: GOLD }} />
-                      </div>
-                      <span style={{ fontSize: '10px', color: GOLD, fontFamily: 'inherit', letterSpacing: '0.01em', textAlign: 'center', lineHeight: 1.3, paddingLeft: '4px', paddingRight: '4px', fontWeight: '600' }}>My Store</span>
-                    </Link>
-                  ) : (
-                    <Link to="/seller/register" onClick={() => setCategoriesOpen(false)}
-                      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '16px 0 13px', gap: '9px', borderBottom: '1px solid rgba(201,168,76,0.12)', borderLeft: '3px solid transparent', textDecoration: 'none' }}>
-                      <div style={{ width: '62px', height: '62px', borderRadius: '18px', background: `${GOLD}18`, border: `1.5px solid ${GOLD}35`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <FiShoppingBag size={22} style={{ color: GOLD }} />
-                      </div>
-                      <span style={{ fontSize: '11px', color: GOLD, fontFamily: 'inherit', letterSpacing: '0.01em', textAlign: 'center', lineHeight: 1.3, paddingLeft: '4px', paddingRight: '4px' }}>Sell</span>
-                    </Link>
-                  )}
+                  {/* Sell shortcut */}
+                  <Link to={isSeller ? '/seller/dashboard' : '/seller/register'} onClick={() => setCategoriesOpen(false)}
+                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '16px 0 13px', gap: '9px', borderBottom: `1px solid ${GOLD}12`, borderLeft: `3px solid ${GOLD}50`, backgroundColor: `${GOLD}08`, textDecoration: 'none', marginTop: 'auto' }}>
+                    <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: `${GOLD}30`, border: `1.5px solid ${GOLD}60`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 14px ${GOLD}25` }}>
+                      <FiShoppingBag size={22} style={{ color: GOLD }} />
+                    </div>
+                    <span style={{ fontSize: '11px', color: GOLD, fontFamily: 'inherit', fontWeight: '600', textAlign: 'center', paddingLeft: '4px', paddingRight: '4px' }}>{isSeller ? 'My Store' : 'Sell'}</span>
+                  </Link>
 
                   {user && (
                     <button onClick={handleLogout}
-                      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '16px 0 13px', gap: '9px', marginTop: 'auto', background: 'transparent', border: 'none', borderTop: '1px solid rgba(248,113,113,0.15)', borderLeft: '3px solid transparent', cursor: 'pointer' }}>
-                      <div style={{ width: '62px', height: '62px', borderRadius: '18px', background: 'rgba(248,113,113,0.08)', border: '1.5px solid rgba(248,113,113,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <FiLogOut size={22} style={{ color: '#f87171' }} />
+                      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '16px 0 13px', gap: '9px', background: 'transparent', border: 'none', borderTop: '1px solid rgba(248,113,113,0.15)', borderLeft: '3px solid transparent', cursor: 'pointer' }}>
+                      <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'rgba(248,113,113,0.08)', border: '1.5px solid rgba(248,113,113,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <FiLogOut size={20} style={{ color: '#f87171' }} />
                       </div>
-                      <span style={{ fontSize: '12px', color: '#f87171', fontFamily: 'inherit', letterSpacing: '0.01em' }}>Logout</span>
+                      <span style={{ fontSize: '11px', color: '#f87171', fontFamily: 'inherit' }}>Logout</span>
                     </button>
                   )}
                 </div>
 
-                {/* Divider */}
+                {/* Gold divider */}
                 <div style={{ width: '2px', flexShrink: 0, background: '#111111', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, background: 'linear-gradient(to bottom, transparent 0%, rgba(201,168,76,0.35) 20%, rgba(201,168,76,0.55) 50%, rgba(201,168,76,0.35) 80%, transparent 100%)' }} />
+                  <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, background: `linear-gradient(to bottom, transparent 0%, ${GOLD}50 20%, ${GOLD}70 50%, ${GOLD}50 80%, transparent 100%)` }} />
                   <motion.div animate={{ y: ['0%', '85%', '0%'] }} transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                    style={{ position: 'absolute', top: '5%', width: '6px', height: '32px', borderRadius: '3px', marginLeft: '-2px', background: 'linear-gradient(to bottom, transparent, #C9A84C, #dbbe6a, #C9A84C, transparent)', boxShadow: '0 0 10px rgba(201,168,76,0.80), 0 0 20px rgba(201,168,76,0.40)', zIndex: 2 }} />
+                    style={{ position: 'absolute', top: '5%', width: '6px', height: '32px', borderRadius: '3px', marginLeft: '-2px', background: `linear-gradient(to bottom, transparent, ${GOLD}, #dbbe6a, ${GOLD}, transparent)`, boxShadow: `0 0 10px ${GOLD}80, 0 0 20px ${GOLD}40`, zIndex: 2 }} />
                 </div>
 
                 {/* Right panel */}
-                <div style={{ flex: 1, overflowY: 'auto', background: '#000000' }}>
+                <div style={{ flex: 1, overflowY: 'auto', background: '#000000' }} className="mega-scroll">
                   <AnimatePresence mode="wait">
                     <motion.div key={activeCat} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.18 }}>
                       {/* Hero card */}
                       <div onClick={() => { navigate(`/shop/${activeCat.toLowerCase()}`); setCategoriesOpen(false); }}
-                        style={{ margin: '14px 12px 0', borderRadius: '20px', background: CAT_CONFIG[activeCat].bg, border: `1px solid ${CAT_CONFIG[activeCat].color}25`, padding: '20px 20px', position: 'relative', overflow: 'hidden', cursor: 'pointer', minHeight: '110px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-                        <div style={{ position: 'absolute', right: '-30px', top: '-30px', width: '160px', height: '160px', borderRadius: '50%', background: `radial-gradient(circle, ${CAT_CONFIG[activeCat].color}30 0%, transparent 65%)`, pointerEvents: 'none' }} />
-                        <div style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', opacity: 0.80 }}>
+                        style={{ margin: '12px 10px 0', borderRadius: '16px', background: CAT_CONFIG[activeCat].bg, border: `1px solid ${CAT_CONFIG[activeCat].color}30`, padding: '18px 16px', position: 'relative', overflow: 'hidden', cursor: 'pointer', minHeight: '100px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+                        <div style={{ position: 'absolute', right: '-20px', top: '-20px', width: '140px', height: '140px', borderRadius: '50%', background: `radial-gradient(circle, ${CAT_CONFIG[activeCat].color}35 0%, transparent 65%)`, pointerEvents: 'none' }} />
+                        <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.80 }}>
                           {(() => { const H = HeroIllustrations[activeCat]; return H ? <H color={CAT_CONFIG[activeCat].color} /> : null; })()}
                         </div>
                         <div style={{ position: 'relative', zIndex: 1 }}>
-                          <span style={{ display: 'inline-block', fontSize: '8px', letterSpacing: '0.20em', textTransform: 'uppercase', color: CAT_CONFIG[activeCat].color, background: `${CAT_CONFIG[activeCat].color}15`, border: `1px solid ${CAT_CONFIG[activeCat].color}30`, padding: '3px 10px', borderRadius: '999px', marginBottom: '8px' }}>
+                          <span style={{ display: 'inline-block', fontSize: '8px', letterSpacing: '0.20em', textTransform: 'uppercase', color: CAT_CONFIG[activeCat].color, background: `${CAT_CONFIG[activeCat].color}18`, border: `1px solid ${CAT_CONFIG[activeCat].color}35`, padding: '3px 10px', borderRadius: '999px', marginBottom: '6px' }}>
                             {CAT_CONFIG[activeCat].tag} · {CAT_CONFIG[activeCat].count}
                           </span>
                           <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
-                            <h3 style={{ fontSize: '26px', fontWeight: 300, color: '#f5f5f5', margin: 0, letterSpacing: '-0.01em', lineHeight: 1 }}>{activeCat}</h3>
-                            <span style={{ fontSize: '11px', color: `${CAT_CONFIG[activeCat].color}80` }}>→</span>
+                            <h3 style={{ fontSize: '24px', fontWeight: 300, color: '#f5f5f5', margin: 0, letterSpacing: '-0.01em', lineHeight: 1 }}>{activeCat}</h3>
+                            <span style={{ fontSize: '11px', color: `${CAT_CONFIG[activeCat].color}90` }}>→</span>
                           </div>
                         </div>
                       </div>
 
                       {/* Section label */}
-                      <div style={{ padding: '16px 12px 10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{ height: '1px', flex: 1, background: 'rgba(201,168,76,0.18)' }} />
-                        <span style={{ fontSize: '8px', letterSpacing: '0.20em', color: 'rgba(201,168,76,0.55)', textTransform: 'uppercase' }}>Shop by style</span>
-                        <div style={{ height: '1px', flex: 1, background: 'rgba(201,168,76,0.18)' }} />
+                      <div style={{ padding: '14px 10px 8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ height: '1px', flex: 1, background: `${GOLD}20` }} />
+                        <span style={{ fontSize: '8px', letterSpacing: '0.20em', color: `${GOLD}60`, textTransform: 'uppercase', fontWeight: '600' }}>Shop by style</span>
+                        <div style={{ height: '1px', flex: 1, background: `${GOLD}20` }} />
                       </div>
 
-                      {/* Subcategory grid — uses full SUB_CATEGORIES data */}
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', padding: '0 12px 16px' }}>
+                      {/* ── MOBILE Subcategory uniform grid (3 cols, fixed image height) ── */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', padding: '0 10px 16px' }}>
                         {(subCategories[activeCat] || []).map((sub, idx) => {
                           const SubIcon = SubIcons[sub.name];
                           const cc = CAT_CONFIG[activeCat].color;
+                          const img = SUB_CATEGORY_IMAGES?.[sub.name];
                           return (
-                            <motion.button key={sub.name} initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.14, delay: idx * 0.02 }}
+                            <motion.button
+                              key={sub.name}
+                              initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }}
+                              transition={{ duration: 0.14, delay: idx * 0.018 }}
                               onClick={() => { navigate(`/shop?category=${activeCat}&search=${encodeURIComponent(sub.name)}`); setCategoriesOpen(false); }}
-                              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', padding: '16px 8px 12px', borderRadius: '18px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)', cursor: 'pointer', transition: 'all 0.14s', position: 'relative', overflow: 'hidden' }}
-                              onTouchStart={e => { e.currentTarget.style.background = `${cc}20`; e.currentTarget.style.borderColor = `${cc}50`; e.currentTarget.style.transform = 'scale(0.96)'; }}
-                              onTouchEnd={e   => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.10)'; e.currentTarget.style.transform = 'scale(1)'; }}
-                              onMouseEnter={e => { e.currentTarget.style.background = `${cc}10`; e.currentTarget.style.borderColor = `${cc}35`; e.currentTarget.style.transform = 'scale(1.03)'; e.currentTarget.style.boxShadow = `0 0 12px rgba(201,168,76,0.25)`; }}
-                              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.10)'; e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
+                              style={{
+                                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                                padding: 0, borderRadius: '14px', overflow: 'hidden',
+                                border: `1px solid ${cc}22`,
+                                cursor: 'pointer',
+                                background: `linear-gradient(160deg, ${cc}10 0%, rgba(0,0,0,0.5) 100%)`,
+                                transition: 'all 0.14s',
+                              }}
+                              onTouchStart={e => { e.currentTarget.style.background = `${cc}25`; e.currentTarget.style.borderColor = `${cc}55`; e.currentTarget.style.transform = 'scale(0.96)'; }}
+                              onTouchEnd={e   => { e.currentTarget.style.background = `linear-gradient(160deg, ${cc}10 0%, rgba(0,0,0,0.5) 100%)`; e.currentTarget.style.borderColor = `${cc}22`; e.currentTarget.style.transform = 'scale(1)'; }}
                             >
-                              <div style={{ width: '52px', height: '52px', borderRadius: '16px', background: `linear-gradient(135deg, ${cc}38, ${cc}18)`, border: `1px solid ${cc}45`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                {SubIcon ? <SubIcon c={cc} size={24} /> : <span style={{ fontSize: '20px' }}>{sub.icon}</span>}
+                              {/* Image */}
+                              <div style={{ width: '100%', height: '72px', overflow: 'hidden', flexShrink: 0, position: 'relative', backgroundColor: `${cc}10`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                {img ? (
+                                  <img src={img.url} alt={img.alt || sub.name} loading="lazy"
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center', display: 'block' }}
+                                    onError={e => { e.currentTarget.style.display = 'none'; }}
+                                  />
+                                ) : null}
+                                {/* Fallback icon */}
+                                {!img && (
+                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', background: `linear-gradient(135deg, ${cc}28, ${cc}10)` }}>
+                                    {SubIcon ? <SubIcon c={cc} size={26} /> : <span style={{ fontSize: '18px' }}>{sub.icon}</span>}
+                                  </div>
+                                )}
+                                {/* Bottom fade */}
+                                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '24px', background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)', pointerEvents: 'none' }} />
                               </div>
-                              <span style={{ fontSize: '11px', color: 'rgba(240,232,216,0.92)', fontFamily: 'inherit', lineHeight: 1.3, textAlign: 'center', wordBreak: 'break-word', fontWeight: 400 }}>{sub.name}</span>
+                              {/* Label */}
+                              <span style={{ fontSize: '10px', color: 'rgba(240,232,216,0.90)', fontFamily: 'inherit', padding: '6px 4px 8px', textAlign: 'center', lineHeight: 1.3, width: '100%', fontWeight: 500, letterSpacing: '0.01em' }}>{sub.name}</span>
                             </motion.button>
                           );
                         })}
                       </div>
 
                       {/* View all CTA */}
-                      <div style={{ padding: '0 12px 20px' }}>
+                      <div style={{ padding: '0 10px 20px' }}>
                         <button onClick={() => { navigate(`/shop/${activeCat.toLowerCase()}`); setCategoriesOpen(false); }}
-                          style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderRadius: '18px', background: `linear-gradient(135deg, ${CAT_CONFIG[activeCat].color}20, ${CAT_CONFIG[activeCat].color}08)`, border: `1px solid ${CAT_CONFIG[activeCat].color}30`, cursor: 'pointer', transition: 'all 0.15s' }}>
+                          style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderRadius: '14px', background: `linear-gradient(135deg, ${CAT_CONFIG[activeCat].color}22, ${CAT_CONFIG[activeCat].color}08)`, border: `1px solid ${CAT_CONFIG[activeCat].color}30`, cursor: 'pointer' }}>
                           <div>
                             <p style={{ fontSize: '9px', color: `${CAT_CONFIG[activeCat].color}70`, margin: '0 0 3px', letterSpacing: '0.14em', textTransform: 'uppercase' }}>Full collection</p>
-                            <p style={{ fontSize: '15px', color: '#f5f5f5', margin: 0, fontWeight: 300, letterSpacing: '0.02em' }}>Shop all {activeCat}</p>
+                            <p style={{ fontSize: '14px', color: '#f5f5f5', margin: 0, fontWeight: 300 }}>Shop all {activeCat}</p>
                           </div>
-                          <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: `linear-gradient(135deg, ${GOLD}, #a07830)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: `0 4px 16px ${GOLD}35` }}>
-                            <FiChevronRight size={18} style={{ color: '#000000' }} />
+                          <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: `linear-gradient(135deg, ${GOLD}, #a07830)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: `0 4px 14px ${GOLD}35` }}>
+                            <FiChevronRight size={16} style={{ color: '#000000' }} />
                           </div>
                         </button>
                       </div>
-
-                      {/* Legal links removed from here */}
                     </motion.div>
                   </AnimatePresence>
                 </div>
@@ -975,7 +1163,7 @@ export default function Navbar() {
         )}
       </AnimatePresence>
 
-      {/* ══ MOBILE MORE OVERLAY ══ */}
+      {/* ════ MOBILE MORE OVERLAY ════ */}
       <AnimatePresence>
         {mobileMoreOpen && (
           <>
@@ -985,60 +1173,32 @@ export default function Navbar() {
             <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'tween', duration: 0.35, ease: 'easeOut' }}
               className="fixed left-0 right-0 z-[95] md:hidden flex flex-col"
               style={{ top: 0, bottom: '76px', background: '#0a0a0a', borderTop: `1px solid ${BORDER}`, overflowY: 'auto' }}>
-              
               <div style={{ padding: '24px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#050505', flexShrink: 0 }}>
                 <h2 style={{ color: '#fff', fontSize: '18px', fontWeight: '600', margin: 0, fontFamily: 'Cinzel, serif', letterSpacing: '0.05em' }}>More Options</h2>
                 <button onClick={() => setMobileMoreOpen(false)} style={{ background: 'rgba(255,255,255,0.05)', border: `1px solid ${BORDER}`, borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0 }}>
                   <FiX size={18} />
                 </button>
               </div>
-
               <div style={{ overflowY: 'auto', flex: 1, padding: '24px 16px' }}>
                 <div style={{ backgroundColor: '#111', borderRadius: '12px', border: `1px solid ${BORDER}`, overflow: 'hidden' }}>
-                  <Link to={isSeller ? '/seller/dashboard' : '/seller/register'} onClick={() => setMobileMoreOpen(false)}
-                    style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px', textDecoration: 'none', borderBottom: `1px solid ${BORDER}` }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: `${GOLD}15`, border: `1px solid ${GOLD}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <FiShoppingBag size={18} style={{ color: GOLD }} />
-                    </div>
-                    <div>
-                      <p style={{ color: '#f5f5f5', fontSize: '15px', fontWeight: '500', margin: '0 0 2px' }}>{isSeller ? 'Seller Dashboard' : 'Become a Seller'}</p>
-                      <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px', margin: 0 }}>{isSeller ? (user?.sellerInfo?.businessName || 'My Store') : 'Sell on Trendorra'}</p>
-                    </div>
-                    <FiChevronRight size={16} style={{ color: 'rgba(255,255,255,0.2)', marginLeft: 'auto', flexShrink: 0 }} />
-                  </Link>
-                  <Link to="/orders" onClick={() => setMobileMoreOpen(false)}
-                    style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px', textDecoration: 'none', borderBottom: `1px solid ${BORDER}` }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(96,165,250,0.12)', border: '1px solid rgba(96,165,250,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <FiTruck size={18} style={{ color: '#60a5fa' }} />
-                    </div>
-                    <div>
-                      <p style={{ color: '#f5f5f5', fontSize: '15px', fontWeight: '500', margin: '0 0 2px' }}>Track Order</p>
-                      <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px', margin: 0 }}>Check delivery status</p>
-                    </div>
-                    <FiChevronRight size={16} style={{ color: 'rgba(255,255,255,0.2)', marginLeft: 'auto', flexShrink: 0 }} />
-                  </Link>
-                  <Link to="/shop" onClick={() => setMobileMoreOpen(false)}
-                    style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px', textDecoration: 'none', borderBottom: `1px solid ${BORDER}` }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <FiTag size={18} style={{ color: '#4ade80' }} />
-                    </div>
-                    <div>
-                      <p style={{ color: '#f5f5f5', fontSize: '15px', fontWeight: '500', margin: '0 0 2px' }}>Offers & Coupons</p>
-                      <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px', margin: 0 }}>Deals & discounts</p>
-                    </div>
-                    <FiChevronRight size={16} style={{ color: 'rgba(255,255,255,0.2)', marginLeft: 'auto', flexShrink: 0 }} />
-                  </Link>
-                  <Link to="/help" onClick={() => setMobileMoreOpen(false)}
-                    style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px', textDecoration: 'none' }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(255,255,255,0.06)', border: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <FiHelpCircle size={18} style={{ color: 'rgba(255,255,255,0.6)' }} />
-                    </div>
-                    <div>
-                      <p style={{ color: '#f5f5f5', fontSize: '15px', fontWeight: '500', margin: '0 0 2px' }}>Help & Support</p>
-                      <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px', margin: 0 }}>FAQs & customer care</p>
-                    </div>
-                    <FiChevronRight size={16} style={{ color: 'rgba(255,255,255,0.2)', marginLeft: 'auto', flexShrink: 0 }} />
-                  </Link>
+                  {[
+                    { to: isSeller ? '/seller/dashboard' : '/seller/register', icon: FiShoppingBag, label: isSeller ? 'Seller Dashboard' : 'Become a Seller', sub: isSeller ? (user?.sellerInfo?.businessName || 'My Store') : 'Sell on Trendorra', iconBg: `${GOLD}15`, iconBorder: `${GOLD}30`, iconColor: GOLD },
+                    { to: '/orders',  icon: FiTruck,      label: 'Track Order',      sub: 'Check delivery status', iconBg: 'rgba(96,165,250,0.12)', iconBorder: 'rgba(96,165,250,0.25)', iconColor: '#60a5fa' },
+                    { to: '/shop',    icon: FiTag,        label: 'Offers & Coupons', sub: 'Deals & discounts',     iconBg: 'rgba(74,222,128,0.10)', iconBorder: 'rgba(74,222,128,0.25)', iconColor: '#4ade80' },
+                    { to: '/help',    icon: FiHelpCircle, label: 'Help & Support',   sub: 'FAQs & customer care',  iconBg: 'rgba(255,255,255,0.06)', iconBorder: BORDER, iconColor: 'rgba(255,255,255,0.6)' },
+                  ].map(({ to, icon: Icon, label, sub, iconBg, iconBorder, iconColor }, i, arr) => (
+                    <Link key={to} to={to} onClick={() => setMobileMoreOpen(false)}
+                      style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px', textDecoration: 'none', borderBottom: i < arr.length-1 ? `1px solid ${BORDER}` : 'none' }}>
+                      <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: iconBg, border: `1px solid ${iconBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <Icon size={18} style={{ color: iconColor }} />
+                      </div>
+                      <div>
+                        <p style={{ color: '#f5f5f5', fontSize: '15px', fontWeight: '500', margin: '0 0 2px' }}>{label}</p>
+                        <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px', margin: 0 }}>{sub}</p>
+                      </div>
+                      <FiChevronRight size={16} style={{ color: 'rgba(255,255,255,0.2)', marginLeft: 'auto', flexShrink: 0 }} />
+                    </Link>
+                  ))}
                 </div>
               </div>
             </motion.div>
