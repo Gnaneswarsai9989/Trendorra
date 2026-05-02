@@ -55,44 +55,44 @@ const SUBCAT_IMGS = {
   'Jackets & Coats': 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
 
   'Blazers': 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
-  'Sweaters': 'https://images.unsplash.com/photo-1511401139252-f158d3209c17?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
+  'Sweaters': 'https://images.unsplash.com/photo-1516826957135-700dedea698c?w=300&h=220&fit=crop&auto=format&q=80',
   'Suits': 'https://images.unsplash.com/photo-1594938298603-c8148c4b3f39?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
   // ── Men: Bottoms ──
   'Jeans': 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
   'Trousers': 'https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
   'Track Pants': 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=300&h=220&fit=crop&auto=format&q=80',
-  'Joggers': 'https://images.unsplash.com/photo-1594381898411-846e7d193883?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
+  'Joggers': 'https://images.unsplash.com/photo-1584865288642-42078afe6942?w=300&h=220&fit=crop&auto=format&q=80',
   'Shorts': 'https://images.unsplash.com/photo-1560243563-062bfc001d68?w=300&h=220&fit=crop&auto=format&q=80',
   'Cargo Pants': 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
   'Pants': 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
   // ── Men: Ethnic ──
-  'Kurtas': 'https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
+  'Kurtas': 'https://images.unsplash.com/photo-1602810319428-019690571b5b?w=300&h=220&fit=crop&auto=format&q=80',
   'Kurta Sets': 'https://images.unsplash.com/photo-1614252369475-531eba835eb1?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
-  'Sherwanis': 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
-  'Ethnic Jackets': 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
-  'Dhoti': 'https://images.unsplash.com/photo-1626784215021-2e39ccf971cd?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
+  'Sherwanis': 'https://images.unsplash.com/photo-1603252109303-2751441dd157?w=300&h=220&fit=crop&auto=format&q=80',
+  'Ethnic Jackets': 'https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?w=300&h=220&fit=crop&auto=format&q=80',
+  'Dhoti': 'https://images.unsplash.com/photo-1650632784494-7b6d1960113f?w=300&h=220&fit=crop&auto=format&q=80',
   'Activewear': 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
   // ── Women: Tops ──
   'Tops': 'https://images.unsplash.com/photo-1485462537746-965f33f7f6a7?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
-  'Shirts': 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
-  'Kurtis': 'https://images.unsplash.com/photo-1609803384069-19f3f58df70b?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
-  'Tunics': 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
+  'Shirts': 'https://images.unsplash.com/photo-1723126004568-206c5ee9f6f7?w=300&h=220&fit=crop&auto=format&q=80',
+  'Kurtis': 'https://images.unsplash.com/photo-1745313452052-0e4e341f326c?w=300&h=220&fit=crop&auto=format&q=80', 'Tunics': 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
   // ── Women: Dresses ──
   'Dresses': 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
   'Casual Dresses': 'https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
   'Party Dresses': 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
   'Maxi Dresses': 'https://images.unsplash.com/photo-1623609163841-5e69d8c62cc7?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
   'Bodycon Dresses': 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
-  'Mini Dresses': 'https://images.unsplash.com/photo-1550639524-a6dc0a9a7eb0?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
+  'Mini Dresses': 'https://images.unsplash.com/photo-1752797203245-3b9e233b2ac8?w=300&h=220&fit=crop&auto=format&q=80',
   // ── Women: Bottoms ──
   'Leggings': 'https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
   'Palazzos': 'https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
   'Skirts': 'https://images.unsplash.com/photo-1532635241-17e820acc59f?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
   'Co-ords': 'https://images.unsplash.com/photo-1603400521630-9f2de124b33b?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
   // ── Women: Ethnic ──
-  'Sarees': 'https://images.unsplash.com/photo-1610189352649-c93c1a02b69a?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
-  'Salwar Suits': 'https://images.unsplash.com/photo-1614518920537-58a97d9d4044?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
-  'Lehenga Choli': 'https://images.unsplash.com/photo-1610189352649-c93c1a02b69a?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
+  'Sarees': 'https://images.unsplash.com/photo-1678705730064-a7ecbab4b3fb?w=300&h=220&fit=crop&auto=format&q=80',
+  'Salwar Suits': 'https://images.unsplash.com/photo-1603124552830-30ee98dfe342?w=300&h=220&fit=crop&auto=format&q=80',
+
+  'Lehenga Choli': 'https://images.unsplash.com/photo-1759720883040-af9be070929e?w=300&h=220&fit=crop&auto=format&q=80',
   'Dupattas': 'https://images.unsplash.com/photo-1520903920243-00d872a2d1c9?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
   // ── Women: Footwear ──
   'Heels': 'https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
@@ -102,14 +102,14 @@ const SUBCAT_IMGS = {
   'Hoodies': 'https://images.unsplash.com/photo-1620799139507-2a76f79a2f4d?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
   'Graphic Tees': 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
   'Oversized Tees': 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
-  'Bomber Jackets': 'https://images.unsplash.com/photo-1578768079052-aa76e52ff9ef?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
-  'Jackets': 'https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
+  'Bomber Jackets': 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=300&h=220&fit=crop&auto=format&q=80', 'Jackets': 'https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
+
   'Caps': 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
   'Sneakers': 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
   // ── Accessories ──
   'Bags': 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
   'Watches': 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
-  'Belts': 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
+  'Belts': 'https://images.unsplash.com/photo-1666723043169-22e29545675c?w=300&h=220&fit=crop&auto=format&q=80',
   'Wallets': 'https://plus.unsplash.com/premium_photo-1672759267829-17e48ef96660?w=300&h=220&fit=crop&auto=format&q=80',
   'Sunglasses': 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=300&h=220&fit=crop&crop=top&auto=format&q=80',
 
@@ -668,38 +668,44 @@ export default function Navbar() {
 
       {/* Single seamless floor+fade — no visible seam lines */}
       <div className="md:hidden fixed z-[109]" style={{ bottom: 0, left: 0, right: 0, height: '110px', background: 'linear-gradient(to top, #000000 55%, transparent 100%)', pointerEvents: 'none' }} />
-      <nav className="md:hidden fixed z-[110]" style={{ bottom: '12px', left: '50%', transform: 'translateX(-50%)', width: 'calc(100% - 28px)', maxWidth: '390px' }}>        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', padding: '6px 8px', backgroundColor: 'rgba(0,0,0,0.0)', borderRadius: '100px', border: '1px solid rgba(201,168,76,0.20)', boxShadow: '0 4px 28px rgba(0,0,0,0.92)', backdropFilter: 'blur(24px)' }}>
-        <button onClick={() => { setMobileAccountOpen(false); setCategoriesOpen(false); setMobileMoreOpen(false); navigate('/'); }}
-          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', padding: '6px 14px', background: 'none', border: 'none', cursor: 'pointer', position: 'relative', minWidth: '52px' }}>
-          {isActivePath('/') && <span style={{ position: 'absolute', inset: 0, borderRadius: '999px', backgroundColor: GOLD_GLOW }} />}
-          <FiHome size={20} strokeWidth={isActivePath('/') ? 2.5 : 1.5} style={{ color: isActivePath('/') ? GOLD : TEXT }} />
-          <span style={{ fontSize: '10px', color: isActivePath('/') ? GOLD : TEXT, fontWeight: '500' }}>Home</span>
-        </button>
-        <button onClick={() => { setCategoriesOpen(o => !o); setMobileAccountOpen(false); setMobileMoreOpen(false); }}
-          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', padding: '6px 14px', background: 'none', border: 'none', cursor: 'pointer', position: 'relative', minWidth: '52px' }}>
-          <span style={{ position: 'absolute', inset: 0, borderRadius: '999px', backgroundColor: categoriesOpen ? GOLD : GOLD_GLOW, transition: 'background 0.18s' }} />
-          <FiGrid size={20} strokeWidth={categoriesOpen ? 2.5 : 1.5} style={{ color: categoriesOpen ? '#000' : TEXT, position: 'relative', zIndex: 1 }} />
-          <span style={{ fontSize: '10px', color: categoriesOpen ? '#000' : TEXT, fontWeight: '500', position: 'relative', zIndex: 1 }}>Categories</span>
-        </button>
-        <button onClick={() => { if (!user) navigate('/login'); else { setMobileAccountOpen(o => !o); setCategoriesOpen(false); setMobileMoreOpen(false); } }}
-          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', padding: '6px 12px', background: 'none', border: 'none', cursor: 'pointer', position: 'relative', minWidth: '52px' }}>
-          <span style={{ position: 'absolute', inset: 0, borderRadius: '999px', backgroundColor: mobileAccountOpen ? GOLD : GOLD_GLOW }} />
-          {user
-            ? <span style={{ color: mobileAccountOpen ? '#000' : '#fff', fontSize: '15px', fontWeight: '700', position: 'relative', zIndex: 1, lineHeight: 1, height: '20px', display: 'flex', alignItems: 'center' }}>{user.name?.charAt(0).toUpperCase()}</span>
-            : <FiUser size={20} strokeWidth={1.5} style={{ color: '#fff', position: 'relative', zIndex: 1 }} />
-          }
-          <span style={{ fontSize: '10px', color: mobileAccountOpen ? '#000' : 'rgba(255,255,255,0.8)', fontWeight: '500', position: 'relative', zIndex: 1 }}>Account</span>
-        </button>
-        <Link to="/cart" onClick={() => { setMobileAccountOpen(false); setCategoriesOpen(false); setMobileMoreOpen(false); }}
-          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', padding: '6px 14px', position: 'relative', minWidth: '52px', textDecoration: 'none' }}>
-          {isActivePath('/cart') && <span style={{ position: 'absolute', inset: 0, borderRadius: '999px', backgroundColor: GOLD_GLOW }} />}
-          <div style={{ position: 'relative', zIndex: 1 }}>
-            <FiShoppingCart size={20} strokeWidth={isActivePath('/cart') ? 2.5 : 1.5} style={{ color: isActivePath('/cart') ? GOLD : TEXT }} />
-            {cartCount > 0 && <span style={{ position: 'absolute', top: '-6px', right: '-8px', backgroundColor: GOLD, color: '#000', fontSize: '9px', width: '14px', height: '14px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700' }}>{cartCount}</span>}
-          </div>
-          <span style={{ fontSize: '10px', color: isActivePath('/cart') ? GOLD : TEXT, fontWeight: '500', position: 'relative', zIndex: 1 }}>Cart</span>
-        </Link>
-      </div>
+      <nav className="md:hidden fixed z-[110]" style={{ bottom: '12px', left: '50%', transform: 'translateX(-50%)', width: 'calc(100% - 28px)', maxWidth: '390px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', padding: '6px 8px', backgroundColor: '#000000', borderRadius: '100px', border: '1px solid rgba(201,168,76,0.20)', boxShadow: '0 4px 28px rgba(0,0,0,0.92)' }}>
+
+          {/* ── HOME button: navigates to /home (HomePage), not / (LandingPage) ── */}
+          <button onClick={() => { setMobileAccountOpen(false); setCategoriesOpen(false); setMobileMoreOpen(false); navigate('/home'); }}
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', padding: '6px 14px', background: 'none', border: 'none', cursor: 'pointer', position: 'relative', minWidth: '52px' }}>
+            {isActivePath('/home') && <span style={{ position: 'absolute', inset: 0, borderRadius: '999px', backgroundColor: GOLD_GLOW }} />}
+            <FiHome size={20} strokeWidth={isActivePath('/home') ? 2.5 : 1.5} style={{ color: isActivePath('/home') ? GOLD : TEXT }} />
+            <span style={{ fontSize: '10px', color: isActivePath('/home') ? GOLD : TEXT, fontWeight: '500' }}>Home</span>
+          </button>
+
+          <button onClick={() => { setCategoriesOpen(o => !o); setMobileAccountOpen(false); setMobileMoreOpen(false); }}
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', padding: '6px 14px', background: 'none', border: 'none', cursor: 'pointer', position: 'relative', minWidth: '52px' }}>
+            <span style={{ position: 'absolute', inset: 0, borderRadius: '999px', backgroundColor: categoriesOpen ? GOLD : GOLD_GLOW, transition: 'background 0.18s' }} />
+            <FiGrid size={20} strokeWidth={categoriesOpen ? 2.5 : 1.5} style={{ color: categoriesOpen ? '#000' : TEXT, position: 'relative', zIndex: 1 }} />
+            <span style={{ fontSize: '10px', color: categoriesOpen ? '#000' : TEXT, fontWeight: '500', position: 'relative', zIndex: 1 }}>Categories</span>
+          </button>
+
+          <button onClick={() => { if (!user) navigate('/login'); else { setMobileAccountOpen(o => !o); setCategoriesOpen(false); setMobileMoreOpen(false); } }}
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', padding: '6px 12px', background: 'none', border: 'none', cursor: 'pointer', position: 'relative', minWidth: '52px' }}>
+            <span style={{ position: 'absolute', inset: 0, borderRadius: '999px', backgroundColor: mobileAccountOpen ? GOLD : GOLD_GLOW }} />
+            {user
+              ? <span style={{ color: mobileAccountOpen ? '#000' : '#fff', fontSize: '15px', fontWeight: '700', position: 'relative', zIndex: 1, lineHeight: 1, height: '20px', display: 'flex', alignItems: 'center' }}>{user.name?.charAt(0).toUpperCase()}</span>
+              : <FiUser size={20} strokeWidth={1.5} style={{ color: '#fff', position: 'relative', zIndex: 1 }} />
+            }
+            <span style={{ fontSize: '10px', color: mobileAccountOpen ? '#000' : 'rgba(255,255,255,0.8)', fontWeight: '500', position: 'relative', zIndex: 1 }}>Account</span>
+          </button>
+
+          <Link to="/cart" onClick={() => { setMobileAccountOpen(false); setCategoriesOpen(false); setMobileMoreOpen(false); }}
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', padding: '6px 14px', position: 'relative', minWidth: '52px', textDecoration: 'none' }}>
+            {isActivePath('/cart') && <span style={{ position: 'absolute', inset: 0, borderRadius: '999px', backgroundColor: GOLD_GLOW }} />}
+            <div style={{ position: 'relative', zIndex: 1 }}>
+              <FiShoppingCart size={20} strokeWidth={isActivePath('/cart') ? 2.5 : 1.5} style={{ color: isActivePath('/cart') ? GOLD : TEXT }} />
+              {cartCount > 0 && <span style={{ position: 'absolute', top: '-6px', right: '-8px', backgroundColor: GOLD, color: '#000', fontSize: '9px', width: '14px', height: '14px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700' }}>{cartCount}</span>}
+            </div>
+            <span style={{ fontSize: '10px', color: isActivePath('/cart') ? GOLD : TEXT, fontWeight: '500', position: 'relative', zIndex: 1 }}>Cart</span>
+          </Link>
+        </div>
       </nav>
 
       {/* ══ MOBILE ACCOUNT OVERLAY ══ */}

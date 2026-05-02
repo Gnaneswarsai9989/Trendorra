@@ -6,11 +6,13 @@ import { ThemeProvider } from './context/ThemeContext';
 import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
 
+
 // Layout
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 
 // Customer Pages
+import LandingPage from './pages/LandingPage';
 import HomePage from './pages/HomePage';
 import ShopPage from './pages/ShopPage';
 import ProductDetailPage from './pages/ProductDetailPage';
@@ -25,7 +27,7 @@ import OrderDetailPage from './pages/OrderDetailPage';
 import OrderConfirmationPage from './pages/OrderConfirmationPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import NotFoundPage from './pages/NotFoundPage';
-import ReturnRequestPage from './pages/ReturnRequestPage';   // ← NEW
+import ReturnRequestPage from './pages/ReturnRequestPage';
 
 import GoogleAuthSuccess from './pages/GoogleAuthSuccess';
 
@@ -44,7 +46,7 @@ import AdminNotifications from './pages/admin/AdminNotifications';
 import AdminCoupons from './pages/admin/AdminCoupons';
 import AdminSellers from './pages/admin/AdminSellers';
 import AdminSettings from './pages/admin/AdminSettings';
-import AdminReturns from './pages/admin/AdminReturns';  // ← NEW
+import AdminReturns from './pages/admin/AdminReturns';
 
 // Seller Pages
 import SellerDashboard from './pages/seller/SellerDashboard';
@@ -98,31 +100,26 @@ function ScrollToTop() {
   return null;
 }
 
-// ── Pages that show Navbar + Footer ──────────────────────────────
-const FULL_LAYOUT_ROUTES = [
-  '/', '/shop', '/cart', '/login', '/register', '/forgot-password',
-  '/profile', '/wishlist', '/orders', '/checkout',
-  '/privacy-policy', '/terms-of-service', '/refund-policy',
-  '/shipping-policy', '/cookie-policy', '/disclaimer',
-  '/size-guide', '/faq', '/contact', '/track-order',
-  '/seller-register', '/seller/register',
-];
-
 // Routes that get a full-screen layout (no Navbar/Footer)
 const DASHBOARD_ROUTES = ['/seller', '/admin'];
 const isDashboardRoute = (path) =>
   DASHBOARD_ROUTES.some(r => path === r || path.startsWith(r + '/'));
 
+// ── ONLY CHANGE: also hide Navbar/Footer on the landing page "/" ──
+const isLandingRoute = (path) => path === '/';
+
 const AppContent = () => {
   const { pathname } = useLocation();
   const { isLoggedIn } = useAuth();
-  const fullScreen = isDashboardRoute(pathname);
+
+  // Hide Navbar+Footer for dashboard routes AND the landing page
+  const fullScreen = isDashboardRoute(pathname) || isLandingRoute(pathname);
 
   // Sync existing permission token on login
   useEffect(() => {
     if (isLoggedIn && Notification.permission === 'granted') {
       import('./firebase').then(({ requestNotificationPermission }) => {
-        requestNotificationPermission().catch(() => {});
+        requestNotificationPermission().catch(() => { });
       });
     }
   }, [isLoggedIn]);
@@ -161,7 +158,8 @@ const AppContent = () => {
         <main className="flex-1" style={{ backgroundColor: '#111111' }}>
           <Routes>
             {/* ── Customer Routes ── */}
-            <Route path="/" element={<HomePage />} />
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/home" element={<HomePage />} />
             <Route path="/shop" element={<ShopPage />} />
             <Route path="/shop/:category" element={<ShopPage />} />
             <Route path="/product/:id" element={<ProductDetailPage />} />
@@ -174,7 +172,7 @@ const AppContent = () => {
             <Route path="/wishlist" element={<ProtectedRoute><WishlistPage /></ProtectedRoute>} />
             <Route path="/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
             <Route path="/orders/:id" element={<ProtectedRoute><OrderDetailPage /></ProtectedRoute>} />
-            <Route path="/orders/:id/return" element={<ProtectedRoute><ReturnRequestPage /></ProtectedRoute>} />  {/* ← NEW */}
+            <Route path="/orders/:id/return" element={<ProtectedRoute><ReturnRequestPage /></ProtectedRoute>} />
             <Route path="/order-confirmation/:id" element={<ProtectedRoute><OrderConfirmationPage /></ProtectedRoute>} />
             <Route path="/auth/google/success" element={<GoogleAuthSuccess />} />
 
@@ -190,7 +188,7 @@ const AppContent = () => {
             <Route path="/admin/notifications" element={<AdminRoute><AdminNotifications /></AdminRoute>} />
             <Route path="/admin/sellers" element={<AdminRoute><AdminSellers /></AdminRoute>} />
             <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
-            <Route path="/admin/returns" element={<AdminRoute><AdminReturns /></AdminRoute>} />  {/* ← NEW */}
+            <Route path="/admin/returns" element={<AdminRoute><AdminReturns /></AdminRoute>} />
 
             {/* ── Seller Routes ── */}
             <Route path="/seller" element={<SellerRoute><SellerDashboard /></SellerRoute>} />
