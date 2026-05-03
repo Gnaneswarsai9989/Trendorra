@@ -282,7 +282,7 @@ function NotificationPanel({ notifications, userId, unreadCount, markRead, markA
             return (
               <div
                 key={notif._id}
-                onClick={() => markRead(notif.id)}
+                onClick={() => markRead(notif._id)}
                 style={{
                   display: 'flex', alignItems: 'flex-start', gap: '12px',
                   padding: '14px 18px', cursor: 'pointer',

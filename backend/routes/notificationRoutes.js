@@ -14,10 +14,14 @@ router.post('/bulk-email', protect, admin, async (req, res) => {
 
     let users = [];
     if (toAll) {
-      users = await User.find({ role: 'user' }).select('email fcmToken _id');
+      users = await User.find({ role: { $in: ['user', 'seller'] } }).select('email fcmToken _id');
     } else {
-      const user = await User.findOne({ email: customerEmail }).select('email fcmToken _id');
-      if (user) users = [user];
+      // ✅ Add role: 'user' filter for single user too
+      const user = await User.findOne({
+        email: customerEmail,
+        role: { $in: ['user', 'seller'] }
+      }).select('email fcmToken _id'); if (user) users = [user];
+
     }
 
     if (users.length === 0)
