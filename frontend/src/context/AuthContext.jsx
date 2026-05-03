@@ -5,12 +5,11 @@ import toast from 'react-hot-toast';
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
-    try {
-      const stored = localStorage.getItem('trendora_user');
-      return stored ? JSON.parse(stored) : null;
-    } catch { return null; }
-  });
+  // ✅ CRITICAL FIX: Start user as NULL always.
+  // Previously it read from localStorage immediately, so isLoggedIn=true
+  // before initializing finished — causing instant redirect away from landing page.
+  // Now user stays null until the token is verified by the server.
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
 
@@ -18,15 +17,18 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const token = localStorage.getItem('trendora_token');
     if (!token) {
+      // No token — definitely not logged in
       setInitializing(false);
       return;
     }
+    // Token exists — verify with server
     authAPI.getMe()
       .then(res => {
         setUser(res.user);
         localStorage.setItem('trendora_user', JSON.stringify(res.user));
       })
       .catch(() => {
+        // Token expired or invalid — clear everything
         localStorage.removeItem('trendora_token');
         localStorage.removeItem('trendora_user');
         setUser(null);
@@ -81,19 +83,16 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('trendora_user', JSON.stringify(updatedUser));
   };
 
-  // ✅ NEW: loginWithToken — used after Google OAuth redirect
+  // ✅ loginWithToken — used after Google OAuth redirect
   const loginWithToken = async (token) => {
     try {
-      // Save token first
       localStorage.setItem('trendora_token', token);
-      // Fetch user details using the token
       const res = await authAPI.getMe();
       localStorage.setItem('trendora_user', JSON.stringify(res.user));
       setUser(res.user);
       toast.success(`Welcome, ${res.user.name?.split(' ')[0]}! 🎉`);
       return { success: true, user: res.user };
     } catch (err) {
-      // If failed, clear everything
       localStorage.removeItem('trendora_token');
       localStorage.removeItem('trendora_user');
       setUser(null);
@@ -102,48 +101,20 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Show loader while verifying token
-  if (initializing) {
-    return (
-      <div style={{
-        backgroundColor: '#111111',
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{
-            color: '#C9A84C',
-            fontSize: '22px',
-            letterSpacing: '0.3em',
-            fontFamily: 'serif',
-            marginBottom: '16px'
-          }}>
-            TRENDORRA
-          </div>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            border: '2px solid rgba(201,168,76,0.2)',
-            borderTopColor: '#C9A84C',
-            borderRadius: '50%',
-            animation: 'spin 0.8s linear infinite',
-            margin: '0 auto'
-          }} />
-          <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
-        </div>
-      </div>
-    );
-  }
-
   const isAdmin = user?.role === 'admin';
 
   return (
     <AuthContext.Provider value={{
-      user, loading, login, register, logout,
-      updateUser, isAdmin, isLoggedIn: !!user,
-      loginWithToken, // ✅ NEW: exposed for GoogleAuthSuccess page
+      user,
+      loading,
+      initializing,
+      login,
+      register,
+      logout,
+      updateUser,
+      isAdmin,
+      isLoggedIn: !!user,
+      loginWithToken,
     }}>
       {children}
     </AuthContext.Provider>

@@ -13,6 +13,7 @@
 // 4. In Shiprocket dashboard → Webhooks → set URL to:
 //    https://yourdomain.com/api/delivery/webhook
 // ═══════════════════════════════════════════════════════════════════
+const notifyUser = require('../utils/notifyUser');
 const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
@@ -42,11 +43,12 @@ const getShiprocket = () => {
 router.post('/ready/:orderId', protect, sellerOrAdmin, async (req, res) => {
   try {
     const order = await Order.findById(req.params.orderId)
-      .populate('user', 'name phone email')
-      .populate('orderItems.product', 'name price');
-
-    const sellerUser = await User.findById(req.user._id).select('+sellerInfo +name +email +phone');
-
+      .populate('user', 'name email fcmToken')
+      .populate('orderItems.product', 'name price')
+      .populate({
+        path: 'orderItems.product',
+        populate: { path: 'createdBy', select: 'name phone sellerInfo' }
+      });
     if (!order)
       return res.status(404).json({ success: false, message: 'Order not found' });
     if (!['Processing', 'Confirmed'].includes(order.orderStatus))
@@ -58,6 +60,8 @@ router.post('/ready/:orderId', protect, sellerOrAdmin, async (req, res) => {
       try {
         const shiprocket = getShiprocket();
         if (shiprocket) {
+          const sellerUser = order.orderItems?.[0]?.product?.createdBy;
+
           const result = await shiprocket.createShipment(order, sellerUser);
           waybill = result?.packages?.[0]?.waybill || null;
           console.log(`📦 Shiprocket AWB: ${waybill}`);
@@ -82,6 +86,11 @@ router.post('/ready/:orderId', protect, sellerOrAdmin, async (req, res) => {
       updatedBy: req.user._id,
     });
     await order.save();
+    await notifyUser(
+      order.user,
+      "Order Confirmed",
+      `Your order is confirmed. Tracking ID: ${order.trackingId}`
+    );
 
     res.json({
       success: true,
@@ -110,7 +119,13 @@ router.post('/simulate/:orderId', protect, sellerOrAdmin, async (req, res) => {
   }
 
   try {
-    const order = await Order.findById(req.params.orderId);
+    const order = await Order.findById(req.params.orderId)
+      .populate('user', 'name email fcmToken')
+      .populate('orderItems.product', 'name price')
+      .populate({
+        path: 'orderItems.product',
+        populate: { path: 'createdBy', select: 'name phone sellerInfo' }
+      });
     if (!order)
       return res.status(404).json({ success: false, message: 'Order not found' });
 
@@ -142,7 +157,18 @@ router.post('/simulate/:orderId', protect, sellerOrAdmin, async (req, res) => {
     }
 
     await order.save();
+    const statusMessages = {
+      Confirmed: "Your order is confirmed ✅",
+      Shipped: "Your order is shipped 🚚",
+      "Out for Delivery": "Your order is out for delivery 📦",
+      Delivered: "Your order is delivered 🎉",
+    };
 
+    await notifyUser(
+      order.user,
+      "Order Update",
+      statusMessages[nextStatus] || `Order status updated to ${nextStatus}`
+    );
     res.json({
       success: true,
       message: `[Prototype] ${prevStatus} → ${nextStatus}`,
@@ -192,7 +218,13 @@ router.get('/track/:waybill', protect, async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════
 router.post('/cancel/:orderId', protect, admin, async (req, res) => {
   try {
-    const order = await Order.findById(req.params.orderId);
+    const order = await Order.findById(req.params.orderId)
+      .populate('user', 'name email fcmToken')
+      .populate('orderItems.product', 'name price')
+      .populate({
+        path: 'orderItems.product',
+        populate: { path: 'createdBy', select: 'name phone sellerInfo' }
+      });
     if (!order)
       return res.status(404).json({ success: false, message: 'Order not found' });
 
@@ -218,6 +250,11 @@ router.post('/cancel/:orderId', protect, admin, async (req, res) => {
       message: 'Cancelled by admin', updatedBy: req.user._id,
     });
     await order.save();
+    await notifyUser(
+      order.user,
+      "Order Cancelled",
+      "Your order has been cancelled ❌"
+    );
 
     res.json({ success: true, message: 'Order cancelled and shipment cancelled', order });
   } catch (error) {
@@ -242,7 +279,9 @@ router.post('/webhook', async (req, res) => {
     const { awb, current_status } = req.body;
     if (!awb || !current_status) return res.status(200).json({ success: true });
 
-    const order = await Order.findOne({ trackingId: awb });
+    const order = await Order.findOne({ trackingId: awb })
+      .populate('user', 'name email fcmToken');
+
     if (!order) return res.status(200).json({ success: true });
 
     const statusMap = {
@@ -267,6 +306,11 @@ router.post('/webhook', async (req, res) => {
         order.payoutEligible = true;
       }
       await order.save();
+      await notifyUser(
+        order.user,
+        "Order Update",
+        `Your order status is now ${newStatus}`
+      );
       console.log(`📊 Webhook: Order ${order._id}: ${prev} → ${newStatus}`);
     }
 
@@ -379,11 +423,11 @@ router.get('/print.js', (req, res) => {
 router.get('/label/:orderId', async (req, res) => {
   try {
     const order = await Order.findById(req.params.orderId)
-      .populate('user', 'name email phone')
-      .populate('orderItems.product', 'name')
+      .populate('user', 'name email fcmToken')
+      .populate('orderItems.product', 'name price')
       .populate({
         path: 'orderItems.product',
-        populate: { path: 'createdBy', select: 'name email phone sellerInfo' },
+        populate: { path: 'createdBy', select: 'name phone sellerInfo' }
       });
 
     if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
@@ -1019,11 +1063,11 @@ router.get('/label/:orderId', async (req, res) => {
 router.post('/reverse/:orderId', protect, sellerOrAdmin, async (req, res) => {
   try {
     const order = await Order.findById(req.params.orderId)
-      .populate('user', 'name phone email')
+      .populate('user', 'name email fcmToken')
       .populate('orderItems.product', 'name price')
       .populate({
         path: 'orderItems.product',
-        populate: { path: 'createdBy', select: 'name phone sellerInfo' },
+        populate: { path: 'createdBy', select: 'name phone sellerInfo' }
       });
 
     if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
@@ -1068,6 +1112,11 @@ router.post('/reverse/:orderId', protect, sellerOrAdmin, async (req, res) => {
       updatedBy: req.user._id,
     });
     await order.save();
+    await notifyUser(
+      order.user,
+      "Return Pickup Scheduled",
+      `Reverse pickup scheduled. AWB: ${reverseAwb}`
+    );
 
     res.json({
       success: true,

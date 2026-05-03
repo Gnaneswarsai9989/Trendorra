@@ -238,6 +238,7 @@ function ExploreBtn({ onClick }) {
                         display: 'flex', alignItems: 'center', gap: '22px',
                         overflow: 'hidden',
                         backdropFilter: hover ? 'none' : 'blur(8px)',
+                        WebkitBackdropFilter: hover ? 'none' : 'blur(8px)',
                     }}
                 >
                     {/* Shimmer sweep */}

@@ -6,7 +6,6 @@ import { ThemeProvider } from './context/ThemeContext';
 import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
 
-
 // Layout
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
@@ -33,6 +32,7 @@ import GoogleAuthSuccess from './pages/GoogleAuthSuccess';
 
 import NotificationPermissionModal from './components/NotificationPermissionModal';
 import { onForegroundMessage } from './firebase';
+import { db } from './firebase';
 import { toast } from 'react-hot-toast';
 
 // Admin Pages
@@ -64,14 +64,14 @@ import { SizeGuide, FAQ, ContactUs, TrackOrder } from './pages/legal/HelpPages';
 
 // ── Route Guards ──────────────────────────────────────────────────
 const ProtectedRoute = ({ children }) => {
-  const { isLoggedIn, loading } = useAuth();
-  if (loading) return null;
+  const { isLoggedIn, initializing } = useAuth();
+  if (initializing) return null;
   return isLoggedIn ? children : <Navigate to="/login" replace />;
 };
 
 const AdminRoute = ({ children }) => {
-  const { isLoggedIn, isAdmin, loading } = useAuth();
-  if (loading) return (
+  const { isLoggedIn, isAdmin, initializing } = useAuth();
+  if (initializing) return (
     <div style={{ backgroundColor: '#111', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ color: '#C9A84C', fontFamily: 'serif', letterSpacing: '0.3em' }}>Loading...</div>
     </div>
@@ -82,8 +82,8 @@ const AdminRoute = ({ children }) => {
 };
 
 const SellerRoute = ({ children }) => {
-  const { isLoggedIn, user, loading } = useAuth();
-  if (loading) return (
+  const { isLoggedIn, user, initializing } = useAuth();
+  if (initializing) return (
     <div style={{ backgroundColor: '#111', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ color: '#C9A84C', fontFamily: 'serif', letterSpacing: '0.3em' }}>Loading...</div>
     </div>
@@ -105,17 +105,25 @@ const DASHBOARD_ROUTES = ['/seller', '/admin'];
 const isDashboardRoute = (path) =>
   DASHBOARD_ROUTES.some(r => path === r || path.startsWith(r + '/'));
 
-// ── ONLY CHANGE: also hide Navbar/Footer on the landing page "/" ──
 const isLandingRoute = (path) => path === '/';
 
 const AppContent = () => {
   const { pathname } = useLocation();
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, initializing } = useAuth();
 
   // Hide Navbar+Footer for dashboard routes AND the landing page
   const fullScreen = isDashboardRoute(pathname) || isLandingRoute(pathname);
 
-  // Sync existing permission token on login
+  // ✅ CORRECT FLOW:
+  // - initializing=true  → user=null → isLoggedIn=false → LandingPage shows ✅
+  // - initializing=false → user=null → isLoggedIn=false → LandingPage stays ✅
+  // - initializing=false → user=obj  → isLoggedIn=true  → redirect to /home ✅
+  // This works because AuthContext now starts user as null (not from localStorage)
+  if (!initializing && pathname === '/' && isLoggedIn) {
+    return <Navigate to="/home" replace />;
+  }
+
+  // Sync FCM token on login
   useEffect(() => {
     if (isLoggedIn && Notification.permission === 'granted') {
       import('./firebase').then(({ requestNotificationPermission }) => {
@@ -124,7 +132,7 @@ const AppContent = () => {
     }
   }, [isLoggedIn]);
 
-  // Focus foreground messages
+  // Foreground FCM messages → toast
   useEffect(() => {
     try {
       const unsubscribe = onForegroundMessage((payload) => {
@@ -154,7 +162,7 @@ const AppContent = () => {
       <NotificationPermissionModal />
       <ScrollToTop />
       <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#111111' }}>
-        {!fullScreen && <Navbar />}
+        {!fullScreen && <Navbar db={db} />}
         <main className="flex-1" style={{ backgroundColor: '#111111' }}>
           <Routes>
             {/* ── Customer Routes ── */}

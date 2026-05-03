@@ -8,19 +8,19 @@ import {
   FiShield, FiUser,
 } from 'react-icons/fi';
 
-const BG   = '#080808';
+const BG = '#080808';
 const CARD = '#111111';
-const C2   = '#181818';
+const C2 = '#181818';
 const BORDER = 'rgba(255,255,255,0.07)';
-const GOLD   = '#C9A84C';
+const GOLD = '#C9A84C';
 
 const statusStyle = (s) => ({
-  Processing:         { color: '#fbbf24', backgroundColor: 'rgba(251,191,36,0.12)',  borderRadius: '6px', padding: '3px 10px', fontSize: '11px' },
-  Confirmed:          { color: '#60a5fa', backgroundColor: 'rgba(96,165,250,0.12)',  borderRadius: '6px', padding: '3px 10px', fontSize: '11px' },
-  Shipped:            { color: '#a78bfa', backgroundColor: 'rgba(167,139,250,0.12)', borderRadius: '6px', padding: '3px 10px', fontSize: '11px' },
-  'Out for Delivery': { color: '#fb923c', backgroundColor: 'rgba(251,146,60,0.12)',  borderRadius: '6px', padding: '3px 10px', fontSize: '11px' },
-  Delivered:          { color: '#4ade80', backgroundColor: 'rgba(74,222,128,0.12)',  borderRadius: '6px', padding: '3px 10px', fontSize: '11px' },
-  Cancelled:          { color: '#f87171', backgroundColor: 'rgba(248,113,113,0.12)', borderRadius: '6px', padding: '3px 10px', fontSize: '11px' },
+  Processing: { color: '#fbbf24', backgroundColor: 'rgba(251,191,36,0.12)', borderRadius: '6px', padding: '3px 10px', fontSize: '11px' },
+  Confirmed: { color: '#60a5fa', backgroundColor: 'rgba(96,165,250,0.12)', borderRadius: '6px', padding: '3px 10px', fontSize: '11px' },
+  Shipped: { color: '#a78bfa', backgroundColor: 'rgba(167,139,250,0.12)', borderRadius: '6px', padding: '3px 10px', fontSize: '11px' },
+  'Out for Delivery': { color: '#fb923c', backgroundColor: 'rgba(251,146,60,0.12)', borderRadius: '6px', padding: '3px 10px', fontSize: '11px' },
+  Delivered: { color: '#4ade80', backgroundColor: 'rgba(74,222,128,0.12)', borderRadius: '6px', padding: '3px 10px', fontSize: '11px' },
+  Cancelled: { color: '#f87171', backgroundColor: 'rgba(248,113,113,0.12)', borderRadius: '6px', padding: '3px 10px', fontSize: '11px' },
 }[s] || { color: 'rgba(255,255,255,0.4)', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '6px', padding: '3px 10px', fontSize: '11px' });
 
 // ── Danger Modal ──────────────────────────────────────────────────
@@ -68,11 +68,11 @@ function DangerModal({ open, onClose, onConfirm, loading, title, subtitle, lines
 
 // ── Main ──────────────────────────────────────────────────────────
 export default function AdminDashboard() {
-  const [stats,   setStats]   = useState(null);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [tab,     setTab]     = useState('overview');
+  const [tab, setTab] = useState('overview');
   const [showRevenueModal, setShowRevenueModal] = useState(false);
-  const [revenueDeleting,  setRevenueDeleting]  = useState(false);
+  const [revenueDeleting, setRevenueDeleting] = useState(false);
 
   const fetchStats = () => {
     setLoading(true);
@@ -86,26 +86,26 @@ export default function AdminDashboard() {
     catch (e) { console.error(e); } finally { setRevenueDeleting(false); }
   };
 
-  const totalRevenue  = stats?.totalRevenue  || 0;
+  const totalRevenue = stats?.totalRevenue || 0;
   const sellerRevenue = stats?.sellerStats?.reduce((s, x) => s + (x.revenue || 0), 0) || 0;
-  const adminRevenue  = Math.max(0, totalRevenue - sellerRevenue);
+  const adminRevenue = Math.max(0, totalRevenue - sellerRevenue);
 
   const statCards = stats ? [
-    { label: 'Total Users',     value: (stats.totalUsers  || 0).toLocaleString(), icon: FiUsers,       color: GOLD,      sub: `${stats.totalSellers || 0} sellers`    },
-    { label: 'Total Orders',    value: (stats.totalOrders || 0).toLocaleString(), icon: FiShoppingBag, color: '#60a5fa', sub: `${stats.cancelledCount || 0} cancelled` },
-    { label: 'Total Revenue',   value: `₹${totalRevenue.toLocaleString()}`,        icon: FiDollarSign,  color: '#4ade80', sub: 'Excl. cancelled'                       },
+    { label: 'Total Users', value: (stats.totalUsers || 0).toLocaleString(), icon: FiUsers, color: GOLD, sub: `${stats.totalSellers || 0} sellers` },
+    { label: 'Total Orders', value: (stats.totalOrders || 0).toLocaleString(), icon: FiShoppingBag, color: '#60a5fa', sub: `${stats.cancelledCount || 0} cancelled` },
+    { label: 'Total Revenue', value: `₹${totalRevenue.toLocaleString()}`, icon: FiDollarSign, color: '#4ade80', sub: 'Excl. cancelled' },
     { label: 'Avg Order Value', value: stats.totalOrders ? `₹${Math.round(totalRevenue / stats.totalOrders).toLocaleString()}` : '₹0', icon: FiTrendingUp, color: '#a78bfa', sub: 'Per order' },
   ] : [];
 
   const adminLinks = [
-    { to: '/admin/products',      label: 'Products',      icon: FiPackage,     desc: 'Add, edit, delete products',         color: GOLD      },
-    { to: '/admin/orders',        label: 'Orders',        icon: FiShoppingBag, desc: 'View and update all orders',         color: '#60a5fa' },
-    { to: '/admin/users',         label: 'Users',         icon: FiUsers,       desc: 'Manage customers & roles',           color: '#4ade80' },
-    { to: '/admin/analytics',     label: 'Analytics',     icon: FiTrendingUp,  desc: 'Revenue charts & insights',          color: '#a78bfa' },
-    { to: '/admin/notifications', label: 'Notifications', icon: FiBell,        desc: 'Send SMS & promotional offers',      color: '#fb923c' },
-    { to: '/admin/coupons',       label: 'Coupons',       icon: FiTag,         desc: 'Create & manage discount codes',     color: '#f472b6' },
-    { to: '/admin/sellers',       label: 'Sellers',       icon: FiUser,        desc: 'Seller accounts & payouts',         color: '#34d399' },
-    { to: '/admin/settings',      label: 'Settings',      icon: FiSliders,     desc: 'Commission & platform fees',        color: '#38bdf8' },
+    { to: '/admin/products', label: 'Products', icon: FiPackage, desc: 'Add, edit, delete products', color: GOLD },
+    { to: '/admin/orders', label: 'Orders', icon: FiShoppingBag, desc: 'View and update all orders', color: '#60a5fa' },
+    { to: '/admin/users', label: 'Users', icon: FiUsers, desc: 'Manage customers & roles', color: '#4ade80' },
+    { to: '/admin/analytics', label: 'Analytics', icon: FiTrendingUp, desc: 'Revenue charts & insights', color: '#a78bfa' },
+    { to: '/admin/notifications', label: 'Notifications', icon: FiBell, desc: 'Send SMS & promotional offers', color: '#fb923c' },
+    { to: '/admin/coupons', label: 'Coupons', icon: FiTag, desc: 'Create & manage discount codes', color: '#f472b6' },
+    { to: '/admin/sellers', label: 'Sellers', icon: FiUser, desc: 'Seller accounts & payouts', color: '#34d399' },
+    { to: '/admin/settings', label: 'Settings', icon: FiSliders, desc: 'Commission & platform fees', color: '#38bdf8' },
   ];
 
   return (
@@ -144,7 +144,7 @@ export default function AdminDashboard() {
           <button onClick={() => setShowRevenueModal(true)}
             style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#f87171', background: 'none', border: '1px solid rgba(248,113,113,0.25)', borderRadius: '6px', padding: '6px 12px', cursor: 'pointer', fontSize: '12px' }}
             onMouseOver={e => e.currentTarget.style.borderColor = 'rgba(248,113,113,0.6)'}
-            onMouseOut={e  => e.currentTarget.style.borderColor = 'rgba(248,113,113,0.25)'}>
+            onMouseOut={e => e.currentTarget.style.borderColor = 'rgba(248,113,113,0.25)'}>
             <FiTrash2 size={12} /> Reset Revenue
           </button>
           <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '5px', color: 'rgba(255,255,255,0.35)', textDecoration: 'none', fontSize: '12px' }}>
@@ -200,9 +200,9 @@ export default function AdminDashboard() {
               {tab === 'overview' && (
                 <div className="admin-revenue" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '14px' }}>
                   {[
-                    { label: 'Total Platform Revenue', value: `₹${totalRevenue.toLocaleString()}`,  color: GOLD,      sub: `${stats?.totalOrders || 0} orders total`,            bg: `${GOLD}08`,             border: `${GOLD}22`            },
-                    { label: 'Admin Products Revenue',  value: `₹${adminRevenue.toLocaleString()}`, color: '#60a5fa', sub: 'Your own product sales',                              bg: 'rgba(96,165,250,0.06)',  border: 'rgba(96,165,250,0.18)' },
-                    { label: 'Seller Products Revenue', value: `₹${sellerRevenue.toLocaleString()}`,color: '#4ade80', sub: `${stats?.sellerStats?.length || 0} active sellers`,   bg: 'rgba(74,222,128,0.06)',  border: 'rgba(74,222,128,0.18)' },
+                    { label: 'Total Platform Revenue', value: `₹${totalRevenue.toLocaleString()}`, color: GOLD, sub: `${stats?.totalOrders || 0} orders total`, bg: `${GOLD}08`, border: `${GOLD}22` },
+                    { label: 'Admin Products Revenue', value: `₹${adminRevenue.toLocaleString()}`, color: '#60a5fa', sub: 'Your own product sales', bg: 'rgba(96,165,250,0.06)', border: 'rgba(96,165,250,0.18)' },
+                    { label: 'Seller Products Revenue', value: `₹${sellerRevenue.toLocaleString()}`, color: '#4ade80', sub: `${stats?.sellerStats?.length || 0} active sellers`, bg: 'rgba(74,222,128,0.06)', border: 'rgba(74,222,128,0.18)' },
                   ].map(({ label, value, color, sub, bg, border }) => {
                     const num = parseFloat(value.replace(/[₹,]/g, '')) || 0;
                     const pct = totalRevenue > 0 ? Math.round((num / totalRevenue) * 100) : 0;
@@ -241,7 +241,7 @@ export default function AdminDashboard() {
                             return (
                               <tr key={i} style={{ borderBottom: `1px solid ${BORDER}` }}
                                 onMouseOver={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)'}
-                                onMouseOut={e  => e.currentTarget.style.backgroundColor = 'transparent'}>
+                                onMouseOut={e => e.currentTarget.style.backgroundColor = 'transparent'}>
                                 <td style={{ padding: '12px' }}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <div style={{ width: '26px', height: '26px', borderRadius: '50%', backgroundColor: `${GOLD}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -288,7 +288,7 @@ export default function AdminDashboard() {
                       <Link key={_id} to={`/admin/orders?status=${_id}`}
                         style={{ ...s, display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none', border: `1px solid ${s.color}25`, transition: 'opacity 0.2s' }}
                         onMouseOver={e => e.currentTarget.style.opacity = '0.7'}
-                        onMouseOut={e  => e.currentTarget.style.opacity = '1'}>
+                        onMouseOut={e => e.currentTarget.style.opacity = '1'}>
                         <span style={{ fontSize: '11px' }}>{_id}</span>
                         <span style={{ backgroundColor: s.color, color: '#000', fontSize: '10px', fontWeight: '700', borderRadius: '20px', padding: '1px 7px', minWidth: '20px', textAlign: 'center' }}>{count}</span>
                       </Link>
@@ -370,7 +370,7 @@ export default function AdminDashboard() {
                   return (
                     <Link key={order._id} className="admin-recent-order" to="/admin/orders" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 24px', borderBottom: `1px solid ${BORDER}`, textDecoration: 'none', transition: 'background 0.15s' }}
                       onMouseOver={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)'}
-                      onMouseOut={e  => e.currentTarget.style.backgroundColor = 'transparent'}>
+                      onMouseOut={e => e.currentTarget.style.backgroundColor = 'transparent'}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                         {/* Order source badge */}
                         <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: hasSeller ? 'rgba(96,165,250,0.12)' : `${GOLD}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
