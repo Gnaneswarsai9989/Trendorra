@@ -633,7 +633,7 @@ html,body{overflow-x:hidden;max-width:100vw;}
       <header className={`sticky top-0 w-full z-50 transition-all duration-300 ${scrolled ? 'shadow-2xl' : ''}`} style={{ backgroundColor: NAV_BG }}>
 
         {/* ── Mobile ── */}
-        <div className="md:hidden" style={{ backgroundColor: NAV_BG, overflow: 'hidden' }}>
+        <div className="md:hidden" style={{ backgroundColor: NAV_BG, overflow: 'visible' }}>
           <div className="relative flex items-center justify-between px-4 h-14" style={{ borderBottom: `1px solid ${BORDER}` }}>
             <button onClick={() => setMobileMoreOpen(true)} className="w-9 h-9 flex items-center justify-center -ml-1 z-10" style={{ color: TEXT }}>
               <FiMenu size={22} />
@@ -649,7 +649,8 @@ html,body{overflow-x:hidden;max-width:100vw;}
               <BellBtn isMobile={true} />
             </div>
           </div>
-          <div style={{ padding: '10px 14px', borderBottom: `1px solid ${BORDER}`, position: 'relative', zIndex: 101 }}>
+          {/* ── FIX: overflow visible so dropdown is not clipped, position relative for stacking ── */}
+          <div style={{ padding: '10px 14px', borderBottom: `1px solid ${BORDER}`, position: 'relative', zIndex: 200, overflow: 'visible' }}>
             <LiveSearch isDark={isDark} isDesktop={false} placeholder="Search products, brands..." />
           </div>
           <div className="overflow-x-auto cat-pills" style={{ borderBottom: 'none', overflowY: 'hidden', position: 'relative', zIndex: 1, maxWidth: '100vw' }}>
