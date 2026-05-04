@@ -479,39 +479,40 @@ export default function ProductDetailPage() {
     }
   };
 
-  /* ── UPDATED Share — Flipkart/Amazon style: text + url only,
-     image appears automatically via OG meta tag preview card
-     that WhatsApp/Telegram fetch from the product page URL ── */
   const handleShare = async () => {
     const url = window.location.href;
+    const effectivePriceVal = hasDiscount ? product.discountPrice : product.price;
+    const savingsLine = hasDiscount
+      ? `💰 Save ₹${(product.price - product.discountPrice).toLocaleString()} (${discountPct}% OFF)`
+      : '';
 
-    /* Flipkart-style share text — clean, no raw image URL */
-    const shareText = `Take a look at this ${product.name} on Trendorra`;
+    const premiumText = [
+      `✨ *${product.name}*`,
+      `━━━━━━━━━━━━━━━━`,
+      hasDiscount
+        ? `💸 *₹${effectivePriceVal?.toLocaleString()}* ~~₹${product.price?.toLocaleString()}~~`
+        : `💸 *₹${effectivePriceVal?.toLocaleString()}*`,
+      savingsLine,
+      product.sizes?.length ? `📐 Sizes: ${product.sizes.join(' · ')}` : '',
+      product.colors?.length ? `🎨 Colors: ${product.colors.map(c => c.name).join(' · ')}` : '',
+      `━━━━━━━━━━━━━━━━`,
+      `🛍️ Shop now on *Trendorra*`,
+      url,
+    ]
+      .filter(Boolean)
+      .join('\n');
 
-    /* ── Web Share API: text + url — WhatsApp/Telegram auto-fetch
-       OG tags from url and render a rich image preview card ── */
     if (navigator.share) {
       try {
-        await navigator.share({
-          title: product.name,
-          text: shareText,
-          url,
-        });
+        await navigator.share({ title: product.name, text: premiumText, url });
         return;
-      } catch (e) {
-        if (e.name === 'AbortError') return;
-      }
+      } catch (e) { if (e.name === 'AbortError') return; }
     }
-
-    /* ── Clipboard fallback: clean text + link only ── */
     try {
-      await navigator.clipboard.writeText(`${shareText}\n${url}`);
-      toast.success('Link copied to clipboard!');
-    } catch {
-      toast.error('Share failed');
-    }
+      await navigator.clipboard.writeText(premiumText);
+      toast.success('Copied to clipboard!');
+    } catch { toast.error('Share failed'); }
   };
-
   const handleReview = async e => {
     e.preventDefault();
     if (!isLoggedIn) { toast.error('Please login to review'); return; }
