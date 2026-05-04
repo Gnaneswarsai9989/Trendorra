@@ -486,30 +486,37 @@ export default function ProductDetailPage() {
       ? `💰 Save ₹${(product.price - product.discountPrice).toLocaleString()} (${discountPct}% OFF)`
       : '';
 
+    // ✅ Text ONLY — no URL in text. URL passed separately via `url` field.
+    // WhatsApp appends the URL at the end and fetches OG image from it automatically.
     const premiumText = [
       `✨ *${product.name}*`,
       `━━━━━━━━━━━━━━━━`,
       hasDiscount
-        ? `💸 *₹${effectivePriceVal?.toLocaleString()}* ~~₹${product.price?.toLocaleString()}~~`
+        ? `💸 *₹${effectivePriceVal?.toLocaleString()}* ~₹${product.price?.toLocaleString()}~`
         : `💸 *₹${effectivePriceVal?.toLocaleString()}*`,
       savingsLine,
       product.sizes?.length ? `📐 Sizes: ${product.sizes.join(' · ')}` : '',
       product.colors?.length ? `🎨 Colors: ${product.colors.map(c => c.name).join(' · ')}` : '',
       `━━━━━━━━━━━━━━━━`,
       `🛍️ Shop now on *Trendorra*`,
-      url,
     ]
       .filter(Boolean)
       .join('\n');
 
     if (navigator.share) {
       try {
-        await navigator.share({ title: product.name, text: premiumText, url });
+        await navigator.share({
+          title: product.name,
+          text: premiumText + '\n',  // trailing newline so URL preview renders below
+          url,                        // ✅ URL passed here only — NOT inside text
+        });
         return;
       } catch (e) { if (e.name === 'AbortError') return; }
     }
+
+    // Clipboard fallback
     try {
-      await navigator.clipboard.writeText(premiumText);
+      await navigator.clipboard.writeText(`${premiumText}\n${url}`);
       toast.success('Copied to clipboard!');
     } catch { toast.error('Share failed'); }
   };
