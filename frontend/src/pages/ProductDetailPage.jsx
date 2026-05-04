@@ -136,12 +136,12 @@ const injectDetailStyles = () => {
       content: ''; position: absolute; inset: -1px; border-radius: 12px; pointer-events: none; transition: box-shadow 0.3s;
     }
     .pdp-rel-card:hover::after { box-shadow: 0 0 20px rgba(201,168,76,0.15), 0 8px 30px rgba(0,0,0,0.4); }
-    .pdp-rel-inner { border-radius: 9px; overflow: hidden; background: #181818; position: relative; z-index: 1; }
+    .pdp-rel-inner { border-radius: 9px; overflow: hidden; background: #000; position: relative; z-index: 1; }
 
-    /* ── DESKTOP: smaller related product image (was 118%, now 85%) ── */
-    .pdp-rel-img   { width: 100%; padding-top: 85%; position: relative; overflow: hidden; background: #1e1e1e; }
+    /* ── DESKTOP: larger related product image ── */
+    .pdp-rel-img   { width: 100%; padding-top: 120%; position: relative; overflow: hidden; background: #111; }
     @media (max-width: 639px) {
-      .pdp-rel-img { padding-top: 110%; }
+      .pdp-rel-img { padding-top: 130%; }
     }
 
     .pdp-rel-img img {
@@ -224,6 +224,9 @@ const injectDetailStyles = () => {
       box-shadow: 0 0 18px rgba(201,168,76,0.25), inset 0 0 12px rgba(201,168,76,0.05);
     }
     .pdp-buynow-btn:active { transform: scale(0.98); }
+
+    /* ── Related product info area black bg ── */
+    .pdp-rel-info { padding: 10px 10px 12px; background: #000; }
   `;
   document.head.appendChild(s);
 };
@@ -450,34 +453,82 @@ export default function ProductDetailPage() {
     }
   };
 
-  /* ── Share ── */
+  /* ── UPDATED Share — Flipkart/Amazon style: image attached as file, link embedded in text, NO raw image URL ── */
   const handleShare = async () => {
     const url = window.location.href;
-    // ── FIX: use null/undefined check, not falsy, so discountPrice:0 doesn't print ──
-    const effectivePrice = product.discountPrice != null ? product.discountPrice : product.price;
+    const effectivePrice = product.discountPrice != null && product.discountPrice > 0
+      ? product.discountPrice : product.price;
     const price = `₹${effectivePrice?.toLocaleString()}`;
-    const wasPrice = product.discountPrice != null ? ` (was ₹${product.price?.toLocaleString()})` : '';
-    const desc = product.description ? product.description.slice(0, 100) + '...' : '';
-    const text = `🛍️ ${product.name}\n💰 ${price}${wasPrice}${desc ? `\n\n${desc}` : ''}\n\n👗 Shop on Trendorra:\n${url}`;
+    const wasPrice = product.discountPrice != null && product.discountPrice > 0
+      ? ` (was ₹${product.price?.toLocaleString()})` : '';
+    const desc = product.description ? product.description.slice(0, 120) + '...' : '';
 
-    try {
-      if (navigator.share) {
+    const shareTitle = product.name;
+
+    /* Clean share text — NO raw image URL anywhere, link embedded naturally at end */
+    const shareText =
+      `🛍️ *${product.name}*\n` +
+      `💰 ${price}${wasPrice}\n` +
+      (desc ? `\n📝 ${desc}\n` : '') +
+      `\n👉 Shop on Trendorra:\n${url}`;
+
+    const imageUrl = product.images?.[0]?.url || '';
+
+    /* ── Strategy 1: Share image FILE + combined text+link (WhatsApp, Instagram, etc.) ── */
+    if (navigator.share && imageUrl) {
+      try {
+        const imgResp = await fetch(imageUrl);
+        const blob = await imgResp.blob();
+        const ext = blob.type.includes('png') ? 'png' : 'jpg';
+        const file = new File(
+          [blob],
+          `${product.name.replace(/\s+/g, '_')}.${ext}`,
+          { type: blob.type }
+        );
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            title: shareTitle,
+            /* text already contains the product link at the end — so the recipient
+               sees: product image (attached) + info text + tappable shop link,
+               all in one message — same as Flipkart/Amazon share style.
+               We intentionally do NOT pass a separate `url` field here to avoid
+               duplication (some browsers append the url after the text). */
+            text: shareText,
+          });
+          return;
+        }
+      } catch (imgErr) {
+        if (imgErr.name === 'AbortError') return;
+        /* Image fetch failed or canShare(files) not supported — fall through */
+      }
+    }
+
+    /* ── Strategy 2: Text-only Web Share with url field — WhatsApp/Telegram auto-generate
+       a rich link preview card (with product image) from the url field.
+       The image appears as a preview card, NOT as a raw URL string in the message. ── */
+    if (navigator.share) {
+      try {
         await navigator.share({
-          title: product.name,
-          text: `${product.name} — ${price}${wasPrice}`,
-          url,
+          title: shareTitle,
+          text:
+            `🛍️ ${product.name}\n` +
+            `💰 ${price}${wasPrice}` +
+            (desc ? `\n\n📝 ${desc}` : ''),
+          url, /* ← WhatsApp & Telegram fetch OG image from this and show a rich preview card */
         });
-      } else {
-        await navigator.clipboard.writeText(text);
-        toast.success('Link copied to clipboard!');
+        return;
+      } catch (e) {
+        if (e.name === 'AbortError') return;
       }
-    } catch (e) {
-      if (e.name !== 'AbortError') {
-        try {
-          await navigator.clipboard.writeText(url);
-          toast.success('Link copied!');
-        } catch { toast.error('Share failed'); }
-      }
+    }
+
+    /* ── Strategy 3: Clipboard fallback — clean text + link only, NO raw image URL ── */
+    try {
+      await navigator.clipboard.writeText(shareText);
+      toast.success('Link copied to clipboard!');
+    } catch {
+      toast.error('Share failed');
     }
   };
 
@@ -689,21 +740,38 @@ export default function ProductDetailPage() {
               </div>
             )}
 
-            {/* ── PRICE — FIXED ──
-                Old code: `product.discountPrice && (...)` → treated 0 as falsy → showed "₹1552 0"
-                New code: `hasDiscount` uses strict null check + > 0 guard → clean output always
-            ── */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap', padding: '10px 0', borderTop: '1px solid rgba(255,255,255,0.07)', borderBottom: '1px solid rgba(255,255,255,0.07)', marginBottom: 14 }}>
-              <span style={{ fontSize: 'clamp(1.2rem,3.5vw,1.65rem)', fontWeight: 700, color: '#fff', letterSpacing: '-0.01em' }}>
-                ₹{effectivePrice?.toLocaleString()}
-              </span>
-              {hasDiscount && (
-                <>
+            {/* ── PRICE ── */}
+            <div style={{ padding: '10px 0', borderTop: '1px solid rgba(255,255,255,0.07)', borderBottom: '1px solid rgba(255,255,255,0.07)', marginBottom: hasDiscount ? 8 : 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 'clamp(1.2rem,3.5vw,1.65rem)', fontWeight: 700, color: '#fff', letterSpacing: '-0.01em' }}>
+                  ₹{effectivePrice?.toLocaleString()}
+                </span>
+                {hasDiscount && (
                   <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', textDecoration: 'line-through' }}>₹{product.price?.toLocaleString()}</span>
-                  <span style={{ fontSize: 10, fontWeight: 700, background: '#22c55e', color: '#fff', padding: '2px 8px', borderRadius: 4, letterSpacing: '0.04em' }}>{discountPct}% OFF</span>
-                </>
-              )}
+                )}
+              </div>
             </div>
+
+            {/* ── Offer label — shown below price bar when discount exists ── */}
+            {hasDiscount && (
+              <div style={{ marginBottom: 14, marginTop: 0 }}>
+                <span style={{
+                  display: 'inline-block',
+                  background: '#22c55e',
+                  color: '#fff',
+                  fontSize: 11,
+                  fontWeight: 800,
+                  letterSpacing: '0.07em',
+                  padding: '3px 10px',
+                  borderRadius: 5,
+                }}>
+                  {discountPct}% OFF
+                </span>
+                <span style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.35)', marginLeft: 8 }}>
+                  You save ₹{(product.price - product.discountPrice)?.toLocaleString()}
+                </span>
+              </div>
+            )}
 
             {/* Color */}
             {product.colors?.length > 0 && (
@@ -986,7 +1054,7 @@ export default function ProductDetailPage() {
           </div>
         </div>
 
-        {/* ════ RELATED PRODUCTS ════ */}
+        {/* ════ RELATED PRODUCTS — black bg, larger cards matching shop grid ════ */}
         {related.length > 0 && (
           <section style={{ marginTop: 36, paddingTop: 28, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -1002,39 +1070,106 @@ export default function ProductDetailPage() {
               </Link>
             </div>
 
-            {/* ── DESKTOP: 4 cols with smaller images via .pdp-rel-img (85% padding-top) ── */}
-            <div style={{ display: 'grid', gap: 9, gridTemplateColumns: 'repeat(2,1fr)' }} className="sm:grid-cols-4 sm:gap-3">
+            {/* ── 4 cols desktop / 2 cols mobile — black bg, larger image ratio ── */}
+            <div
+              className="pdp-related-grid"
+              style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(2, 1fr)' }}
+            >
+              <style>{`
+                @media (min-width: 640px) {
+                  .pdp-related-grid { grid-template-columns: repeat(4, 1fr) !important; gap: 16px !important; }
+                }
+              `}</style>
+
               {related.map((p, i) => (
                 <motion.div key={p._id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07, duration: 0.3 }}>
-                  <Link to={`/product/${p._id}`} className="pdp-rel-card" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+                  <Link
+                    to={`/product/${p._id}`}
+                    className="pdp-rel-card"
+                    onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                    style={{ textDecoration: 'none' }}
+                  >
+                    {/* ── pdp-rel-inner bg is now #000 (set in CSS above) ── */}
                     <div className="pdp-rel-inner">
+
+                      {/* Image — taller ratio (120%) like the shop grid in image 2 */}
                       <div className="pdp-rel-img">
-                        <img src={p.images?.[0]?.url || 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=400'} alt={p.name}
-                          onError={e => { e.target.src = 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=400'; }} />
-                        <div style={{ position: 'absolute', top: 6, left: 6, display: 'flex', flexDirection: 'column', gap: 3, zIndex: 3, pointerEvents: 'none' }}>
-                          {p.isNewArrival && <span style={{ background: GOLD, color: '#000', fontSize: 7, fontWeight: 800, padding: '2px 5px', letterSpacing: '0.12em', textTransform: 'uppercase' }}>New</span>}
+                        <img
+                          src={p.images?.[0]?.url || 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=400'}
+                          alt={p.name}
+                          onError={e => { e.target.src = 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=400'; }}
+                        />
+
+                        {/* Badges */}
+                        <div style={{ position: 'absolute', top: 8, left: 8, display: 'flex', flexDirection: 'column', gap: 4, zIndex: 3, pointerEvents: 'none' }}>
+                          {p.isNewArrival && (
+                            <span style={{ background: GOLD, color: '#000', fontSize: 8, fontWeight: 800, padding: '2px 7px', letterSpacing: '0.12em', textTransform: 'uppercase' }}>NEW</span>
+                          )}
+                          {p.isBestSeller && (
+                            <span style={{ background: '#111', color: '#fff', fontSize: 8, fontWeight: 700, padding: '2px 7px', textTransform: 'uppercase', border: '1px solid rgba(255,255,255,0.2)' }}>BEST SELLER</span>
+                          )}
                           {/* ── FIX: same hasDiscount logic applied to related products ── */}
                           {p.discountPrice != null && p.discountPrice > 0 && (
-                            <span style={{ background: '#ef4444', color: '#fff', fontSize: 7, fontWeight: 700, padding: '2px 5px' }}>
+                            <span style={{ background: '#ef4444', color: '#fff', fontSize: 8, fontWeight: 700, padding: '2px 7px' }}>
                               -{Math.round(((p.price - p.discountPrice) / p.price) * 100)}%
                             </span>
                           )}
                         </div>
-                        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '36%', background: 'linear-gradient(to top,rgba(0,0,0,0.48),transparent)', zIndex: 2, pointerEvents: 'none' }} />
+
+                        {/* Bottom gradient overlay */}
+                        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '35%', background: 'linear-gradient(to top, rgba(0,0,0,0.55), transparent)', zIndex: 2, pointerEvents: 'none' }} />
                       </div>
-                      <div style={{ height: 1, background: 'linear-gradient(90deg,transparent,rgba(201,168,76,0.22),transparent)' }} />
-                      <div style={{ padding: '7px 8px 9px', background: '#181818' }}>
-                        <p style={{ fontSize: 7.5, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.26)', marginBottom: 2 }}>{p.brand || 'Trendorra'}</p>
-                        <h3 style={{ fontSize: 11, fontWeight: 500, color: '#fff', lineHeight: 1.35, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', margin: '0 0 5px' }}>{p.name}</h3>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                          {/* ── FIX: same hasDiscount logic for related product prices ── */}
-                          <span style={{ fontSize: 12, fontWeight: 700, color: '#fff' }}>
+
+                      {/* Gold divider line */}
+                      <div style={{ height: 1, background: 'linear-gradient(90deg, transparent, rgba(201,168,76,0.3), transparent)' }} />
+
+                      {/* Info area — black background */}
+                      <div className="pdp-rel-info">
+                        <p style={{ fontSize: 8, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)', marginBottom: 3 }}>
+                          {p.brand || 'Trendorra'}
+                        </p>
+
+                        <h3 style={{ fontSize: 12, fontWeight: 500, color: '#fff', lineHeight: 1.35, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', margin: '0 0 5px' }}>
+                          {p.name}
+                        </h3>
+
+                        {/* Stars — show if product has reviews */}
+                        {p.numReviews > 0 && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 5 }}>
+                            <Stars rating={p.ratings} size={10} />
+                            <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)' }}>({p.numReviews})</span>
+                          </div>
+                        )}
+
+                        {/* Price row */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <span style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>
                             ₹{(p.discountPrice != null && p.discountPrice > 0 ? p.discountPrice : p.price)?.toLocaleString()}
                           </span>
                           {p.discountPrice != null && p.discountPrice > 0 && (
-                            <span style={{ fontSize: 10, textDecoration: 'line-through', color: 'rgba(255,255,255,0.26)' }}>₹{p.price?.toLocaleString()}</span>
+                            <span style={{ fontSize: 11, textDecoration: 'line-through', color: 'rgba(255,255,255,0.28)' }}>
+                              ₹{p.price?.toLocaleString()}
+                            </span>
                           )}
                         </div>
+
+                        {/* OFF badge */}
+                        {p.discountPrice != null && p.discountPrice > 0 && (
+                          <div style={{ marginTop: 6 }}>
+                            <span style={{
+                              display: 'inline-block',
+                              background: '#22c55e',
+                              color: '#fff',
+                              fontSize: 10,
+                              fontWeight: 800,
+                              letterSpacing: '0.06em',
+                              padding: '2px 8px',
+                              borderRadius: 4,
+                            }}>
+                              {Math.round(((p.price - p.discountPrice) / p.price) * 100)}% OFF
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </Link>

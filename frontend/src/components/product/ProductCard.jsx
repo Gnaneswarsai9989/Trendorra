@@ -8,9 +8,10 @@ const GOLD = '#C9A84C';
 
 const injectStyles = () => {
   if (typeof document === 'undefined') return;
-  if (document.getElementById('pc-styles-v3')) return;
+  const oldStyle = document.getElementById('pc-styles-v3'); if (oldStyle) oldStyle.remove();
+  if (document.getElementById('pc-styles-v4')) return;
   const style = document.createElement('style');
-  style.id = 'pc-styles-v3';
+  style.id = 'pc-styles-v4';
   style.textContent = `
 
     /* ── CSS custom property for spinning border angle ── */
@@ -154,14 +155,14 @@ const injectStyles = () => {
     }
 
     /* ════════════════════════════════════════
-       INNER CARD BODY
+       INNER CARD BODY — full black
     ════════════════════════════════════════ */
 
     .pc-inner {
       position: relative;
       border-radius: 14px;
       overflow: hidden;
-      background: #181818;
+      background: #000;
       z-index: 1;
       display: flex;
       flex-direction: column;
@@ -169,29 +170,23 @@ const injectStyles = () => {
 
     /* ════════════════════════════════════════
        IMAGE CONTAINER
-       padding-top trick forces portrait ratio
-       regardless of parent grid/flex layout
     ════════════════════════════════════════ */
 
     .pc-img-box {
       position: relative;
       width: 100%;
-      padding-top: 118%;         /* mobile — tall portrait */
+      padding-top: 118%;
       overflow: hidden;
-      background: #1e1e1e;
+      background: #000;
       flex-shrink: 0;
     }
 
-    /* Desktop — slightly more compact */
     @media (min-width: 1024px) {
       .pc-img-box {
-        padding-top: 100%;       /* desktop — square-ish */
+        padding-top: 100%;
       }
     }
 
-    /* ── FIX: Invisible full-area Link overlay ──
-       Clicking anywhere on the image navigates to product detail.
-       Must be above images (z-index 2) but below buttons (z-index 8). */
     .pc-img-link {
       position: absolute;
       inset: 0;
@@ -200,7 +195,6 @@ const injectStyles = () => {
       text-decoration: none;
     }
 
-    /* Images sit behind the link overlay */
     .pc-img-box img {
       position: absolute;
       inset: 0;
@@ -209,7 +203,7 @@ const injectStyles = () => {
       object-fit: cover;
       object-position: center top;
       transition: transform 0.6s ease, opacity 0.4s ease;
-      pointer-events: none;      /* clicks pass through to pc-img-link */
+      pointer-events: none;
     }
 
     .pc-img-main  { opacity: 1; z-index: 1; }
@@ -220,7 +214,7 @@ const injectStyles = () => {
       .pc-wrap:hover .pc-img-hover { opacity: 1; transform: scale(1); }
     }
 
-    /* ── Shimmer sweep on desktop hover ── */
+    /* ── Shimmer sweep ── */
     .pc-shimmer {
       position: absolute;
       inset: 0;
@@ -232,9 +226,7 @@ const injectStyles = () => {
     .pc-shimmer::after {
       content: '';
       position: absolute;
-      top: 0;
-      bottom: 0;
-      left: 0;
+      top: 0; bottom: 0; left: 0;
       width: 60%;
       background: linear-gradient(
         90deg,
@@ -253,8 +245,7 @@ const injectStyles = () => {
     }
 
     /* ════════════════════════════════════════
-       ACTION BUTTONS (wishlist + eye)
-       z-index 8 — above the image link
+       ACTION BUTTONS
     ════════════════════════════════════════ */
 
     .pc-actions {
@@ -270,7 +261,6 @@ const injectStyles = () => {
       transition: opacity 0.3s ease, transform 0.3s ease;
     }
 
-    /* Desktop: show on hover */
     @media (hover: hover) and (pointer: fine) {
       .pc-wrap:hover .pc-actions {
         opacity: 1;
@@ -278,7 +268,6 @@ const injectStyles = () => {
       }
     }
 
-    /* Mobile: always visible */
     @media (hover: none), (pointer: coarse) {
       .pc-actions {
         opacity: 1;
@@ -310,14 +299,11 @@ const injectStyles = () => {
 
     /* ════════════════════════════════════════
        QUICK ADD BAR
-       z-index 8 — above the image link
     ════════════════════════════════════════ */
 
     .pc-quick-add {
       position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
+      bottom: 0; left: 0; right: 0;
       background: #C9A84C;
       color: #fff;
       display: flex;
@@ -335,14 +321,12 @@ const injectStyles = () => {
       transition: transform 0.3s ease;
     }
 
-    /* Desktop: slide up on hover */
     @media (hover: hover) and (pointer: fine) {
       .pc-wrap:hover .pc-quick-add {
         transform: translateY(0);
       }
     }
 
-    /* Mobile: always visible */
     @media (hover: none), (pointer: coarse) {
       .pc-quick-add {
         transform: translateY(0);
@@ -353,8 +337,6 @@ const injectStyles = () => {
 
     /* ════════════════════════════════════════
        BADGES
-       pointer-events: none so they never
-       block the image link
     ════════════════════════════════════════ */
 
     .pc-badges {
@@ -379,16 +361,16 @@ const injectStyles = () => {
     }
 
     .pc-badge-gold { background: #C9A84C; color: #fff; }
-    .pc-badge-dark { background: #111;    color: #fff; border: 1px solid rgba(255, 255, 255, 0.15); }
+    .pc-badge-dark { background: #000;    color: #fff; border: 1px solid rgba(255, 255, 255, 0.15); }
     .pc-badge-red  { background: #ef4444; color: #fff; }
 
     /* ════════════════════════════════════════
-       INFO SECTION
+       INFO SECTION — full black
     ════════════════════════════════════════ */
 
     .pc-info {
       padding: 10px 12px 12px;
-      background: #181818;
+      background: #000;
       flex: 1;
     }
 
@@ -429,6 +411,7 @@ const injectStyles = () => {
       color: rgba(255, 255, 255, 0.3);
     }
 
+    /* ── Price row ── */
     .pc-price-row {
       display: flex;
       align-items: center;
@@ -448,23 +431,21 @@ const injectStyles = () => {
       color: rgba(255, 255, 255, 0.3);
     }
 
-    .pc-colors {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      margin-top: 8px;
+    /* ── Offer label row — shown below price when discount exists ── */
+    .pc-offer-row {
+      margin-top: 6px;
     }
 
-    .pc-color-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      border: 1.5px solid rgba(255, 255, 255, 0.2);
-    }
-
-    .pc-more-colors {
-      font-size: 9px;
-      color: rgba(255, 255, 255, 0.3);
+    .pc-offer-tag {
+      display: inline-block;
+      background: #22c55e;
+      color: #fff;
+      font-size: 9.5px;
+      font-weight: 800;
+      letter-spacing: 0.07em;
+      padding: 2px 8px;
+      border-radius: 4px;
+      line-height: 1.4;
     }
 
     /* ── Gold divider between image and info ── */
@@ -489,12 +470,14 @@ export default function ProductCard({ product, index = 0 }) {
   const { toggleWishlist, isWishlisted } = useWishlist();
   const wishlisted = isWishlisted(product._id);
 
-  const discountPercent = product.discountPrice
+  /* ── Use strict check so discountPrice=0 doesn't count as a discount ── */
+  const hasDiscount = product.discountPrice != null && product.discountPrice > 0;
+  const effectivePrice = hasDiscount ? product.discountPrice : product.price;
+  const discountPercent = hasDiscount
     ? Math.round(((product.price - product.discountPrice) / product.price) * 100)
     : null;
 
-  const mainImage = product.images?.[0]?.url
-    || 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=600&q=80';
+  const mainImage = product.images?.[0]?.url || 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=600&q=80';
   const hoverImage = product.images?.[1]?.url || mainImage;
 
   return (
@@ -509,18 +492,16 @@ export default function ProductCard({ product, index = 0 }) {
         {/* ════════ IMAGE ZONE ════════ */}
         <div className="pc-img-box">
 
-          {/* ✅ Invisible full-area link — clicking the image opens product detail */}
+          {/* Invisible full-area link */}
           <Link
             to={`/product/${product._id}`}
             className="pc-img-link"
             aria-label={product.name}
           />
 
-          {/* Images — pointer-events:none so clicks fall through to the link above */}
           <img src={mainImage} alt={product.name} className="pc-img-main" loading="lazy" />
           <img src={hoverImage} alt={product.name} className="pc-img-hover" loading="lazy" />
 
-          {/* Shimmer sweep effect */}
           <div className="pc-shimmer" />
 
           {/* Bottom gradient overlay */}
@@ -533,14 +514,14 @@ export default function ProductCard({ product, index = 0 }) {
             pointerEvents: 'none',
           }} />
 
-          {/* Badges — pointer-events:none, never block the image link */}
+          {/* Badges */}
           <div className="pc-badges">
             {product.isNewArrival && <span className="pc-badge pc-badge-gold">New</span>}
             {product.isBestSeller && <span className="pc-badge pc-badge-dark">Best Seller</span>}
             {discountPercent && <span className="pc-badge pc-badge-red">-{discountPercent}%</span>}
           </div>
 
-          {/* Action buttons — z-index 8, sit above the image link */}
+          {/* Action buttons */}
           <div className="pc-actions">
             <button
               className={`pc-action-btn${wishlisted ? ' wishlisted' : ''}`}
@@ -549,16 +530,12 @@ export default function ProductCard({ product, index = 0 }) {
             >
               <FiHeart size={13} fill={wishlisted ? 'currentColor' : 'none'} />
             </button>
-            <Link
-              to={`/product/${product._id}`}
-              className="pc-action-btn"
-              title="Quick View"
-            >
+            <Link to={`/product/${product._id}`} className="pc-action-btn" title="Quick View">
               <FiEye size={13} />
             </Link>
           </div>
 
-          {/* Quick Add — z-index 8, sits above the image link */}
+          {/* Quick Add */}
           <div
             className="pc-quick-add"
             onClick={e => { e.preventDefault(); addToCart(product._id, product.sizes?.[0], product.colors?.[0]?.name); }}
@@ -588,40 +565,32 @@ export default function ProductCard({ product, index = 0 }) {
                   key={s}
                   className="pc-star"
                   style={{ color: s <= Math.round(product.ratings) ? GOLD : 'rgba(255,255,255,0.12)' }}
-                >
-                  ★
-                </span>
+                >★</span>
               ))}
               <span className="pc-review-count">({product.numReviews})</span>
             </div>
           )}
 
+          {/* Price row — effective price + strikethrough MRP */}
           <div className="pc-price-row">
             <span className="pc-price-now">
-              ₹{(product.discountPrice || product.price)?.toLocaleString()}
+              ₹{effectivePrice?.toLocaleString()}
             </span>
-            {product.discountPrice && (
+            {hasDiscount && (
               <span className="pc-price-old">
                 ₹{product.price?.toLocaleString()}
               </span>
             )}
           </div>
 
-          {product.colors?.length > 0 && (
-            <div className="pc-colors">
-              {product.colors.slice(0, 5).map((c, i) => (
-                <div
-                  key={i}
-                  className="pc-color-dot"
-                  title={c.name}
-                  style={{ backgroundColor: c.hex || '#555' }}
-                />
-              ))}
-              {product.colors.length > 5 && (
-                <span className="pc-more-colors">+{product.colors.length - 5}</span>
-              )}
+          {/* ── Offer label — separate line below price, only when discounted ── */}
+          {hasDiscount && (
+            <div className="pc-offer-row">
+              <span className="pc-offer-tag">{discountPercent}% OFF</span>
             </div>
           )}
+
+          {/* ── Color dots REMOVED as requested ── */}
 
         </div>
 
