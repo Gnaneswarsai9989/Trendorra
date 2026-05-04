@@ -36,7 +36,6 @@ const injectDetailStyles = () => {
       100% { background-position: 200% center; }
     }
 
-    /* ── Animated gold border — main image card ── */
     .pdp-border-card {
       position: relative; border-radius: 12px; padding: 1.5px; background: transparent;
     }
@@ -64,7 +63,6 @@ const injectDetailStyles = () => {
       position: relative; border-radius: 10px; overflow: hidden; background: #141414; z-index: 1;
     }
 
-    /* ── Active thumbnail spinning border ── */
     .pdp-thumb-active { position: relative; }
     .pdp-thumb-active::before {
       content: ''; position: absolute; inset: -2px;
@@ -75,7 +73,6 @@ const injectDetailStyles = () => {
       animation: pdp-spin 2.5s linear infinite;
     }
 
-    /* ── Size buttons ── */
     .pdp-size-btn {
       min-width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
       border: 1.5px solid rgba(255,255,255,0.12); border-radius: 6px; cursor: pointer;
@@ -85,7 +82,6 @@ const injectDetailStyles = () => {
     .pdp-size-btn:hover  { border-color: rgba(201,168,76,0.5); color: #fff; background: rgba(201,168,76,0.08); }
     .pdp-size-btn.active { border-color: #C9A84C; background: #C9A84C; color: #000; font-weight: 700; }
 
-    /* ── Color swatches ── */
     .pdp-color-swatch {
       width: 24px; height: 24px; border-radius: 50%; cursor: pointer;
       border: 2px solid transparent; transition: all 0.2s ease; position: relative; flex-shrink: 0;
@@ -94,7 +90,6 @@ const injectDetailStyles = () => {
       border-color: #C9A84C; box-shadow: 0 0 0 3px rgba(201,168,76,0.25); transform: scale(1.15);
     }
 
-    /* ── Tab underline ── */
     .pdp-tab {
       position: relative; padding: 10px 4px; font-size: 11px; letter-spacing: 0.12em;
       text-transform: uppercase; cursor: pointer; background: none; border: none; font-family: inherit; transition: color 0.2s;
@@ -105,21 +100,18 @@ const injectDetailStyles = () => {
     }
     .pdp-tab.active::after { transform: scaleX(1); }
 
-    /* ── Review card ── */
     .pdp-review-card {
       padding: 12px; border-radius: 10px;
       background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
       animation: pdp-fade-up 0.35s ease both;
     }
 
-    /* ── Perk cards ── */
     .pdp-perk {
       display: flex; align-items: center; gap: 7px; padding: 8px 10px; border-radius: 8px;
       background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06); transition: border-color 0.2s;
     }
     .pdp-perk:hover { border-color: rgba(201,168,76,0.2); }
 
-    /* ── Related product cards — animated border ── */
     .pdp-rel-card {
       position: relative; border-radius: 11px; padding: 1.5px;
       background: transparent; text-decoration: none; display: block;
@@ -138,7 +130,6 @@ const injectDetailStyles = () => {
     .pdp-rel-card:hover::after { box-shadow: 0 0 20px rgba(201,168,76,0.15), 0 8px 30px rgba(0,0,0,0.4); }
     .pdp-rel-inner { border-radius: 9px; overflow: hidden; background: #000; position: relative; z-index: 1; }
 
-    /* ── DESKTOP: larger related product image ── */
     .pdp-rel-img   { width: 100%; padding-top: 120%; position: relative; overflow: hidden; background: #111; }
     @media (max-width: 639px) {
       .pdp-rel-img { padding-top: 130%; }
@@ -150,16 +141,13 @@ const injectDetailStyles = () => {
     }
     .pdp-rel-card:hover .pdp-rel-img img { transform: scale(1.06); }
 
-    /* Mobile: always-on border */
     @media (hover: none), (pointer: coarse) {
       .pdp-rel-card::before { opacity: 1; animation-play-state: running; }
       .pdp-rel-card::after  { box-shadow: 0 0 12px rgba(201,168,76,0.2); animation: pdp-glow-pulse 3s ease-in-out infinite; }
     }
 
-    /* ── Skeleton ── */
     .pdp-skel { background: rgba(30,22,12,0.6); border-radius: 10px; animation: pdp-skel-pulse 1.4s ease-in-out infinite; }
 
-    /* ── Qty stepper ── */
     .pdp-qty-btn {
       width: 30px; height: 30px; border-radius: 6px; display: flex; align-items: center; justify-content: center;
       background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
@@ -167,11 +155,9 @@ const injectDetailStyles = () => {
     }
     .pdp-qty-btn:hover { background: rgba(201,168,76,0.15); border-color: rgba(201,168,76,0.4); }
 
-    /* ── Breadcrumb ── */
     .pdp-crumb { font-size: 10px; color: rgba(255,255,255,0.35); text-decoration: none; transition: color 0.2s; }
     .pdp-crumb:hover { color: #C9A84C; }
 
-    /* ── Size guide modal ── */
     .pdp-sg-overlay {
       position: fixed; inset: 0; z-index: 300; background: rgba(0,0,0,0.82);
       display: flex; align-items: center; justify-content: center;
@@ -196,10 +182,8 @@ const injectDetailStyles = () => {
     .pdp-sg-table tr:last-child td { border-bottom: none; }
     .pdp-sg-table tr:hover td { background: rgba(201,168,76,0.04); }
 
-    /* ── ATC button pulse ── */
     .pdp-atc-btn { animation: pdp-btn-pulse 2s ease-in-out infinite; }
 
-    /* ── Buy Now button shine effect ── */
     .pdp-buynow-btn {
       position: relative; overflow: hidden;
       background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 50%, #1a1a1a 100%);
@@ -225,13 +209,18 @@ const injectDetailStyles = () => {
     }
     .pdp-buynow-btn:active { transform: scale(0.98); }
 
-    /* ── Related product info area black bg ── */
     .pdp-rel-info { padding: 10px 10px 12px; background: #000; }
+
+    /* Share button loading state */
+    .pdp-share-loading {
+      animation: pdp-skel-pulse 1s ease-in-out infinite;
+      pointer-events: none;
+    }
   `;
   document.head.appendChild(s);
 };
 
-/* ── Default size measurements — fallback when seller hasn't set custom ones ── */
+/* ── Default size measurements ── */
 const SIZE_MEASUREMENTS = {
   XS: { chest: '32–33"', waist: '24–25"', hips: '34–35"', length: '25"' },
   S: { chest: '34–35"', waist: '26–27"', hips: '36–37"', length: '26"' },
@@ -295,11 +284,7 @@ function SizeGuideModal({ sizes, sizeGuide, onClose }) {
             <table className="pdp-sg-table">
               <thead>
                 <tr>
-                  <th>Size</th>
-                  <th>Chest</th>
-                  <th>Waist</th>
-                  <th>Hips</th>
-                  <th>Length</th>
+                  <th>Size</th><th>Chest</th><th>Waist</th><th>Hips</th><th>Length</th>
                 </tr>
               </thead>
               <tbody>
@@ -401,6 +386,7 @@ export default function ProductDetailPage() {
   const [addingCart, setAddingCart] = useState(false);
   const [buyingNow, setBuyingNow] = useState(false);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
+  const [sharing, setSharing] = useState(false); // ← NEW: share loading state
 
   const { addToCart } = useCart();
   const { toggleWishlist, isWishlisted } = useWishlist();
@@ -424,7 +410,7 @@ export default function ProductDetailPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  /* ── Inject OG meta tags dynamically when product loads ── */
+  /* ── OG meta tags ── */
   useEffect(() => {
     if (!product) return;
     const setMeta = (prop, content, isName = false) => {
@@ -465,7 +451,6 @@ export default function ProductDetailPage() {
     setAddingCart(false);
   };
 
-  /* ── FIX: Buy Now — adds to cart then navigates to checkout ── */
   const handleBuyNow = async () => {
     if (product.sizes?.length && !selectedSize) { toast.error('Please select a size'); return; }
     setBuyingNow(true);
@@ -479,47 +464,118 @@ export default function ProductDetailPage() {
     }
   };
 
+  /* ══════════════════════════════════════════════════════════════
+     PREMIUM SHARE — fetches product image and attaches as file
+     so WhatsApp shows the image inline in the message bubble.
+     Falls back gracefully on desktop / CORS failure.
+  ══════════════════════════════════════════════════════════════ */
   const handleShare = async () => {
     const url = window.location.href;
     const effectivePriceVal = hasDiscount ? product.discountPrice : product.price;
-    const savingsLine = hasDiscount
-      ? `💰 Save ₹${(product.price - product.discountPrice).toLocaleString()} (${discountPct}% OFF)`
-      : '';
 
-    // ✅ Text ONLY — no URL in text. URL passed separately via `url` field.
-    // WhatsApp appends the URL at the end and fetches OG image from it automatically.
-    const premiumText = [
+    /* ── Build premium message text ── */
+    const lines = [
       `✨ *${product.name}*`,
       `━━━━━━━━━━━━━━━━`,
       hasDiscount
-        ? `💸 *₹${effectivePriceVal?.toLocaleString()}* ~₹${product.price?.toLocaleString()}~`
+        ? `💸 *₹${effectivePriceVal?.toLocaleString()}*  ~₹${product.price?.toLocaleString()}~`
         : `💸 *₹${effectivePriceVal?.toLocaleString()}*`,
-      savingsLine,
+      hasDiscount
+        ? `🏷️ Save ₹${(product.price - product.discountPrice).toLocaleString()} (${discountPct}% OFF)`
+        : '',
+      product.brand ? `🏬 Brand: ${product.brand}` : '',
       product.sizes?.length ? `📐 Sizes: ${product.sizes.join(' · ')}` : '',
       product.colors?.length ? `🎨 Colors: ${product.colors.map(c => c.name).join(' · ')}` : '',
       `━━━━━━━━━━━━━━━━`,
       `🛍️ Shop now on *Trendorra*`,
-    ]
-      .filter(Boolean)
-      .join('\n');
+      url,
+    ].filter(Boolean).join('\n');
 
+    /* ── Helper: fetch image blob with CORS proxy fallback ── */
+    const fetchImageBlob = async (imgUrl) => {
+      // 1️⃣ Direct fetch
+      try {
+        const res = await fetch(imgUrl, { mode: 'cors' });
+        if (res.ok) {
+          const blob = await res.blob();
+          if (blob.size > 0) return blob;
+        }
+      } catch (_) { }
+
+      // 2️⃣ allorigins CORS proxy fallback
+      try {
+        const proxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(imgUrl)}`;
+        const res = await fetch(proxy);
+        if (res.ok) {
+          const blob = await res.blob();
+          if (blob.size > 0) return blob;
+        }
+      } catch (_) { }
+
+      return null;
+    };
+
+    const imageUrl = product.images?.[0]?.url;
+
+    /* ── Try sharing WITH image file (mobile only) ── */
+    if (imageUrl && navigator.share && navigator.canShare) {
+      setSharing(true);
+      const loadingToast = toast.loading('Preparing share...');
+
+      try {
+        const blob = await fetchImageBlob(imageUrl);
+
+        if (blob) {
+          const mimeType = blob.type || 'image/jpeg';
+          const ext = mimeType.includes('png') ? 'png' : mimeType.includes('webp') ? 'webp' : 'jpg';
+          const safeName = product.name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+          const file = new File([blob], `${safeName}.${ext}`, { type: mimeType });
+
+          if (navigator.canShare({ files: [file] })) {
+            toast.dismiss(loadingToast);
+            setSharing(false);
+            // Share image + text (URL inside text so it appears with the image)
+            await navigator.share({
+              files: [file],
+              text: lines,
+            });
+            return;
+          }
+        }
+      } catch (e) {
+        toast.dismiss(loadingToast);
+        setSharing(false);
+        if (e.name === 'AbortError') return; // user cancelled
+        // fall through to URL-only share
+      }
+
+      toast.dismiss(loadingToast);
+      setSharing(false);
+    }
+
+    /* ── Fallback: text + url share (no image) ── */
     if (navigator.share) {
       try {
         await navigator.share({
           title: product.name,
-          text: premiumText + '\n',  // trailing newline so URL preview renders below
-          url,                        // ✅ URL passed here only — NOT inside text
+          text: lines + '\n',
+          url,
         });
         return;
-      } catch (e) { if (e.name === 'AbortError') return; }
+      } catch (e) {
+        if (e.name === 'AbortError') return;
+      }
     }
 
-    // Clipboard fallback
+    /* ── Last resort: copy to clipboard ── */
     try {
-      await navigator.clipboard.writeText(`${premiumText}\n${url}`);
+      await navigator.clipboard.writeText(lines);
       toast.success('Copied to clipboard!');
-    } catch { toast.error('Share failed'); }
+    } catch {
+      toast.error('Share failed');
+    }
   };
+
   const handleReview = async e => {
     e.preventDefault();
     if (!isLoggedIn) { toast.error('Please login to review'); return; }
@@ -734,19 +790,10 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            {/* ── Offer label — shown below price bar when discount exists ── */}
+            {/* Offer label */}
             {hasDiscount && (
               <div style={{ marginBottom: 14, marginTop: 0 }}>
-                <span style={{
-                  display: 'inline-block',
-                  background: '#22c55e',
-                  color: '#fff',
-                  fontSize: 11,
-                  fontWeight: 800,
-                  letterSpacing: '0.07em',
-                  padding: '3px 10px',
-                  borderRadius: 5,
-                }}>
+                <span style={{ display: 'inline-block', background: '#22c55e', color: '#fff', fontSize: 11, fontWeight: 800, letterSpacing: '0.07em', padding: '3px 10px', borderRadius: 5 }}>
                   {discountPct}% OFF
                 </span>
                 <span style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.35)', marginLeft: 8 }}>
@@ -815,38 +862,40 @@ export default function ProductDetailPage() {
                 <FiShoppingCart size={14} />
                 {addingCart ? 'Adding...' : 'Add to Cart'}
               </button>
+
               <button onClick={() => toggleWishlist(product._id)}
                 style={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1.5px solid ${isWishlisted(product._id) ? GOLD : 'rgba(255,255,255,0.12)'}`, borderRadius: 8, background: isWishlisted(product._id) ? GOLD : 'transparent', color: isWishlisted(product._id) ? '#000' : 'rgba(255,255,255,0.6)', cursor: 'pointer', transition: 'all 0.2s', flexShrink: 0 }}>
                 <FiHeart size={15} fill={isWishlisted(product._id) ? 'currentColor' : 'none'} />
               </button>
-              <button onClick={handleShare}
-                style={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1.5px solid rgba(255,255,255,0.12)', borderRadius: 8, background: 'transparent', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', transition: 'all 0.2s', flexShrink: 0 }}>
+
+              {/* ── Share button with loading state ── */}
+              <button
+                onClick={handleShare}
+                disabled={sharing}
+                className={sharing ? 'pdp-share-loading' : ''}
+                style={{
+                  width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  border: `1.5px solid ${sharing ? GOLD : 'rgba(255,255,255,0.12)'}`,
+                  borderRadius: 8, background: sharing ? 'rgba(201,168,76,0.1)' : 'transparent',
+                  color: sharing ? GOLD : 'rgba(255,255,255,0.6)',
+                  cursor: sharing ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s', flexShrink: 0,
+                }}>
                 <FiShare2 size={15} />
               </button>
             </div>
 
-            {/* ── BUY NOW BUTTON — stylish dark gold shimmer ── */}
+            {/* ── BUY NOW BUTTON ── */}
             <button
               className="pdp-buynow-btn"
               onClick={handleBuyNow}
               disabled={buyingNow}
               style={{
-                width: '100%',
-                height: 44,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 7,
-                borderRadius: 8,
-                fontSize: 11,
-                fontWeight: 700,
-                letterSpacing: '0.16em',
-                textTransform: 'uppercase',
-                cursor: buyingNow ? 'not-allowed' : 'pointer',
-                fontFamily: 'inherit',
-                color: buyingNow ? 'rgba(201,168,76,0.5)' : GOLD,
-                marginBottom: 14,
-                opacity: buyingNow ? 0.7 : 1,
+                width: '100%', height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                gap: 7, borderRadius: 8, fontSize: 11, fontWeight: 700, letterSpacing: '0.16em',
+                textTransform: 'uppercase', cursor: buyingNow ? 'not-allowed' : 'pointer',
+                fontFamily: 'inherit', color: buyingNow ? 'rgba(201,168,76,0.5)' : GOLD,
+                marginBottom: 14, opacity: buyingNow ? 0.7 : 1,
               }}
             >
               <FiZap size={13} style={{ filter: `drop-shadow(0 0 4px ${GOLD})` }} />
@@ -1052,38 +1101,18 @@ export default function ProductDetailPage() {
               </Link>
             </div>
 
-            <div
-              className="pdp-related-grid"
-              style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(2, 1fr)' }}
-            >
-              <style>{`
-                @media (min-width: 640px) {
-                  .pdp-related-grid { grid-template-columns: repeat(4, 1fr) !important; gap: 16px !important; }
-                }
-              `}</style>
-
+            <div className="pdp-related-grid" style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(2, 1fr)' }}>
+              <style>{`@media (min-width: 640px) { .pdp-related-grid { grid-template-columns: repeat(4, 1fr) !important; gap: 16px !important; } }`}</style>
               {related.map((p, i) => (
                 <motion.div key={p._id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07, duration: 0.3 }}>
-                  <Link
-                    to={`/product/${p._id}`}
-                    className="pdp-rel-card"
-                    onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                    style={{ textDecoration: 'none' }}
-                  >
+                  <Link to={`/product/${p._id}`} className="pdp-rel-card" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} style={{ textDecoration: 'none' }}>
                     <div className="pdp-rel-inner">
                       <div className="pdp-rel-img">
-                        <img
-                          src={p.images?.[0]?.url || 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=400'}
-                          alt={p.name}
-                          onError={e => { e.target.src = 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=400'; }}
-                        />
+                        <img src={p.images?.[0]?.url || 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=400'} alt={p.name}
+                          onError={e => { e.target.src = 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=400'; }} />
                         <div style={{ position: 'absolute', top: 8, left: 8, display: 'flex', flexDirection: 'column', gap: 4, zIndex: 3, pointerEvents: 'none' }}>
-                          {p.isNewArrival && (
-                            <span style={{ background: GOLD, color: '#000', fontSize: 8, fontWeight: 800, padding: '2px 7px', letterSpacing: '0.12em', textTransform: 'uppercase' }}>NEW</span>
-                          )}
-                          {p.isBestSeller && (
-                            <span style={{ background: '#111', color: '#fff', fontSize: 8, fontWeight: 700, padding: '2px 7px', textTransform: 'uppercase', border: '1px solid rgba(255,255,255,0.2)' }}>BEST SELLER</span>
-                          )}
+                          {p.isNewArrival && <span style={{ background: GOLD, color: '#000', fontSize: 8, fontWeight: 800, padding: '2px 7px', letterSpacing: '0.12em', textTransform: 'uppercase' }}>NEW</span>}
+                          {p.isBestSeller && <span style={{ background: '#111', color: '#fff', fontSize: 8, fontWeight: 700, padding: '2px 7px', textTransform: 'uppercase', border: '1px solid rgba(255,255,255,0.2)' }}>BEST SELLER</span>}
                           {p.discountPrice != null && p.discountPrice > 0 && (
                             <span style={{ background: '#ef4444', color: '#fff', fontSize: 8, fontWeight: 700, padding: '2px 7px' }}>
                               -{Math.round(((p.price - p.discountPrice) / p.price) * 100)}%
@@ -1094,12 +1123,8 @@ export default function ProductDetailPage() {
                       </div>
                       <div style={{ height: 1, background: 'linear-gradient(90deg, transparent, rgba(201,168,76,0.3), transparent)' }} />
                       <div className="pdp-rel-info">
-                        <p style={{ fontSize: 8, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)', marginBottom: 3 }}>
-                          {p.brand || 'Trendorra'}
-                        </p>
-                        <h3 style={{ fontSize: 12, fontWeight: 500, color: '#fff', lineHeight: 1.35, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', margin: '0 0 5px' }}>
-                          {p.name}
-                        </h3>
+                        <p style={{ fontSize: 8, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)', marginBottom: 3 }}>{p.brand || 'Trendorra'}</p>
+                        <h3 style={{ fontSize: 12, fontWeight: 500, color: '#fff', lineHeight: 1.35, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', margin: '0 0 5px' }}>{p.name}</h3>
                         {p.numReviews > 0 && (
                           <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 5 }}>
                             <Stars rating={p.ratings} size={10} />
@@ -1111,23 +1136,12 @@ export default function ProductDetailPage() {
                             ₹{(p.discountPrice != null && p.discountPrice > 0 ? p.discountPrice : p.price)?.toLocaleString()}
                           </span>
                           {p.discountPrice != null && p.discountPrice > 0 && (
-                            <span style={{ fontSize: 11, textDecoration: 'line-through', color: 'rgba(255,255,255,0.28)' }}>
-                              ₹{p.price?.toLocaleString()}
-                            </span>
+                            <span style={{ fontSize: 11, textDecoration: 'line-through', color: 'rgba(255,255,255,0.28)' }}>₹{p.price?.toLocaleString()}</span>
                           )}
                         </div>
                         {p.discountPrice != null && p.discountPrice > 0 && (
                           <div style={{ marginTop: 6 }}>
-                            <span style={{
-                              display: 'inline-block',
-                              background: '#22c55e',
-                              color: '#fff',
-                              fontSize: 10,
-                              fontWeight: 800,
-                              letterSpacing: '0.06em',
-                              padding: '2px 8px',
-                              borderRadius: 4,
-                            }}>
+                            <span style={{ display: 'inline-block', background: '#22c55e', color: '#fff', fontSize: 10, fontWeight: 800, letterSpacing: '0.06em', padding: '2px 8px', borderRadius: 4 }}>
                               {Math.round(((p.price - p.discountPrice) / p.price) * 100)}% OFF
                             </span>
                           </div>
@@ -1145,11 +1159,7 @@ export default function ProductDetailPage() {
       {/* ════ SIZE GUIDE MODAL ════ */}
       <AnimatePresence>
         {sizeGuideOpen && (
-          <SizeGuideModal
-            sizes={product.sizes}
-            sizeGuide={product.sizeGuide}
-            onClose={() => setSizeGuideOpen(false)}
-          />
+          <SizeGuideModal sizes={product.sizes} sizeGuide={product.sizeGuide} onClose={() => setSizeGuideOpen(false)} />
         )}
       </AnimatePresence>
 
