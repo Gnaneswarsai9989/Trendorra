@@ -1,5 +1,18 @@
 const mongoose = require('mongoose');
 
+// ── sizeGuide sub-schema ──────────────────────────────────────────────────────
+// Stores per-size measurements set by the seller.
+// Shape: { S: { chest: '34–35"', waist: '26–27"', hips: '36–37"', length: '26"' }, ... }
+const sizeRowSchema = new mongoose.Schema(
+  {
+    chest: { type: String, default: '' },
+    waist: { type: String, default: '' },
+    hips: { type: String, default: '' },
+    length: { type: String, default: '' },
+  },
+  { _id: false } // no separate _id per row
+);
+
 const productSchema = new mongoose.Schema({
   name: { type: String, required: [true, 'Product name is required'], trim: true },
   description: { type: String, required: [true, 'Description is required'] },
@@ -27,6 +40,17 @@ const productSchema = new mongoose.Schema({
   material: String,
   careInstructions: String,
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+
+  // ── NEW: seller-customizable size guide ──────────────────────────────────
+  // Mongoose Map: keys are size strings (e.g. 'S', 'M'), values are sizeRowSchema.
+  // Serialises to a plain object automatically via .toObject() / .lean().
+  sizeGuide: {
+    type: Map,
+    of: sizeRowSchema,
+    default: {},
+  },
+  // ─────────────────────────────────────────────────────────────────────────
+
 }, { timestamps: true });
 
 productSchema.index({ name: 'text', description: 'text', brand: 'text', tags: 'text' });

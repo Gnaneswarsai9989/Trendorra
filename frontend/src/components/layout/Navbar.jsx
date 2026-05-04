@@ -611,11 +611,14 @@ export default function Navbar({ db = null }) {
   return (
     <>
       <style>{`
-        .t-scroll::-webkit-scrollbar{width:4px;height:4px;}
-        .t-scroll::-webkit-scrollbar-track{background:transparent;}
-        .t-scroll::-webkit-scrollbar-thumb{background:rgba(201,168,76,0.30);border-radius:4px;}
-        .t-scroll::-webkit-scrollbar-thumb:hover{background:rgba(201,168,76,0.60);}
-        button:focus{outline:none;}
+.t-scroll::-webkit-scrollbar{width:4px;height:4px;}
+.cat-pills::-webkit-scrollbar{width:0;height:0;}
+.cat-pills{scrollbar-width:none;-ms-overflow-style:none;}.t-scroll::-webkit-scrollbar-track{background:transparent;}
+.t-scroll::-webkit-scrollbar-thumb{background:rgba(201,168,76,0.30);border-radius:4px;}
+.t-scroll::-webkit-scrollbar-thumb:hover{background:rgba(201,168,76,0.60);}
+.t-scroll{scrollbar-width:none;}
+button:focus{outline:none;}
+html,body{overflow-x:hidden;max-width:100vw;}
         @keyframes catPulse { 0%,100%{box-shadow:0 0 0 0 rgba(201,168,76,0.4);} 50%{box-shadow:0 0 0 6px rgba(201,168,76,0);} }
         .cat-btn-pulse { animation: catPulse 2.5s ease-in-out infinite; }
       `}</style>
@@ -630,7 +633,7 @@ export default function Navbar({ db = null }) {
       <header className={`sticky top-0 w-full z-50 transition-all duration-300 ${scrolled ? 'shadow-2xl' : ''}`} style={{ backgroundColor: NAV_BG }}>
 
         {/* ── Mobile ── */}
-        <div className="md:hidden" style={{ backgroundColor: NAV_BG }}>
+        <div className="md:hidden" style={{ backgroundColor: NAV_BG, overflow: 'hidden' }}>
           <div className="relative flex items-center justify-between px-4 h-14" style={{ borderBottom: `1px solid ${BORDER}` }}>
             <button onClick={() => setMobileMoreOpen(true)} className="w-9 h-9 flex items-center justify-center -ml-1 z-10" style={{ color: TEXT }}>
               <FiMenu size={22} />
@@ -649,7 +652,7 @@ export default function Navbar({ db = null }) {
           <div style={{ padding: '10px 14px', borderBottom: `1px solid ${BORDER}`, position: 'relative', zIndex: 101 }}>
             <LiveSearch isDark={isDark} isDesktop={false} placeholder="Search products, brands..." />
           </div>
-          <div className="overflow-x-auto t-scroll" style={{ borderBottom: `1px solid ${BORDER}` }}>
+          <div className="overflow-x-auto cat-pills" style={{ borderBottom: 'none', overflowY: 'hidden', position: 'relative', zIndex: 1, maxWidth: '100vw' }}>
             <div className="flex items-center gap-2 px-4 py-2 w-max">
               {['All', ...CATEGORIES].map(cat => {
                 const c = CAT_CONFIG[cat]; const clr = c?.color || GOLD;

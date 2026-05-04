@@ -1,110 +1,388 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { productAPI, reviewAPI } from '../services/api';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
-import { FiHeart, FiShare2, FiStar, FiCheck, FiTruck, FiRefreshCw, FiShield, FiAlertCircle, FiXCircle, FiPlay, FiPause } from 'react-icons/fi';
+import {
+  FiHeart, FiShare2, FiCheck, FiTruck, FiRefreshCw,
+  FiShield, FiXCircle, FiPlay, FiPause,
+  FiChevronLeft, FiChevronRight, FiMinus, FiPlus, FiShoppingCart,
+  FiZoomIn, FiX, FiInfo, FiZap
+} from 'react-icons/fi';
 
-// ── Custom Video Player (play/pause only, Flipkart style) ─────────────────────
-function VideoPlayer({ src, style, className }) {
+const GOLD = '#C9A84C';
+
+/* ── Inject page-level styles once ─────────────────────────────── */
+const injectDetailStyles = () => {
+  if (typeof document === 'undefined') return;
+  if (document.getElementById('pdp-styles')) return;
+  const s = document.createElement('style');
+  s.id = 'pdp-styles';
+  s.textContent = `
+    @property --pdp-angle {
+      syntax: '<angle>'; inherits: false; initial-value: 0deg;
+    }
+    @keyframes pdp-spin       { to { --pdp-angle: 360deg; } }
+    @keyframes pdp-glow-pulse { 0%,100%{opacity:0.3} 50%{opacity:0.85} }
+    @keyframes pdp-fade-up    { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes pdp-badge-pop  { 0%{transform:scale(0.7)} 70%{transform:scale(1.08)} 100%{transform:scale(1)} }
+    @keyframes pdp-btn-pulse  { 0%{box-shadow:0 0 0 0 rgba(201,168,76,0.5)} 70%{box-shadow:0 0 0 10px rgba(201,168,76,0)} 100%{box-shadow:0 0 0 0 rgba(201,168,76,0)} }
+    @keyframes pdp-skel-pulse { 0%,100%{opacity:0.4} 50%{opacity:0.85} }
+    @keyframes pdp-buynow-shine {
+      0%   { background-position: -200% center; }
+      100% { background-position: 200% center; }
+    }
+
+    /* ── Animated gold border — main image card ── */
+    .pdp-border-card {
+      position: relative; border-radius: 12px; padding: 1.5px; background: transparent;
+    }
+    .pdp-border-card::before {
+      content: ''; position: absolute; inset: 0;
+      border-radius: 12px; padding: 1.5px;
+      background: conic-gradient(
+        from var(--pdp-angle),
+        transparent 0deg, transparent 45deg,
+        #6b4e10 65deg, #C9A84C 88deg, #f5e09a 110deg,
+        #C9A84C 132deg, #6b4e10 152deg,
+        transparent 172deg, transparent 360deg
+      );
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor; mask-composite: exclude;
+      animation: pdp-spin 4s linear infinite;
+    }
+    .pdp-border-card::after {
+      content: ''; position: absolute; inset: -2px;
+      border-radius: 14px; pointer-events: none;
+      box-shadow: 0 0 18px rgba(201,168,76,0.2);
+      animation: pdp-glow-pulse 3s ease-in-out infinite;
+    }
+    .pdp-border-card-inner {
+      position: relative; border-radius: 10px; overflow: hidden; background: #141414; z-index: 1;
+    }
+
+    /* ── Active thumbnail spinning border ── */
+    .pdp-thumb-active { position: relative; }
+    .pdp-thumb-active::before {
+      content: ''; position: absolute; inset: -2px;
+      border-radius: 10px; padding: 2px;
+      background: conic-gradient(from var(--pdp-angle), transparent 0deg, #C9A84C 90deg, transparent 180deg, #C9A84C 270deg, transparent 360deg);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor; mask-composite: exclude;
+      animation: pdp-spin 2.5s linear infinite;
+    }
+
+    /* ── Size buttons ── */
+    .pdp-size-btn {
+      min-width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+      border: 1.5px solid rgba(255,255,255,0.12); border-radius: 6px; cursor: pointer;
+      font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.6);
+      background: rgba(255,255,255,0.03); transition: all 0.2s ease; padding: 0 9px; font-family: inherit;
+    }
+    .pdp-size-btn:hover  { border-color: rgba(201,168,76,0.5); color: #fff; background: rgba(201,168,76,0.08); }
+    .pdp-size-btn.active { border-color: #C9A84C; background: #C9A84C; color: #000; font-weight: 700; }
+
+    /* ── Color swatches ── */
+    .pdp-color-swatch {
+      width: 24px; height: 24px; border-radius: 50%; cursor: pointer;
+      border: 2px solid transparent; transition: all 0.2s ease; position: relative; flex-shrink: 0;
+    }
+    .pdp-color-swatch.active {
+      border-color: #C9A84C; box-shadow: 0 0 0 3px rgba(201,168,76,0.25); transform: scale(1.15);
+    }
+
+    /* ── Tab underline ── */
+    .pdp-tab {
+      position: relative; padding: 10px 4px; font-size: 11px; letter-spacing: 0.12em;
+      text-transform: uppercase; cursor: pointer; background: none; border: none; font-family: inherit; transition: color 0.2s;
+    }
+    .pdp-tab::after {
+      content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+      height: 2px; background: #C9A84C; transform: scaleX(0); transition: transform 0.25s ease; border-radius: 2px;
+    }
+    .pdp-tab.active::after { transform: scaleX(1); }
+
+    /* ── Review card ── */
+    .pdp-review-card {
+      padding: 12px; border-radius: 10px;
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
+      animation: pdp-fade-up 0.35s ease both;
+    }
+
+    /* ── Perk cards ── */
+    .pdp-perk {
+      display: flex; align-items: center; gap: 7px; padding: 8px 10px; border-radius: 8px;
+      background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06); transition: border-color 0.2s;
+    }
+    .pdp-perk:hover { border-color: rgba(201,168,76,0.2); }
+
+    /* ── Related product cards — animated border ── */
+    .pdp-rel-card {
+      position: relative; border-radius: 11px; padding: 1.5px;
+      background: transparent; text-decoration: none; display: block;
+    }
+    .pdp-rel-card::before {
+      content: ''; position: absolute; inset: 0; border-radius: 11px; padding: 1.5px;
+      background: conic-gradient(from var(--pdp-angle), transparent 0deg, transparent 50deg, #8B6914 70deg, #C9A84C 90deg, #f5e09a 110deg, #C9A84C 130deg, #8B6914 150deg, transparent 170deg, transparent 360deg);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor; mask-composite: exclude;
+      opacity: 0; animation: pdp-spin 4s linear infinite paused; transition: opacity 0.3s;
+    }
+    .pdp-rel-card:hover::before { opacity: 1; animation-play-state: running; }
+    .pdp-rel-card::after {
+      content: ''; position: absolute; inset: -1px; border-radius: 12px; pointer-events: none; transition: box-shadow 0.3s;
+    }
+    .pdp-rel-card:hover::after { box-shadow: 0 0 20px rgba(201,168,76,0.15), 0 8px 30px rgba(0,0,0,0.4); }
+    .pdp-rel-inner { border-radius: 9px; overflow: hidden; background: #181818; position: relative; z-index: 1; }
+
+    /* ── DESKTOP: smaller related product image (was 118%, now 85%) ── */
+    .pdp-rel-img   { width: 100%; padding-top: 85%; position: relative; overflow: hidden; background: #1e1e1e; }
+    @media (max-width: 639px) {
+      .pdp-rel-img { padding-top: 110%; }
+    }
+
+    .pdp-rel-img img {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; object-position: center top; transition: transform 0.5s ease;
+    }
+    .pdp-rel-card:hover .pdp-rel-img img { transform: scale(1.06); }
+
+    /* Mobile: always-on border */
+    @media (hover: none), (pointer: coarse) {
+      .pdp-rel-card::before { opacity: 1; animation-play-state: running; }
+      .pdp-rel-card::after  { box-shadow: 0 0 12px rgba(201,168,76,0.2); animation: pdp-glow-pulse 3s ease-in-out infinite; }
+    }
+
+    /* ── Skeleton ── */
+    .pdp-skel { background: rgba(30,22,12,0.6); border-radius: 10px; animation: pdp-skel-pulse 1.4s ease-in-out infinite; }
+
+    /* ── Qty stepper ── */
+    .pdp-qty-btn {
+      width: 30px; height: 30px; border-radius: 6px; display: flex; align-items: center; justify-content: center;
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+      color: #fff; cursor: pointer; transition: all 0.2s; font-family: inherit;
+    }
+    .pdp-qty-btn:hover { background: rgba(201,168,76,0.15); border-color: rgba(201,168,76,0.4); }
+
+    /* ── Breadcrumb ── */
+    .pdp-crumb { font-size: 10px; color: rgba(255,255,255,0.35); text-decoration: none; transition: color 0.2s; }
+    .pdp-crumb:hover { color: #C9A84C; }
+
+    /* ── Size guide modal ── */
+    .pdp-sg-overlay {
+      position: fixed; inset: 0; z-index: 300; background: rgba(0,0,0,0.82);
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px; backdrop-filter: blur(8px);
+    }
+    .pdp-sg-modal {
+      background: #141414; border: 1px solid rgba(201,168,76,0.2);
+      border-radius: 14px; width: 100%; max-width: 460px;
+      max-height: 85vh; overflow-y: auto;
+    }
+    .pdp-sg-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .pdp-sg-table th {
+      padding: 7px 11px; text-align: left; font-size: 9.5px;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.03);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .pdp-sg-table td {
+      padding: 8px 11px; color: rgba(255,255,255,0.75);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .pdp-sg-table tr:last-child td { border-bottom: none; }
+    .pdp-sg-table tr:hover td { background: rgba(201,168,76,0.04); }
+
+    /* ── ATC button pulse ── */
+    .pdp-atc-btn { animation: pdp-btn-pulse 2s ease-in-out infinite; }
+
+    /* ── Buy Now button shine effect ── */
+    .pdp-buynow-btn {
+      position: relative; overflow: hidden;
+      background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 50%, #1a1a1a 100%);
+      border: 1.5px solid rgba(201,168,76,0.5);
+      transition: all 0.25s ease;
+    }
+    .pdp-buynow-btn::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(
+        105deg,
+        transparent 30%,
+        rgba(201,168,76,0.18) 50%,
+        transparent 70%
+      );
+      background-size: 200% 100%;
+      animation: pdp-buynow-shine 2.2s linear infinite;
+    }
+    .pdp-buynow-btn:hover {
+      background: linear-gradient(135deg, #1e1a0e 0%, #2e2510 50%, #1e1a0e 100%);
+      border-color: #C9A84C;
+      box-shadow: 0 0 18px rgba(201,168,76,0.25), inset 0 0 12px rgba(201,168,76,0.05);
+    }
+    .pdp-buynow-btn:active { transform: scale(0.98); }
+  `;
+  document.head.appendChild(s);
+};
+
+/* ── Default size measurements — fallback when seller hasn't set custom ones ── */
+const SIZE_MEASUREMENTS = {
+  XS: { chest: '32–33"', waist: '24–25"', hips: '34–35"', length: '25"' },
+  S: { chest: '34–35"', waist: '26–27"', hips: '36–37"', length: '26"' },
+  M: { chest: '36–37"', waist: '28–29"', hips: '38–39"', length: '27"' },
+  L: { chest: '38–40"', waist: '30–32"', hips: '40–42"', length: '28"' },
+  XL: { chest: '41–43"', waist: '33–35"', hips: '43–45"', length: '29"' },
+  XXL: { chest: '44–46"', waist: '36–38"', hips: '46–48"', length: '30"' },
+  'Free Size': { chest: '32–42"', waist: '24–36"', hips: '34–46"', length: 'Adjustable' },
+};
+
+/* ── Size Guide Modal ── */
+function SizeGuideModal({ sizes, sizeGuide, onClose }) {
+  const mergedMeasurements = { ...SIZE_MEASUREMENTS, ...(sizeGuide || {}) };
+  const displaySizes = (sizes?.length > 0 ? sizes : Object.keys(mergedMeasurements))
+    .filter(sz => mergedMeasurements[sz]);
+
+  return (
+    <div className="pdp-sg-overlay" onClick={onClose}>
+      <motion.div
+        className="pdp-sg-modal"
+        initial={{ scale: 0.92, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.92, opacity: 0 }}
+        transition={{ duration: 0.22 }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 18px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+          <div>
+            <p style={{ fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: GOLD, margin: '0 0 3px' }}>Trendorra</p>
+            <h3 style={{ fontSize: 14, fontWeight: 400, color: '#fff', margin: 0 }}>Size Guide</h3>
+          </div>
+          <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 7, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'rgba(255,255,255,0.6)' }}>
+            <FiX size={14} />
+          </button>
+        </div>
+
+        <div style={{ margin: '12px 14px', padding: '9px 12px', borderRadius: 7, background: 'rgba(201,168,76,0.07)', border: '1px solid rgba(201,168,76,0.18)', display: 'flex', gap: 9, alignItems: 'flex-start' }}>
+          <FiInfo size={13} style={{ color: GOLD, flexShrink: 0, marginTop: 1 }} />
+          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', lineHeight: 1.6, margin: 0 }}>
+            <strong style={{ color: GOLD }}>How to measure:</strong> Use a soft measuring tape. Measure chest at fullest point, waist at narrowest, hips at fullest. All measurements in inches.
+          </p>
+        </div>
+
+        {sizes?.length > 0 && (
+          <div style={{ padding: '0 14px 10px' }}>
+            <p style={{ fontSize: 9.5, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)', marginBottom: 7 }}>
+              Available in this product
+            </p>
+            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+              {sizes.map(sz => (
+                <span key={sz} style={{ padding: '3px 11px', borderRadius: 5, background: 'rgba(201,168,76,0.12)', border: '1px solid rgba(201,168,76,0.3)', fontSize: 11.5, fontWeight: 600, color: GOLD }}>
+                  {sz}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div style={{ padding: '0 14px 18px', overflowX: 'auto' }}>
+          {displaySizes.length > 0 ? (
+            <table className="pdp-sg-table">
+              <thead>
+                <tr>
+                  <th>Size</th>
+                  <th>Chest</th>
+                  <th>Waist</th>
+                  <th>Hips</th>
+                  <th>Length</th>
+                </tr>
+              </thead>
+              <tbody>
+                {displaySizes.map(sz => {
+                  const m = mergedMeasurements[sz];
+                  return (
+                    <tr key={sz}>
+                      <td style={{ fontWeight: 700, color: '#fff' }}>{sz}</td>
+                      <td>{m.chest || '—'}</td>
+                      <td>{m.waist || '—'}</td>
+                      <td>{m.hips || '—'}</td>
+                      <td>{m.length || '—'}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          ) : (
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', textAlign: 'center', padding: '16px 0' }}>
+              No size measurements available for this product.
+            </p>
+          )}
+        </div>
+
+        <div style={{ padding: '10px 14px 16px', borderTop: '1px solid rgba(255,255,255,0.06)', textAlign: 'center' }}>
+          <p style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.28)', margin: 0 }}>If between sizes, we recommend sizing up for comfort.</p>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+/* ── Video Player ── */
+function VideoPlayer({ src, style }) {
   const videoRef = useRef(null);
   const [playing, setPlaying] = useState(false);
-  const [showControl, setShowControl] = useState(true);
+  const [showCtrl, setShowCtrl] = useState(true);
   const hideTimer = useRef(null);
 
-  const togglePlay = (e) => {
+  const toggle = e => {
     e.stopPropagation();
     const v = videoRef.current;
     if (!v) return;
     if (v.paused) {
-      v.play();
-      setPlaying(true);
-      clearTimeout(hideTimer.current);
-      hideTimer.current = setTimeout(() => setShowControl(false), 1500);
+      v.play(); setPlaying(true);
+      hideTimer.current = setTimeout(() => setShowCtrl(false), 1800);
     } else {
-      v.pause();
-      setPlaying(false);
-      setShowControl(true);
+      v.pause(); setPlaying(false); setShowCtrl(true);
       clearTimeout(hideTimer.current);
     }
   };
-
-  const handleTap = () => {
-    setShowControl(true);
-    clearTimeout(hideTimer.current);
-    if (playing) {
-      hideTimer.current = setTimeout(() => setShowControl(false), 1500);
-    }
-  };
-
-  useEffect(() => {
-    return () => clearTimeout(hideTimer.current);
-  }, []);
+  useEffect(() => () => clearTimeout(hideTimer.current), []);
 
   return (
-    <div onClick={handleTap} style={{ position: 'relative', ...style }} className={className}>
-      <video
-        ref={videoRef}
-        src={src}
-        playsInline
-        loop
-        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', borderRadius: 'inherit' }}
-        onPlay={() => setPlaying(true)}
-        onPause={() => setPlaying(false)}
-      />
-      {/* Center play/pause button */}
-      <div
-        onClick={togglePlay}
-        style={{
-          position: 'absolute',
-          inset: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          borderRadius: 'inherit',
-          opacity: showControl ? 1 : 0,
-          transition: 'opacity 0.3s ease',
-          background: playing && !showControl ? 'transparent' : 'rgba(0,0,0,0.18)',
-          cursor: 'pointer',
-        }}
-      >
-        <div style={{
-          width: '56px',
-          height: '56px',
-          borderRadius: '50%',
-          backgroundColor: 'rgba(0,0,0,0.55)',
-          backdropFilter: 'blur(8px)',
-          border: '2px solid rgba(201,168,76,0.7)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}>
-          {playing
-            ? <FiPause size={22} color="#C9A84C" />
-            : <FiPlay size={22} color="#C9A84C" style={{ marginLeft: '3px' }} />
-          }
+    <div onClick={() => { setShowCtrl(true); if (playing) { clearTimeout(hideTimer.current); hideTimer.current = setTimeout(() => setShowCtrl(false), 1800); } }} style={{ position: 'relative', ...style }}>
+      <video ref={videoRef} src={src} playsInline loop muted style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', borderRadius: 'inherit' }} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} />
+      <div onClick={toggle} style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: showCtrl ? 1 : 0, transition: 'opacity 0.3s', background: playing && !showCtrl ? 'transparent' : 'rgba(0,0,0,0.2)', cursor: 'pointer', borderRadius: 'inherit' }}>
+        <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', border: `2px solid rgba(201,168,76,0.7)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {playing ? <FiPause size={16} color={GOLD} /> : <FiPlay size={16} color={GOLD} style={{ marginLeft: 2 }} />}
         </div>
-      </div>
-      {/* VIDEO badge */}
-      <div style={{
-        position: 'absolute', top: '12px', left: '12px',
-        display: 'flex', alignItems: 'center', gap: '5px',
-        padding: '4px 10px', borderRadius: '20px',
-        backgroundColor: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)',
-        border: '1px solid rgba(201,168,76,0.25)', pointerEvents: 'none',
-      }}>
-        <FiPlay size={9} color="#C9A84C" />
-        <span style={{ color: '#C9A84C', fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em' }}>VIDEO</span>
       </div>
     </div>
   );
 }
 
+/* ── Stars ── */
+function Stars({ rating, size = 12 }) {
+  return (
+    <div style={{ display: 'flex', gap: 2 }}>
+      {[1, 2, 3, 4, 5].map(s => (
+        <span key={s} style={{ fontSize: size, color: s <= Math.round(rating) ? GOLD : 'rgba(255,255,255,0.12)' }}>★</span>
+      ))}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   MAIN PAGE
+══════════════════════════════════════════════════════════════════ */
 export default function ProductDetailPage() {
+  injectDetailStyles();
+
   const { id } = useParams();
+  const navigate = useNavigate();
+  const reviewsRef = useRef(null);
+
   const [product, setProduct] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -113,101 +391,127 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('description');
   const [reviewForm, setReviewForm] = useState({ rating: 5, title: '', comment: '' });
-  const [submittingReview, setSubmittingReview] = useState(false);
-  const [relatedProducts, setRelatedProducts] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [related, setRelated] = useState([]);
   const [activeMedia, setActiveMedia] = useState({ type: 'image', index: 0 });
+  const [imgZoomed, setImgZoomed] = useState(false);
+  const [addingCart, setAddingCart] = useState(false);
+  const [buyingNow, setBuyingNow] = useState(false);
+  const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
 
   const { addToCart } = useCart();
   const { toggleWishlist, isWishlisted } = useWishlist();
   const { isLoggedIn } = useAuth();
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+    setLoading(true);
     Promise.all([productAPI.getById(id), reviewAPI.getByProduct(id)])
       .then(([pRes, rRes]) => {
-        setProduct(pRes.product);
+        const p = pRes.product;
+        setProduct(p);
         setReviews(rRes.reviews || []);
-        if (pRes.product.colors?.[0]) setSelectedColor(pRes.product.colors[0].name);
-        if (pRes.product.sizes?.[0]) setSelectedSize(pRes.product.sizes[0]);
-        if (pRes.product?.category) {
-          productAPI.getAll({ category: pRes.product.category, limit: 5 })
-            .then(r => setRelatedProducts((r.products || []).filter(p => p._id !== id).slice(0, 4)));
+        if (p.colors?.[0]) setSelectedColor(p.colors[0].name);
+        if (p.sizes?.[0]) setSelectedSize(p.sizes[0]);
+        if (p.category) {
+          productAPI.getAll({ category: p.category, limit: 5 })
+            .then(r => setRelated((r.products || []).filter(x => x._id !== id).slice(0, 4)));
         }
       })
       .finally(() => setLoading(false));
   }, [id]);
 
-  const handleAddToCart = async () => {
-    if (product.sizes?.length && !selectedSize) { toast.error('Please select a size'); return; }
-    await addToCart(product._id, selectedSize, selectedColor, quantity);
+  const handleReadReviews = e => {
+    e.preventDefault();
+    setActiveTab('reviews');
+    setTimeout(() => {
+      reviewsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
   };
 
-  const handleSubmitReview = async (e) => {
+  const handleAddToCart = async () => {
+    if (product.sizes?.length && !selectedSize) { toast.error('Please select a size'); return; }
+    setAddingCart(true);
+    await addToCart(product._id, selectedSize, selectedColor, quantity);
+    setAddingCart(false);
+  };
+
+  /* ── FIX: Buy Now — adds to cart then navigates to checkout ── */
+  const handleBuyNow = async () => {
+    if (product.sizes?.length && !selectedSize) { toast.error('Please select a size'); return; }
+    setBuyingNow(true);
+    try {
+      await addToCart(product._id, selectedSize, selectedColor, quantity);
+      navigate('/checkout');
+    } catch (err) {
+      toast.error('Something went wrong. Please try again.');
+    } finally {
+      setBuyingNow(false);
+    }
+  };
+
+  /* ── Share ── */
+  const handleShare = async () => {
+    const url = window.location.href;
+    // ── FIX: use null/undefined check, not falsy, so discountPrice:0 doesn't print ──
+    const effectivePrice = product.discountPrice != null ? product.discountPrice : product.price;
+    const price = `₹${effectivePrice?.toLocaleString()}`;
+    const wasPrice = product.discountPrice != null ? ` (was ₹${product.price?.toLocaleString()})` : '';
+    const desc = product.description ? product.description.slice(0, 100) + '...' : '';
+    const text = `🛍️ ${product.name}\n💰 ${price}${wasPrice}${desc ? `\n\n${desc}` : ''}\n\n👗 Shop on Trendorra:\n${url}`;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: product.name,
+          text: `${product.name} — ${price}${wasPrice}`,
+          url,
+        });
+      } else {
+        await navigator.clipboard.writeText(text);
+        toast.success('Link copied to clipboard!');
+      }
+    } catch (e) {
+      if (e.name !== 'AbortError') {
+        try {
+          await navigator.clipboard.writeText(url);
+          toast.success('Link copied!');
+        } catch { toast.error('Share failed'); }
+      }
+    }
+  };
+
+  const handleReview = async e => {
     e.preventDefault();
-    if (!isLoggedIn) { toast.error('Please login to submit a review'); return; }
-    setSubmittingReview(true);
+    if (!isLoggedIn) { toast.error('Please login to review'); return; }
+    setSubmitting(true);
     try {
       const res = await reviewAPI.create({ productId: id, ...reviewForm });
       setReviews(prev => [res.review, ...prev]);
       setReviewForm({ rating: 5, title: '', comment: '' });
       toast.success('Review submitted!');
-    } catch (err) {
-      toast.error(err.message || 'Failed to submit review');
-    } finally { setSubmittingReview(false); }
+    } catch (err) { toast.error(err.message || 'Failed'); }
+    finally { setSubmitting(false); }
   };
 
-  const handleShare = async () => {
-    const url = window.location.href;
-    const priceText = `₹${(product.discountPrice || product.price).toLocaleString()}`;
-    // Using bolding (*) and emojis for a neat, premium look in WhatsApp/Telegram
-    const shareText = `🛍️ *${product.name}*\n💰 *Price: ${priceText}*\n\nCheck out this product on *Trendorra*:\n🔗 ${url}`;
-
-    try {
-      if (navigator.share) {
-        const shareData = {
-          title: product.name,
-          text: shareText,
-          url: url,
-        };
-
-        // Attempt to share the image file if supported
-        if (product.images?.[0]?.url && navigator.canShare) {
-          try {
-            const resp = await fetch(product.images[0].url);
-            const blob = await resp.blob();
-            const file = new File([blob], 'product.jpg', { type: 'image/jpeg' });
-            if (navigator.canShare({ files: [file] })) {
-              shareData.files = [file];
-            }
-          } catch (e) {
-            console.error('Image fetch error:', e);
-          }
-        }
-
-        await navigator.share(shareData);
-      } else {
-        await navigator.clipboard.writeText(`${shareText}\n${url}`);
-        toast.success('Details & link copied!');
-      }
-    } catch (err) {
-      if (err.name !== 'AbortError') {
-        toast.error('Sharing failed');
-      }
-    }
-  };
-
+  /* ── Loading skeleton ── */
   if (loading) return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16 grid grid-cols-1 md:grid-cols-2 gap-12" style={{ backgroundColor: "#111111", minHeight: "100vh" }}>
-      <div className="skeleton aspect-[3/4]" />
-      <div className="space-y-4">
-        {[...Array(5)].map((_, i) => <div key={i} className="skeleton h-8 rounded" style={{ width: `${80 - i * 10}%` }} />)}
+    <div style={{ minHeight: '100vh', background: '#0d0d0d', padding: '20px 16px' }}>
+      <div style={{ maxWidth: 960, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr', gap: 20 }} className="lg:grid-cols-2">
+        <div className="pdp-skel" style={{ width: '100%', paddingTop: '100%', borderRadius: 12 }} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {[80, 55, 40, 65, 45, 75, 40].map((w, i) => (
+            <div key={i} className="pdp-skel" style={{ height: i === 0 ? 24 : 11, width: `${w}%` }} />
+          ))}
+        </div>
       </div>
     </div>
   );
 
   if (!product) return (
-    <div className="text-center py-24">
-      <h2 className="font-display text-3xl">Product not found</h2>
-      <Link to="/shop" className="btn-gold mt-6 inline-block">Back to Shop</Link>
+    <div style={{ textAlign: 'center', padding: '80px 16px', background: '#0d0d0d', minHeight: '100vh' }}>
+      <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 15, marginBottom: 16 }}>Product not found</p>
+      <Link to="/shop" style={{ color: GOLD, textDecoration: 'none', fontSize: 11.5, letterSpacing: '0.12em', textTransform: 'uppercase', border: `1px solid ${GOLD}`, padding: '8px 20px', borderRadius: 6 }}>Back to Shop</Link>
     </div>
   );
 
@@ -217,422 +521,559 @@ export default function ProductDetailPage() {
     ...images.map((img, i) => ({ type: 'image', index: i, url: img.url })),
     ...videos.map((vid, i) => ({ type: 'video', index: i, url: vid.url })),
   ];
-  const activeMobileIdx = allMedia.findIndex(x => x.type === activeMedia.type && x.index === activeMedia.index);
+  const activeMobIdx = allMedia.findIndex(x => x.type === activeMedia.type && x.index === activeMedia.index);
+
+  /* ─────────────────────────────────────────────────────────────────
+     FIX: Use strict null/undefined check (not falsy) for discountPrice.
+     When seller sets discountPrice = 0, the old `product.discountPrice`
+     check treated 0 as falsy → showed "₹1,552 0" next to the MRP.
+     Now we only show the discount UI when discountPrice is a real number > 0.
+  ───────────────────────────────────────────────────────────────── */
+  const hasDiscount = product.discountPrice != null && product.discountPrice > 0;
+  const effectivePrice = hasDiscount ? product.discountPrice : product.price;
+  const discountPct = hasDiscount
+    ? Math.round(((product.price - product.discountPrice) / product.price) * 100)
+    : null;
+
+  const noReturns = product.createdBy?.sellerInfo?.noReturnsEnabled;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12" style={{ backgroundColor: "#111111", minHeight: "100vh" }}>
-      {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-xs font-body text-white/40 mb-10">
-        <Link to="/" className="hover:text-gold">Home</Link> /
-        <Link to="/shop" className="hover:text-gold">Shop</Link> /
-        <Link to={`/shop/${product.category.toLowerCase()}`} className="hover:text-gold">{product.category}</Link> /
-        <span className="text-white">{product.name}</span>
-      </nav>
+    <div style={{ minHeight: '100vh', background: '#0d0d0d' }}>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 mb-12 sm:mb-20">
-        {/* ── GALLERY ── */}
-        <div>
-          {/* MOBILE slider */}
-          <div className="lg:hidden relative">
-            <div
-              id="img-slider"
-              className="flex overflow-x-auto"
-              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}
-              onScroll={(e) => {
-                const idx = Math.round(e.target.scrollLeft / e.target.offsetWidth);
-                const m = allMedia[idx];
-                if (m) setActiveMedia({ type: m.type, index: m.index });
+      {/* ── Breadcrumb ── */}
+      <div style={{ maxWidth: 960, margin: '0 auto', padding: '10px 16px' }} className="sm:px-6">
+        <nav style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+          <Link to="/" className="pdp-crumb">Home</Link>
+          <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: 9 }}>/</span>
+          <Link to="/shop" className="pdp-crumb">Shop</Link>
+          <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: 9 }}>/</span>
+          <Link to={`/shop/${product.category?.toLowerCase()}`} className="pdp-crumb">{product.category}</Link>
+          <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: 9 }}>/</span>
+          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product.name}</span>
+        </nav>
+      </div>
+
+      {/* ── Main grid ── */}
+      <div style={{ maxWidth: 960, margin: '0 auto', padding: '0 16px 32px' }} className="sm:px-6">
+        <div style={{ display: 'grid', gap: 24, alignItems: 'start' }} className="lg:grid-cols-2">
+
+          {/* ════ LEFT — GALLERY ════ */}
+          <div>
+            {/* MOBILE */}
+            <div className="lg:hidden">
+              <div className="pdp-border-card" style={{ marginBottom: 7 }}>
+                <div className="pdp-border-card-inner">
+                  <div style={{ position: 'relative', width: '100%', paddingTop: '108%', background: '#1a1a1a' }}>
+                    <AnimatePresence mode="wait">
+                      {activeMedia.type === 'image' ? (
+                        <motion.img key={`mi-${activeMedia.index}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.22 }}
+                          src={images[activeMedia.index]?.url} alt={product.name}
+                          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', cursor: 'zoom-in' }}
+                          onClick={() => setImgZoomed(true)} />
+                      ) : (
+                        <motion.div key={`mv-${activeMedia.index}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: 'absolute', inset: 0 }}>
+                          <VideoPlayer src={videos[activeMedia.index]?.url} style={{ width: '100%', height: '100%' }} />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    <div style={{ position: 'absolute', top: 8, left: 8, display: 'flex', flexDirection: 'column', gap: 3, zIndex: 4 }}>
+                      {product.isNewArrival && <span style={{ background: GOLD, color: '#000', fontSize: 8, fontWeight: 800, letterSpacing: '0.14em', padding: '2px 7px', textTransform: 'uppercase' }}>New</span>}
+                      {product.isBestSeller && <span style={{ background: '#111', color: '#fff', fontSize: 8, fontWeight: 700, padding: '2px 7px', textTransform: 'uppercase', border: '1px solid rgba(255,255,255,0.15)' }}>Best Seller</span>}
+                      {discountPct && <span style={{ background: '#ef4444', color: '#fff', fontSize: 8, fontWeight: 800, padding: '2px 7px', textTransform: 'uppercase' }}>-{discountPct}% OFF</span>}
+                    </div>
+
+                    {activeMedia.type === 'image' && (
+                      <button onClick={() => setImgZoomed(true)} style={{ position: 'absolute', bottom: 8, right: 8, width: 28, height: 28, borderRadius: 6, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)', border: '1px solid rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 4 }}>
+                        <FiZoomIn size={12} color="#fff" />
+                      </button>
+                    )}
+
+                    {allMedia.length > 1 && (<>
+                      <button onClick={() => { const i = (activeMobIdx - 1 + allMedia.length) % allMedia.length; setActiveMedia({ type: allMedia[i].type, index: allMedia[i].index }); }}
+                        style={{ position: 'absolute', left: 7, top: '50%', transform: 'translateY(-50%)', width: 28, height: 28, borderRadius: '50%', background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)', border: '1px solid rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 4 }}>
+                        <FiChevronLeft size={13} color="#fff" />
+                      </button>
+                      <button onClick={() => { const i = (activeMobIdx + 1) % allMedia.length; setActiveMedia({ type: allMedia[i].type, index: allMedia[i].index }); }}
+                        style={{ position: 'absolute', right: 7, top: '50%', transform: 'translateY(-50%)', width: 28, height: 28, borderRadius: '50%', background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)', border: '1px solid rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 4 }}>
+                        <FiChevronRight size={13} color="#fff" />
+                      </button>
+                    </>)}
+                  </div>
+                </div>
+              </div>
+
+              {allMedia.length > 1 && (
+                <div style={{ display: 'flex', gap: 5, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 3 }}>
+                  {allMedia.map((m, i) => {
+                    const active = i === activeMobIdx;
+                    return (
+                      <button key={i} onClick={() => setActiveMedia({ type: m.type, index: m.index })}
+                        className={active ? 'pdp-thumb-active' : ''}
+                        style={{ flexShrink: 0, width: 44, height: 54, borderRadius: 7, overflow: 'hidden', border: `1.5px solid ${active ? GOLD : 'rgba(255,255,255,0.1)'}`, background: '#1a1a1a', cursor: 'pointer', position: 'relative', transition: 'border-color 0.2s' }}>
+                        {m.type === 'image'
+                          ? <img src={m.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
+                          : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1a1a1a' }}><FiPlay size={11} color={GOLD} /></div>
+                        }
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* DESKTOP */}
+            <div className="hidden lg:flex" style={{ gap: 8, alignItems: 'flex-start' }}>
+              {allMedia.length > 1 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, width: 52, maxHeight: 460, overflowY: 'auto', scrollbarWidth: 'none', flexShrink: 0 }}>
+                  {allMedia.map((m, i) => {
+                    const active = activeMedia.type === m.type && activeMedia.index === m.index;
+                    return (
+                      <button key={i} onClick={() => setActiveMedia({ type: m.type, index: m.index })}
+                        className={active ? 'pdp-thumb-active' : ''}
+                        style={{ width: '100%', aspectRatio: '3/4', borderRadius: 7, overflow: 'hidden', border: `1.5px solid ${active ? GOLD : 'rgba(255,255,255,0.1)'}`, background: '#1a1a1a', cursor: 'pointer', flexShrink: 0, position: 'relative', transition: 'border-color 0.2s' }}>
+                        {m.type === 'image'
+                          ? <img src={m.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
+                          : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1a1a1a' }}><FiPlay size={11} color={GOLD} /></div>
+                        }
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className="pdp-border-card" style={{ flex: 1 }}>
+                <div className="pdp-border-card-inner" style={{ aspectRatio: '2/3', position: 'relative', cursor: 'zoom-in' }} onClick={() => setImgZoomed(true)}>
+                  <AnimatePresence mode="wait">
+                    {activeMedia.type === 'image' ? (
+                      <motion.img key={`di-${activeMedia.index}`} initial={{ opacity: 0, scale: 1.02 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.28 }}
+                        src={images[activeMedia.index]?.url} alt={product.name}
+                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
+                    ) : (
+                      <motion.div key={`dv-${activeMedia.index}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ position: 'absolute', inset: 0 }}>
+                        <VideoPlayer src={videos[activeMedia.index]?.url} style={{ width: '100%', height: '100%' }} />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <div style={{ position: 'absolute', top: 10, left: 10, display: 'flex', flexDirection: 'column', gap: 4, zIndex: 4 }}>
+                    {product.isNewArrival && <span style={{ background: GOLD, color: '#000', fontSize: 8, fontWeight: 800, letterSpacing: '0.14em', padding: '2px 8px', textTransform: 'uppercase' }}>New Arrival</span>}
+                    {product.isBestSeller && <span style={{ background: '#111', color: '#fff', fontSize: 8, fontWeight: 700, padding: '2px 8px', textTransform: 'uppercase', border: '1px solid rgba(255,255,255,0.15)' }}>Best Seller</span>}
+                    {discountPct && <span style={{ background: '#ef4444', color: '#fff', fontSize: 8, fontWeight: 800, padding: '2px 8px', textTransform: 'uppercase' }}>-{discountPct}% OFF</span>}
+                  </div>
+
+                  <button onClick={e => { e.stopPropagation(); setImgZoomed(true); }}
+                    style={{ position: 'absolute', bottom: 10, right: 10, width: 30, height: 30, borderRadius: 7, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 4 }}>
+                    <FiZoomIn size={13} color="#fff" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ════ RIGHT — PRODUCT INFO ════ */}
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }} style={{ display: 'flex', flexDirection: 'column' }}>
+
+            {/* Brand + Name */}
+            <div style={{ marginBottom: 8 }}>
+              <p style={{ fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: GOLD, marginBottom: 4, fontFamily: 'Jost,sans-serif' }}>{product.brand || 'Trendorra'}</p>
+              <h1 style={{ fontSize: 'clamp(1.1rem,2.8vw,1.5rem)', fontWeight: 300, color: '#fff', lineHeight: 1.25, margin: 0 }}>{product.name}</h1>
+            </div>
+
+            {/* Ratings */}
+            {product.numReviews > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 12, flexWrap: 'wrap' }}>
+                <Stars rating={product.ratings} />
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>{product.ratings?.toFixed(1)} · {product.numReviews} reviews</span>
+                <a href="#reviews" onClick={handleReadReviews} style={{ fontSize: 10.5, color: GOLD, textDecoration: 'underline', textDecorationColor: 'rgba(201,168,76,0.4)', cursor: 'pointer' }}>Read reviews</a>
+              </div>
+            )}
+
+            {/* ── PRICE — FIXED ──
+                Old code: `product.discountPrice && (...)` → treated 0 as falsy → showed "₹1552 0"
+                New code: `hasDiscount` uses strict null check + > 0 guard → clean output always
+            ── */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap', padding: '10px 0', borderTop: '1px solid rgba(255,255,255,0.07)', borderBottom: '1px solid rgba(255,255,255,0.07)', marginBottom: 14 }}>
+              <span style={{ fontSize: 'clamp(1.2rem,3.5vw,1.65rem)', fontWeight: 700, color: '#fff', letterSpacing: '-0.01em' }}>
+                ₹{effectivePrice?.toLocaleString()}
+              </span>
+              {hasDiscount && (
+                <>
+                  <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', textDecoration: 'line-through' }}>₹{product.price?.toLocaleString()}</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, background: '#22c55e', color: '#fff', padding: '2px 8px', borderRadius: 4, letterSpacing: '0.04em' }}>{discountPct}% OFF</span>
+                </>
+              )}
+            </div>
+
+            {/* Color */}
+            {product.colors?.length > 0 && (
+              <div style={{ marginBottom: 13 }}>
+                <p style={{ fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.42)', marginBottom: 7 }}>
+                  Color: <span style={{ color: '#fff', fontWeight: 500 }}>{selectedColor}</span>
+                </p>
+                <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+                  {product.colors.map(c => (
+                    <div key={c.name} className={`pdp-color-swatch${selectedColor === c.name ? ' active' : ''}`}
+                      onClick={() => setSelectedColor(c.name)} title={c.name}
+                      style={{ backgroundColor: c.hex || '#555' }} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Size */}
+            {product.sizes?.length > 0 && (
+              <div style={{ marginBottom: 13 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 }}>
+                  <p style={{ fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.42)', margin: 0 }}>Size</p>
+                  <button onClick={() => setSizeGuideOpen(true)}
+                    style={{ fontSize: 10, color: GOLD, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline', textDecorationColor: 'rgba(201,168,76,0.35)', display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <FiInfo size={10} /> Size Guide
+                  </button>
+                </div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {product.sizes.map(size => (
+                    <button key={size} className={`pdp-size-btn${selectedSize === size ? ' active' : ''}`}
+                      onClick={() => setSelectedSize(size)}>{size}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Quantity */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, overflow: 'hidden' }}>
+                <button className="pdp-qty-btn" style={{ borderRadius: 0, border: 'none', borderRight: '1px solid rgba(255,255,255,0.08)' }} onClick={() => setQuantity(q => Math.max(1, q - 1))}>
+                  <FiMinus size={11} />
+                </button>
+                <span style={{ width: 36, textAlign: 'center', fontSize: 12, fontWeight: 600, color: '#fff' }}>{quantity}</span>
+                <button className="pdp-qty-btn" style={{ borderRadius: 0, border: 'none', borderLeft: '1px solid rgba(255,255,255,0.08)' }} onClick={() => setQuantity(q => Math.min(product.stock || 99, q + 1))}>
+                  <FiPlus size={11} />
+                </button>
+              </div>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>
+                {product.stock > 0
+                  ? <><span style={{ color: '#22c55e' }}>●</span> {product.stock} in stock</>
+                  : <><span style={{ color: '#ef4444' }}>●</span> Out of stock</>}
+              </span>
+            </div>
+
+            {/* ── CTA ROW: Add to Cart + Wishlist + Share ── */}
+            <div style={{ display: 'flex', gap: 7, marginBottom: 9 }}>
+              <button className="pdp-atc-btn" onClick={handleAddToCart} disabled={addingCart}
+                style={{ flex: 1, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: addingCart ? 'rgba(201,168,76,0.6)' : GOLD, color: '#000', border: 'none', borderRadius: 8, fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', cursor: addingCart ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'background 0.2s' }}>
+                <FiShoppingCart size={14} />
+                {addingCart ? 'Adding...' : 'Add to Cart'}
+              </button>
+              <button onClick={() => toggleWishlist(product._id)}
+                style={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1.5px solid ${isWishlisted(product._id) ? GOLD : 'rgba(255,255,255,0.12)'}`, borderRadius: 8, background: isWishlisted(product._id) ? GOLD : 'transparent', color: isWishlisted(product._id) ? '#000' : 'rgba(255,255,255,0.6)', cursor: 'pointer', transition: 'all 0.2s', flexShrink: 0 }}>
+                <FiHeart size={15} fill={isWishlisted(product._id) ? 'currentColor' : 'none'} />
+              </button>
+              <button onClick={handleShare}
+                style={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1.5px solid rgba(255,255,255,0.12)', borderRadius: 8, background: 'transparent', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', transition: 'all 0.2s', flexShrink: 0 }}>
+                <FiShare2 size={15} />
+              </button>
+            </div>
+
+            {/* ── BUY NOW BUTTON — stylish dark gold shimmer ── */}
+            <button
+              className="pdp-buynow-btn"
+              onClick={handleBuyNow}
+              disabled={buyingNow}
+              style={{
+                width: '100%',
+                height: 44,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 7,
+                borderRadius: 8,
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: '0.16em',
+                textTransform: 'uppercase',
+                cursor: buyingNow ? 'not-allowed' : 'pointer',
+                fontFamily: 'inherit',
+                color: buyingNow ? 'rgba(201,168,76,0.5)' : GOLD,
+                marginBottom: 14,
+                opacity: buyingNow ? 0.7 : 1,
               }}
             >
-              {allMedia.map((media, i) => (
-                <div key={i} className="flex-shrink-0 w-full relative overflow-hidden"
-                  style={{ scrollSnapAlign: 'start', aspectRatio: '1/1', backgroundColor: '#1a1a1a', borderRadius: '16px' }}>
-                  {media.type === 'image'
-                    ? <img src={media.url} alt={product.name} className="w-full h-full object-cover" style={{ borderRadius: '16px' }} />
-                    : <VideoPlayer src={media.url} style={{ width: '100%', height: '100%', borderRadius: '16px' }} />
-                  }
+              <FiZap size={13} style={{ filter: `drop-shadow(0 0 4px ${GOLD})` }} />
+              {buyingNow ? 'Redirecting...' : 'Buy Now'}
+            </button>
+
+            {/* Perks */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 14 }}>
+              {[
+                { icon: FiTruck, text: 'Free shipping above ₹999', sub: 'Delivered in 3-5 days' },
+                { icon: noReturns ? FiXCircle : FiRefreshCw, text: noReturns ? 'Non-returnable' : '7-day returns', sub: noReturns ? 'Check description' : 'Hassle-free process', red: noReturns },
+                { icon: FiShield, text: '100% Authentic', sub: 'Verified products' },
+                { icon: FiCheck, text: 'Cash on Delivery', sub: 'Available everywhere' },
+              ].map(({ icon: Icon, text, sub, red }) => (
+                <div key={text} className="pdp-perk">
+                  <Icon size={13} style={{ color: red ? '#f87171' : GOLD, flexShrink: 0 }} />
+                  <div>
+                    <p style={{ fontSize: 10, fontWeight: 600, color: red ? '#f87171' : '#fff', margin: '0 0 1px' }}>{text}</p>
+                    <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', margin: 0 }}>{sub}</p>
+                  </div>
                 </div>
               ))}
             </div>
-            {allMedia.length > 1 && (
-              <div className="flex justify-center gap-1.5 mt-3">
-                {allMedia.map((m, i) => (
-                  <button key={i}
-                    onClick={() => {
-                      const el = document.getElementById('img-slider');
-                      if (el) el.scrollTo({ left: i * el.offsetWidth, behavior: 'smooth' });
-                      setActiveMedia({ type: m.type, index: m.index });
-                    }}
-                    style={{
-                      width: i === activeMobileIdx ? '20px' : '6px', height: '6px', borderRadius: '3px',
-                      backgroundColor: i === activeMobileIdx ? '#C9A84C' : 'rgba(255,255,255,0.25)',
-                      border: 'none', transition: 'all 0.3s',
-                    }} />
+
+            {/* Return policy */}
+            <div style={{ borderRadius: 10, border: `1px solid ${noReturns ? 'rgba(248,113,113,0.22)' : 'rgba(255,255,255,0.07)'}`, overflow: 'hidden' }}>
+              <div style={{ background: noReturns ? 'rgba(248,113,113,0.08)' : 'rgba(34,197,94,0.06)', borderBottom: `1px solid ${noReturns ? 'rgba(248,113,113,0.12)' : 'rgba(255,255,255,0.06)'}`, padding: '7px 12px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                {noReturns ? <FiXCircle size={10} style={{ color: '#f87171', flexShrink: 0 }} /> : <FiRefreshCw size={10} style={{ color: '#22c55e', flexShrink: 0 }} />}
+                <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: noReturns ? '#f87171' : '#22c55e' }}>
+                  {noReturns ? 'Non-Returnable Item' : 'Return & Exchange Policy'}
+                </span>
+              </div>
+              <div style={{ padding: 10, background: '#0d0d0d', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                {(noReturns
+                  ? [{ l: 'Return Window', v: 'Not applicable', r: true }, { l: 'Replacement', v: 'Not available', r: true }, { l: 'Reason', v: 'Seller policy' }, { l: 'Support', v: 'Within 48hrs' }]
+                  : [{ l: 'Return Window', v: '7 days', g: true }, { l: 'Refund Mode', v: 'Original payment' }, { l: 'Condition', v: 'Unused & intact' }, { l: 'Process', v: 'Pickup arranged' }]
+                ).map(({ l, v, r, g }) => (
+                  <div key={l} style={{ background: '#161616', borderRadius: 5, padding: '6px 8px' }}>
+                    <p style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.26)', margin: '0 0 2px' }}>{l}</p>
+                    <p style={{ fontSize: 10.5, fontWeight: 500, color: r ? '#f87171' : g ? '#22c55e' : 'rgba(255,255,255,0.7)', margin: 0 }}>{v}</p>
+                  </div>
                 ))}
               </div>
-            )}
-            {allMedia.length > 1 && (
-              <div className="absolute top-3 right-3 px-2 py-1 rounded font-body text-xs text-white" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-                {activeMobileIdx + 1}/{allMedia.length}
-              </div>
-            )}
-            {product.isNewArrival && <span className="absolute top-3 left-3 badge-gold">New Arrival</span>}
+            </div>
+
+          </motion.div>
+        </div>
+
+        {/* ════ TABS ════ */}
+        <div ref={reviewsRef} style={{ marginTop: 36, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+          <div style={{ display: 'flex', gap: 22, borderBottom: '1px solid rgba(255,255,255,0.07)', overflowX: 'auto', scrollbarWidth: 'none' }}>
+            {['description', 'reviews', 'care'].map(tab => (
+              <button key={tab} className={`pdp-tab${activeTab === tab ? ' active' : ''}`}
+                onClick={() => setActiveTab(tab)}
+                style={{ color: activeTab === tab ? '#fff' : 'rgba(255,255,255,0.35)', whiteSpace: 'nowrap' }}>
+                {tab === 'reviews' ? `Reviews (${reviews.length})` : tab.charAt(0).toUpperCase() + tab.slice(1)}
+              </button>
+            ))}
           </div>
 
-          {/* DESKTOP thumbnails + main */}
-          <div className="hidden lg:flex gap-4">
-            {allMedia.length > 1 && (
-              <div className="flex flex-col gap-3 w-20" style={{ maxHeight: '560px', overflowY: 'auto', scrollbarWidth: 'none' }}>
-                {allMedia.map((media, i) => {
-                  const isActive = activeMedia.type === media.type && activeMedia.index === media.index;
-                  return (
-                    <button key={i} onClick={() => setActiveMedia({ type: media.type, index: media.index })}
-                      className="relative flex-shrink-0 overflow-hidden transition-all"
-                      style={{ border: `2px solid ${isActive ? '#C9A84C' : 'rgba(255,255,255,0.1)'}`, borderRadius: '10px', aspectRatio: '3/4', backgroundColor: '#1a1a1a' }}>
-                      {media.type === 'image'
-                        ? <img src={media.url} alt="" className="w-full h-full object-cover" style={{ borderRadius: '8px' }} />
-                        : <>
-                          <video src={media.url} className="w-full h-full object-cover" style={{ borderRadius: '8px' }} muted />
-                          <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.35)', borderRadius: '8px' }}>
-                            <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(201,168,76,0.9)' }}>
-                              <FiPlay size={11} color="#fff" style={{ marginLeft: '1px' }} />
-                            </div>
-                          </div>
-                        </>
-                      }
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-            <div className="flex-1 relative overflow-hidden" style={{ aspectRatio: '3/4', backgroundColor: '#1a1a1a', borderRadius: '18px' }}>
-              {activeMedia.type === 'image' ? (
-                <motion.img key={`img-${activeMedia.index}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                  src={images[activeMedia.index]?.url} alt={product.name}
-                  className="w-full h-full object-cover" style={{ borderRadius: '18px' }} />
-              ) : (
-                <motion.div key={`vid-${activeMedia.index}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ width: '100%', height: '100%' }}>
-                  <VideoPlayer src={videos[activeMedia.index]?.url} style={{ width: '100%', height: '100%', borderRadius: '18px' }} />
+          <div style={{ padding: '22px 0' }}>
+            <AnimatePresence mode="wait">
+
+              {activeTab === 'description' && (
+                <motion.div key="desc" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} style={{ maxWidth: 600 }}>
+                  <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.58)', lineHeight: 1.85, margin: '0 0 12px' }}>{product.description}</p>
+                  {product.material && <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.42)' }}><strong style={{ color: 'rgba(255,255,255,0.68)' }}>Material:</strong> {product.material}</p>}
                 </motion.div>
               )}
-              {product.isNewArrival && activeMedia.type === 'image' && <span className="absolute top-4 left-4 badge-gold">New Arrival</span>}
-            </div>
-          </div>
-        </div>
 
-        {/* ── PRODUCT INFO ── */}
-        <div>
-          <p className="font-body text-xs tracking-[0.2em] uppercase mb-2" style={{ color: "rgba(255,255,255,0.4)" }}>{product.brand}</p>
-          <h1 className="font-display text-2xl sm:text-3xl md:text-4xl font-light mb-3 text-white">{product.name}</h1>
-          <div className="flex items-center gap-3 mb-6">
-            <div className="flex">
-              {[1, 2, 3, 4, 5].map(s => (
-                <FiStar key={s} size={16} style={{ color: s <= Math.round(product.ratings) ? '#C9A84C' : 'rgba(255,255,255,0.15)' }} />
-              ))}
-            </div>
-            <span className="text-sm font-body text-white/50">({product.numReviews} reviews)</span>
-          </div>
-          <div className="flex items-center gap-3 flex-wrap mb-8 pb-8" style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
-            <span className="font-display text-2xl sm:text-3xl font-light" style={{ color: "#C9A84C" }}>
-              ₹{(product.discountPrice || product.price)?.toLocaleString()}
-            </span>
-            {product.discountPrice && (
-              <>
-                <span className="font-body text-base line-through" style={{ color: "rgba(255,255,255,0.35)" }}>₹{product.price?.toLocaleString()}</span>
-                <span className="text-white text-[11px] font-body font-medium tracking-wider uppercase px-2 py-0.5" style={{ backgroundColor: "#C9A84C" }}>
-                  {Math.round(((product.price - product.discountPrice) / product.price) * 100)}% OFF
-                </span>
-              </>
-            )}
-          </div>
-          {product.colors?.length > 0 && (
-            <div className="mb-6">
-              <p className="font-body text-xs tracking-[0.15em] uppercase mb-3">Color: <span className="text-gold">{selectedColor}</span></p>
-              <div className="flex gap-3">
-                {product.colors.map(c => (
-                  <button key={c.name} onClick={() => setSelectedColor(c.name)} title={c.name} className="w-7 h-7 rounded-full transition-all"
-                    style={{ border: selectedColor === c.name ? '2px solid #C9A84C' : '2px solid transparent', transform: selectedColor === c.name ? 'scale(1.15)' : 'scale(1)', backgroundColor: c.hex || '#000' }} />
-                ))}
-              </div>
-            </div>
-          )}
-          {product.sizes?.length > 0 && (
-            <div className="mb-8">
-              <div className="flex items-center justify-between mb-3">
-                <p className="font-body text-xs tracking-[0.15em] uppercase">Size</p>
-                <button className="text-xs text-gold font-body underline">Size Guide</button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {product.sizes.map(size => (
-                  <button key={size} onClick={() => setSelectedSize(size)} className="min-w-[40px] h-10 px-3 text-xs font-body border transition-all"
-                    style={{ backgroundColor: selectedSize === size ? '#C9A84C' : 'transparent', borderColor: selectedSize === size ? '#C9A84C' : 'rgba(255,255,255,0.12)', color: selectedSize === size ? '#fff' : 'rgba(255,255,255,0.6)' }}>
-                    {size}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-          <div className="flex items-center gap-4 mb-6">
-            <div className="flex items-center" style={{ border: "1px solid rgba(255,255,255,0.12)" }}>
-              <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="w-10 h-10 flex items-center justify-center text-base text-white hover:text-gold transition-colors">−</button>
-              <span className="w-10 text-center font-body text-sm text-white">{quantity}</span>
-              <button onClick={() => setQuantity(q => Math.min(product.stock, q + 1))} className="w-10 h-10 flex items-center justify-center text-base text-white hover:text-gold transition-colors">+</button>
-            </div>
-            <span className="text-xs text-white/40 font-body">{product.stock} in stock</span>
-          </div>
-          <div className="flex gap-3 mb-8">
-            <button onClick={handleAddToCart} className="flex-1 py-3 sm:py-4 text-sm font-body tracking-[0.15em] uppercase text-white transition-colors" style={{ backgroundColor: "#C9A84C" }}>
-              Add to Cart
-            </button>
-            <button onClick={() => toggleWishlist(product._id)} className="w-12 h-12 flex items-center justify-center transition-all"
-              style={{ border: `1px solid ${isWishlisted(product._id) ? '#C9A84C' : 'rgba(255,255,255,0.12)'}`, backgroundColor: isWishlisted(product._id) ? '#C9A84C' : 'transparent', color: isWishlisted(product._id) ? '#fff' : 'rgba(255,255,255,0.6)' }}>
-              <FiHeart size={17} fill={isWishlisted(product._id) ? 'currentColor' : 'none'} />
-            </button>
-            <button onClick={handleShare} className="w-12 h-12 flex items-center justify-center transition-all" style={{ border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.6)' }}>
-              <FiShare2 size={17} />
-            </button>
-          </div>
-          {(() => {
-            const noReturns = product.createdBy?.sellerInfo?.noReturnsEnabled;
-            const perks = [
-              { icon: FiTruck, text: 'Free shipping on orders above ₹999' },
-              noReturns ? { icon: FiXCircle, text: 'Non-returnable', red: true } : { icon: FiRefreshCw, text: 'Easy 7-day returns & exchanges' },
-              { icon: FiShield, text: '100% authentic products guaranteed' },
-              { icon: FiCheck, text: 'Cash on delivery available' },
-            ];
-            return (
-              <div className="border-t border-white/10 pt-6">
-                <div className="space-y-3">
-                  {perks.map(({ icon: Icon, text, red }) => (
-                    <div key={text} className="flex items-center gap-3 text-sm font-body" style={{ color: red ? '#f87171' : 'rgba(255,255,255,0.5)' }}>
-                      <Icon size={15} style={{ color: red ? '#f87171' : '#C9A84C', flexShrink: 0 }} /> {text}
-                    </div>
-                  ))}
-                </div>
-                <div style={{ marginTop: '16px', borderRadius: '10px', border: noReturns ? '1px solid rgba(248,113,113,0.3)' : '1px solid rgba(255,255,255,0.08)', overflow: 'hidden' }}>
-                  <div style={{ backgroundColor: noReturns ? 'rgba(248,113,113,0.1)' : 'rgba(74,222,128,0.07)', borderBottom: noReturns ? '1px solid rgba(248,113,113,0.2)' : '1px solid rgba(255,255,255,0.06)', padding: '9px 14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    {noReturns ? <FiXCircle size={13} style={{ color: '#f87171', flexShrink: 0 }} /> : <FiRefreshCw size={13} style={{ color: '#4ade80', flexShrink: 0 }} />}
-                    <span style={{ color: noReturns ? '#f87171' : '#4ade80', fontSize: '11px', fontWeight: '700', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                      {noReturns ? 'Non-Returnable Item' : 'Return Policy'}
-                    </span>
-                  </div>
-                  <div style={{ padding: '14px', backgroundColor: '#0d0d0d' }}>
-                    {noReturns ? (
-                      <>
-                        <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', marginBottom: '10px' }}>
-                          <FiAlertCircle size={16} style={{ color: '#fbbf24', flexShrink: 0, marginTop: '1px' }} />
-                          <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '13px', lineHeight: '1.7', margin: 0 }}>
-                            <strong style={{ color: '#fff' }}>This item is non-returnable.</strong> Please read product details carefully before purchasing.
-                          </p>
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '4px' }}>
-                          {[{ label: 'Return Window', value: 'Not applicable', red: true }, { label: 'Replacement', value: 'Not available', red: true }, { label: 'Reason', value: 'Seller policy' }, { label: 'Warranty', value: 'Check description' }].map(({ label, value, red }) => (
-                            <div key={label} style={{ backgroundColor: '#161616', borderRadius: '6px', padding: '8px 10px' }}>
-                              <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 2px' }}>{label}</p>
-                              <p style={{ color: red ? '#f87171' : 'rgba(255,255,255,0.65)', fontSize: '12px', fontWeight: '500', margin: 0 }}>{value}</p>
-                            </div>
-                          ))}
-                        </div>
-                        <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '11px', marginTop: '10px', lineHeight: '1.5' }}>⚠️ In case of a defective or wrong item, please contact support within 48 hours of delivery.</p>
-                      </>
-                    ) : (
-                      <>
-                        <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', marginBottom: '10px' }}>
-                          <FiRefreshCw size={14} style={{ color: '#4ade80', flexShrink: 0, marginTop: '2px' }} />
-                          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', lineHeight: '1.7', margin: 0 }}>
-                            <strong style={{ color: '#fff' }}>7-day hassle-free returns & replacements.</strong> Item must be unused and in original packaging.
-                          </p>
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                          {[{ label: 'Return Window', value: '7 days', green: true }, { label: 'Refund', value: 'Original mode' }, { label: 'Condition', value: 'Unused & intact' }, { label: 'Process', value: 'Pickup arranged' }].map(({ label, value, green }) => (
-                            <div key={label} style={{ backgroundColor: '#161616', borderRadius: '6px', padding: '8px 10px' }}>
-                              <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 2px' }}>{label}</p>
-                              <p style={{ color: green ? '#4ade80' : 'rgba(255,255,255,0.65)', fontSize: '12px', fontWeight: '500', margin: 0 }}>{value}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
-        </div>
-      </div>
-
-      {/* ── TABS ── */}
-      <div className="border-t border-white/10">
-        <div className="flex gap-8 border-b border-white/10">
-          {['description', 'reviews', 'care'].map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)}
-              className={`py-4 text-sm font-body tracking-[0.1em] uppercase transition-all relative ${activeTab === tab ? 'text-white' : 'text-white/40 hover:text-white'}`}>
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              {activeTab === tab && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gold" />}
-            </button>
-          ))}
-        </div>
-        <div className="py-10">
-          {activeTab === 'description' && (
-            <div className="max-w-2xl">
-              <p className="font-body text-white/60 leading-relaxed mb-6">{product.description}</p>
-              {product.material && <p className="font-body text-sm text-white/50"><strong>Material:</strong> {product.material}</p>}
-            </div>
-          )}
-          {activeTab === 'care' && (
-            <div className="max-w-2xl">
-              <p className="font-body text-white/60 leading-relaxed">
-                {product.careInstructions || 'Machine wash cold with similar colors. Do not bleach. Tumble dry low. Cool iron if needed. Do not dry clean.'}
-              </p>
-            </div>
-          )}
-          {activeTab === 'reviews' && (
-            <div className="max-w-3xl" id="reviews">
-              {reviews.length > 0 && (
-                <div className="flex flex-col sm:flex-row gap-8 p-6 mb-8 rounded-xl" style={{ backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.08)' }}>
-                  <div className="text-center flex-shrink-0">
-                    <p className="font-display text-6xl font-light" style={{ color: '#C9A84C' }}>{product.ratings?.toFixed(1) || '0.0'}</p>
-                    <div className="flex justify-center gap-0.5 my-2">
-                      {[1, 2, 3, 4, 5].map(s => <span key={s} style={{ color: s <= Math.round(product.ratings) ? '#C9A84C' : 'rgba(255,255,255,0.12)', fontSize: '16px' }}>★</span>)}
-                    </div>
-                    <p className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>{product.numReviews} reviews</p>
-                  </div>
-                  <div className="flex-1 space-y-2">
-                    {[5, 4, 3, 2, 1].map(star => {
-                      const count = reviews.filter(r => Math.round(r.rating) === star).length;
-                      const pct = reviews.length ? Math.round((count / reviews.length) * 100) : 0;
-                      return (
-                        <div key={star} className="flex items-center gap-3">
-                          <span className="font-body text-xs w-3 text-right" style={{ color: 'rgba(255,255,255,0.5)' }}>{star}</span>
-                          <span style={{ color: '#C9A84C', fontSize: '12px' }}>★</span>
-                          <div className="flex-1 h-1.5 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                            <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: '#C9A84C' }} />
-                          </div>
-                          <span className="font-body text-xs w-8" style={{ color: 'rgba(255,255,255,0.35)' }}>{count}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-              {isLoggedIn ? (
-                <div className="p-6 mb-8 rounded-xl" style={{ backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.08)' }}>
-                  <h3 className="font-display text-xl font-light text-white mb-5">Write a Review</h3>
-                  <form onSubmit={handleSubmitReview} className="space-y-4">
-                    <div>
-                      <label className="block font-body text-[10px] tracking-[0.15em] uppercase mb-3" style={{ color: 'rgba(255,255,255,0.4)' }}>Your Rating</label>
-                      <div className="flex gap-2">
-                        {[1, 2, 3, 4, 5].map(s => (
-                          <button key={s} type="button" onClick={() => setReviewForm(p => ({ ...p, rating: s }))}
-                            className="transition-transform hover:scale-110 text-2xl" style={{ color: s <= reviewForm.rating ? '#C9A84C' : 'rgba(255,255,255,0.15)' }}>★</button>
-                        ))}
-                        <span className="font-body text-sm ml-2 self-center" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                          {['', 'Terrible', 'Poor', 'Average', 'Good', 'Excellent'][reviewForm.rating]}
-                        </span>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block font-body text-[10px] tracking-[0.15em] uppercase mb-2" style={{ color: 'rgba(255,255,255,0.4)' }}>Review Title</label>
-                      <input required placeholder="e.g. Great quality, fits perfectly!" value={reviewForm.title}
-                        onChange={e => setReviewForm(p => ({ ...p, title: e.target.value }))}
-                        className="w-full px-4 py-3 font-body text-sm text-white focus:outline-none transition-colors"
-                        style={{ backgroundColor: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
-                        onFocus={e => e.target.style.borderColor = '#C9A84C'} onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
-                    </div>
-                    <div>
-                      <label className="block font-body text-[10px] tracking-[0.15em] uppercase mb-2" style={{ color: 'rgba(255,255,255,0.4)' }}>Your Review</label>
-                      <textarea required rows={4} placeholder="Tell others what you think about this product..."
-                        value={reviewForm.comment} onChange={e => setReviewForm(p => ({ ...p, comment: e.target.value }))}
-                        className="w-full px-4 py-3 font-body text-sm text-white focus:outline-none resize-none transition-colors"
-                        style={{ backgroundColor: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
-                        onFocus={e => e.target.style.borderColor = '#C9A84C'} onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
-                    </div>
-                    <button type="submit" disabled={submittingReview}
-                      className="px-8 py-3 font-body text-sm tracking-[0.15em] uppercase text-white transition-colors"
-                      style={{ backgroundColor: submittingReview ? 'rgba(201,168,76,0.5)' : '#C9A84C', borderRadius: '8px' }}>
-                      {submittingReview ? 'Submitting...' : 'Submit Review'}
-                    </button>
-                  </form>
-                </div>
-              ) : (
-                <div className="p-5 mb-8 text-center rounded-xl" style={{ backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.08)' }}>
-                  <p className="font-body text-sm mb-3" style={{ color: 'rgba(255,255,255,0.5)' }}>Login to write a review</p>
-                  <Link to="/login" className="inline-block px-6 py-2.5 font-body text-sm tracking-wider uppercase text-white" style={{ backgroundColor: '#C9A84C', borderRadius: '6px' }}>Login to Review</Link>
-                </div>
-              )}
-              {reviews.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-4xl mb-3">⭐</p>
-                  <p className="font-display text-xl font-light text-white mb-2">No reviews yet</p>
-                  <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>Be the first to share your experience!</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <p className="font-body text-[10px] tracking-[0.2em] uppercase mb-4" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                    {reviews.length} Customer Review{reviews.length !== 1 ? 's' : ''}
+              {activeTab === 'care' && (
+                <motion.div key="care" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} style={{ maxWidth: 600 }}>
+                  <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.58)', lineHeight: 1.85 }}>
+                    {product.careInstructions || 'Machine wash cold with similar colors. Do not bleach. Tumble dry low. Cool iron if needed. Do not dry clean.'}
                   </p>
-                  {reviews.map(review => (
-                    <div key={review._id} className="p-5 rounded-xl" style={{ backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.06)' }}>
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium text-white flex-shrink-0" style={{ backgroundColor: '#C9A84C' }}>
-                            {review.user?.name?.charAt(0)?.toUpperCase()}
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-body font-medium text-sm text-white">{review.user?.name}</span>
-                              {review.isVerifiedPurchase && (
-                                <span className="text-[9px] font-body px-1.5 py-0.5 font-medium" style={{ backgroundColor: 'rgba(74,222,128,0.12)', color: '#4ade80', borderRadius: '3px' }}>✓ Verified</span>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                              <div className="flex gap-0.5">
-                                {[1, 2, 3, 4, 5].map(s => <span key={s} className="text-xs" style={{ color: s <= review.rating ? '#C9A84C' : 'rgba(255,255,255,0.12)' }}>★</span>)}
+                </motion.div>
+              )}
+
+              {activeTab === 'reviews' && (
+                <motion.div key="reviews" id="reviews" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} style={{ maxWidth: 680 }}>
+
+                  {reviews.length > 0 && (
+                    <div style={{ display: 'flex', gap: 20, padding: 16, borderRadius: 10, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', marginBottom: 18, flexWrap: 'wrap' }}>
+                      <div style={{ textAlign: 'center', minWidth: 64 }}>
+                        <p style={{ fontSize: 44, fontWeight: 200, color: GOLD, lineHeight: 1, margin: '0 0 4px' }}>{product.ratings?.toFixed(1)}</p>
+                        <Stars rating={product.ratings} size={11} />
+                        <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.32)', marginTop: 2 }}>{product.numReviews} reviews</p>
+                      </div>
+                      <div style={{ flex: 1, minWidth: 130, display: 'flex', flexDirection: 'column', gap: 4, justifyContent: 'center' }}>
+                        {[5, 4, 3, 2, 1].map(star => {
+                          const cnt = reviews.filter(r => Math.round(r.rating) === star).length;
+                          const pct = reviews.length ? Math.round((cnt / reviews.length) * 100) : 0;
+                          return (
+                            <div key={star} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.38)', width: 7 }}>{star}</span>
+                              <span style={{ fontSize: 10, color: GOLD }}>★</span>
+                              <div style={{ flex: 1, height: 3, borderRadius: 3, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                                <div style={{ width: `${pct}%`, height: '100%', background: GOLD, borderRadius: 3, transition: 'width 0.8s ease' }} />
                               </div>
-                              <span className="font-body text-[10px]" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                                {new Date(review.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                              </span>
+                              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.26)', width: 16, textAlign: 'right' }}>{cnt}</span>
                             </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {isLoggedIn ? (
+                    <div style={{ padding: 16, borderRadius: 10, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', marginBottom: 18 }}>
+                      <h3 style={{ fontSize: 13, fontWeight: 400, color: '#fff', margin: '0 0 12px' }}>Write a Review</h3>
+                      <form onSubmit={handleReview} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        <div>
+                          <p style={{ fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.32)', marginBottom: 6 }}>Rating</p>
+                          <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                            {[1, 2, 3, 4, 5].map(s => (
+                              <button key={s} type="button" onClick={() => setReviewForm(p => ({ ...p, rating: s }))}
+                                style={{ fontSize: 20, color: s <= reviewForm.rating ? GOLD : 'rgba(255,255,255,0.1)', background: 'none', border: 'none', cursor: 'pointer', transition: 'color 0.15s', padding: 0 }}>★</button>
+                            ))}
+                            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.38)', marginLeft: 4 }}>
+                              {['', 'Terrible', 'Poor', 'Average', 'Good', 'Excellent'][reviewForm.rating]}
+                            </span>
                           </div>
                         </div>
-                      </div>
-                      {review.title && <h4 className="font-body font-semibold text-sm text-white mb-1.5">{review.title}</h4>}
-                      <p className="font-body text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.6)' }}>{review.comment}</p>
+                        {[
+                          { key: 'title', label: 'Review Title', placeholder: 'e.g. Great quality!', type: 'input' },
+                          { key: 'comment', label: 'Your Review', placeholder: 'Tell others what you think...', type: 'textarea' },
+                        ].map(({ key, label, placeholder, type }) => (
+                          <div key={key}>
+                            <p style={{ fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.32)', marginBottom: 4 }}>{label}</p>
+                            {type === 'input'
+                              ? <input required placeholder={placeholder} value={reviewForm[key]} onChange={e => setReviewForm(p => ({ ...p, [key]: e.target.value }))}
+                                style={{ width: '100%', padding: '8px 12px', background: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, color: '#fff', fontSize: 12, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />
+                              : <textarea required rows={3} placeholder={placeholder} value={reviewForm[key]} onChange={e => setReviewForm(p => ({ ...p, [key]: e.target.value }))}
+                                style={{ width: '100%', padding: '8px 12px', background: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, color: '#fff', fontSize: 12, fontFamily: 'inherit', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
+                            }
+                          </div>
+                        ))}
+                        <button type="submit" disabled={submitting}
+                          style={{ alignSelf: 'flex-start', padding: '8px 20px', background: submitting ? 'rgba(201,168,76,0.5)' : GOLD, color: '#000', border: 'none', borderRadius: 6, fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', cursor: submitting ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
+                          {submitting ? 'Submitting...' : 'Submit Review'}
+                        </button>
+                      </form>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+                  ) : (
+                    <div style={{ padding: 16, borderRadius: 10, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', textAlign: 'center', marginBottom: 18 }}>
+                      <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.42)', marginBottom: 10 }}>Login to write a review</p>
+                      <Link to="/login" style={{ display: 'inline-block', padding: '7px 20px', background: GOLD, color: '#000', borderRadius: 6, fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', textDecoration: 'none' }}>Login to Review</Link>
+                    </div>
+                  )}
 
-      {/* ── RELATED PRODUCTS ── */}
-      {relatedProducts.length > 0 && (
-        <section className="mt-16 pb-12">
-          <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '3rem' }}>
-            <p className="section-subtitle">You may also like</p>
-            <h2 className="font-display text-2xl sm:text-3xl font-light text-white mb-8">More from {product?.category}</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-              {relatedProducts.map((p) => (
-                <Link key={p._id} to={`/product/${p._id}`} className="group block" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-                  <div className="relative overflow-hidden aspect-[3/4] mb-3" style={{ backgroundColor: '#1a1a1a' }}>
-                    <img src={p.images?.[0]?.url} alt={p.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                    {p.isNewArrival && <span className="absolute top-2 left-2 text-white text-[10px] font-body font-medium tracking-wider uppercase px-2 py-0.5" style={{ backgroundColor: '#C9A84C' }}>New</span>}
-                    {p.discountPrice && <span className="absolute top-2 right-2 text-white text-[10px] font-body font-medium px-2 py-0.5" style={{ backgroundColor: '#ef4444' }}>-{Math.round(((p.price - p.discountPrice) / p.price) * 100)}%</span>}
-                  </div>
-                  <p className="font-body text-[10px] tracking-[0.15em] uppercase mb-1" style={{ color: 'rgba(255,255,255,0.35)' }}>{p.brand}</p>
-                  <h3 className="font-body text-sm font-medium text-white group-hover:text-gold transition-colors line-clamp-2 mb-1">{p.name}</h3>
-                  <div className="flex items-center gap-2">
-                    <span className="font-body text-sm font-medium" style={{ color: '#C9A84C' }}>₹{(p.discountPrice || p.price)?.toLocaleString()}</span>
-                    {p.discountPrice && <span className="font-body text-xs line-through" style={{ color: 'rgba(255,255,255,0.3)' }}>₹{p.price?.toLocaleString()}</span>}
-                  </div>
-                </Link>
+                  {reviews.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '32px 0' }}>
+                      <p style={{ fontSize: 28, marginBottom: 7 }}>⭐</p>
+                      <p style={{ fontSize: 14, fontWeight: 300, color: '#fff', marginBottom: 4 }}>No reviews yet</p>
+                      <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.32)' }}>Be the first to share your experience!</p>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {reviews.map((review, ri) => (
+                        <div key={review._id} className="pdp-review-card" style={{ animationDelay: `${ri * 0.05}s` }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                            <div style={{ width: 30, height: 30, borderRadius: '50%', background: GOLD, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#000', flexShrink: 0 }}>
+                              {review.user?.name?.charAt(0)?.toUpperCase()}
+                            </div>
+                            <div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <span style={{ fontSize: 12, fontWeight: 600, color: '#fff' }}>{review.user?.name}</span>
+                                {review.isVerifiedPurchase && <span style={{ fontSize: 8, background: 'rgba(34,197,94,0.12)', color: '#22c55e', padding: '2px 6px', borderRadius: 3, fontWeight: 600 }}>✓ Verified</span>}
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 1 }}>
+                                <Stars rating={review.rating} size={9} />
+                                <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.28)' }}>
+                                  {new Date(review.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          {review.title && <h4 style={{ fontSize: 12, fontWeight: 600, color: '#fff', margin: '0 0 3px' }}>{review.title}</h4>}
+                          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.58)', lineHeight: 1.65, margin: 0 }}>{review.comment}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+
+        {/* ════ RELATED PRODUCTS ════ */}
+        {related.length > 0 && (
+          <section style={{ marginTop: 36, paddingTop: 28, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 3, height: 20, borderRadius: 2, background: GOLD, flexShrink: 0 }} />
+                <div>
+                  <p style={{ fontSize: 8, letterSpacing: '0.25em', textTransform: 'uppercase', color: GOLD, margin: '0 0 2px', fontFamily: 'Jost,sans-serif' }}>You may also like</p>
+                  <h2 style={{ fontSize: 'clamp(0.9rem,2.4vw,1.25rem)', fontWeight: 300, color: '#fff', margin: 0 }}>More from {product.category}</h2>
+                </div>
+              </div>
+              <Link to={`/shop/${product.category?.toLowerCase()}`} style={{ fontSize: 10, color: GOLD, textDecoration: 'none', letterSpacing: '0.07em', display: 'flex', alignItems: 'center', gap: 3 }}>
+                View All <FiChevronRight size={11} />
+              </Link>
+            </div>
+
+            {/* ── DESKTOP: 4 cols with smaller images via .pdp-rel-img (85% padding-top) ── */}
+            <div style={{ display: 'grid', gap: 9, gridTemplateColumns: 'repeat(2,1fr)' }} className="sm:grid-cols-4 sm:gap-3">
+              {related.map((p, i) => (
+                <motion.div key={p._id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07, duration: 0.3 }}>
+                  <Link to={`/product/${p._id}`} className="pdp-rel-card" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+                    <div className="pdp-rel-inner">
+                      <div className="pdp-rel-img">
+                        <img src={p.images?.[0]?.url || 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=400'} alt={p.name}
+                          onError={e => { e.target.src = 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=400'; }} />
+                        <div style={{ position: 'absolute', top: 6, left: 6, display: 'flex', flexDirection: 'column', gap: 3, zIndex: 3, pointerEvents: 'none' }}>
+                          {p.isNewArrival && <span style={{ background: GOLD, color: '#000', fontSize: 7, fontWeight: 800, padding: '2px 5px', letterSpacing: '0.12em', textTransform: 'uppercase' }}>New</span>}
+                          {/* ── FIX: same hasDiscount logic applied to related products ── */}
+                          {p.discountPrice != null && p.discountPrice > 0 && (
+                            <span style={{ background: '#ef4444', color: '#fff', fontSize: 7, fontWeight: 700, padding: '2px 5px' }}>
+                              -{Math.round(((p.price - p.discountPrice) / p.price) * 100)}%
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '36%', background: 'linear-gradient(to top,rgba(0,0,0,0.48),transparent)', zIndex: 2, pointerEvents: 'none' }} />
+                      </div>
+                      <div style={{ height: 1, background: 'linear-gradient(90deg,transparent,rgba(201,168,76,0.22),transparent)' }} />
+                      <div style={{ padding: '7px 8px 9px', background: '#181818' }}>
+                        <p style={{ fontSize: 7.5, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.26)', marginBottom: 2 }}>{p.brand || 'Trendorra'}</p>
+                        <h3 style={{ fontSize: 11, fontWeight: 500, color: '#fff', lineHeight: 1.35, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', margin: '0 0 5px' }}>{p.name}</h3>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          {/* ── FIX: same hasDiscount logic for related product prices ── */}
+                          <span style={{ fontSize: 12, fontWeight: 700, color: '#fff' }}>
+                            ₹{(p.discountPrice != null && p.discountPrice > 0 ? p.discountPrice : p.price)?.toLocaleString()}
+                          </span>
+                          {p.discountPrice != null && p.discountPrice > 0 && (
+                            <span style={{ fontSize: 10, textDecoration: 'line-through', color: 'rgba(255,255,255,0.26)' }}>₹{p.price?.toLocaleString()}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                </motion.div>
               ))}
             </div>
-          </div>
-        </section>
-      )}
+          </section>
+        )}
+      </div>
+
+      {/* ════ SIZE GUIDE MODAL ════ */}
+      <AnimatePresence>
+        {sizeGuideOpen && (
+          <SizeGuideModal
+            sizes={product.sizes}
+            sizeGuide={product.sizeGuide}
+            onClose={() => setSizeGuideOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ════ ZOOM LIGHTBOX ════ */}
+      <AnimatePresence>
+        {imgZoomed && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setImgZoomed(false)}
+            style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, backdropFilter: 'blur(8px)', cursor: 'zoom-out' }}>
+            <motion.img initial={{ scale: 0.88, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.92, opacity: 0 }} transition={{ duration: 0.22 }}
+              src={images[activeMedia.type === 'image' ? activeMedia.index : 0]?.url} alt={product.name}
+              style={{ maxWidth: '92vw', maxHeight: '90vh', objectFit: 'contain', borderRadius: 10, boxShadow: '0 0 60px rgba(201,168,76,0.14)' }}
+              onClick={e => e.stopPropagation()} />
+            <button onClick={() => setImgZoomed(false)}
+              style={{ position: 'absolute', top: 16, right: 16, width: 34, height: 34, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+              ×
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }
